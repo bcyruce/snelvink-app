@@ -52,7 +52,7 @@ export default function LoginPage() {
         </header>
 
         <h1 className="mb-8 text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-          Inloggen bij SnelVink
+          SnelVink v1.0
         </h1>
 
         <form

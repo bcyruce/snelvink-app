@@ -1,0 +1,22 @@
+name: Deploy to Hetzner VPS
+
+on:
+  push:
+    branches: [ main ] # 当代码推送到 main 分支时触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/snelvink-app
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart snelvink
