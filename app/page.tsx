@@ -7,7 +7,7 @@ import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import SettingsTab from "@/components/SettingsTab";
-import { supabase } from "@/lib/supabase";
+import { UserProvider, useUser } from "@/hooks/useUser";
 import { Sparkles, Thermometer, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -19,46 +19,19 @@ type TaskModule =
   | "kerntemp"
   | "ontvangst";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
+  const { user, isLoading } = useUser();
   const [activeTab, setActiveTab] = useState<BottomNavTab>("tasks");
   const [activeModule, setActiveModule] = useState<TaskModule>("dashboard");
-  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, user, router]);
 
-    const verifySession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-
-      if (!data.session) {
-        router.push("/login");
-        return;
-      }
-
-      setCheckingSession(false);
-    };
-
-    void verifySession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        router.push("/login");
-      } else if (mounted) {
-        setCheckingSession(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [router]);
-
-  if (checkingSession) {
+  if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-gray-600">
@@ -146,5 +119,13 @@ export default function Home() {
 
       <BottomNav active={activeTab} onChange={setActiveTab} />
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <UserProvider>
+      <HomeContent />
+    </UserProvider>
   );
 }

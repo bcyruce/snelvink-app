@@ -1,6 +1,8 @@
 "use client";
 
+import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { Camera } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -15,6 +17,9 @@ function parseStoredTemperature(raw: string | null): number | null {
 }
 
 export default function KoelingCheck() {
+  const { profile, isFreePlan } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
+
   const [temperature, setTemperature] = useState(DEFAULT_TEMP);
   const [storageReady, setStorageReady] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -23,6 +28,7 @@ export default function KoelingCheck() {
   const [showRegistered, setShowRegistered] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const registeredTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -111,6 +117,11 @@ export default function KoelingCheck() {
   };
 
   const handleSave = async () => {
+    if (!restaurantId) {
+      console.error("Geen restaurant gekoppeld aan dit profiel.");
+      return;
+    }
+
     persistLocalBackup();
 
     setIsSaving(true);
@@ -118,7 +129,7 @@ export default function KoelingCheck() {
     try {
       let publicUrl: string | null = null;
 
-      if (photoFile) {
+      if (photoFile && !isFreePlan) {
         const ext = photoFile.name.split(".").pop() ?? "jpg";
         const filePath = `koeling1/${Date.now()}-${crypto.randomUUID()}.${ext}`;
         const { error: uploadError } = await supabase
@@ -145,6 +156,7 @@ export default function KoelingCheck() {
         {
           equipment_name: "Koeling 1",
           temperature,
+          restaurant_id: restaurantId,
           ...(publicUrl ? { photo_url: publicUrl } : {}),
         },
       ]);
@@ -207,6 +219,10 @@ export default function KoelingCheck() {
   );
 
   const handlePhotoPickerOpen = () => {
+    if (isFreePlan) {
+      setShowUpgradeModal(true);
+      return;
+    }
     photoInputRef.current?.click();
   };
 
@@ -225,6 +241,14 @@ export default function KoelingCheck() {
 
   return (
     <div className="mt-10 flex flex-col gap-6">
+      <UpgradePromptModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      >
+        Alleen beschikbaar voor Basic-abonnement. Upgrade om foto&apos;s toe te
+        voegen als bewijs voor de NVWA.
+      </UpgradePromptModal>
+
       <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
         Koeling 1
       </h2>
@@ -303,7 +327,7 @@ export default function KoelingCheck() {
       <button
         type="button"
         onClick={handlePhotoPickerOpen}
-        disabled={isSaving}
+        disabled={isSaving || !restaurantId}
         className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform hover:bg-gray-50 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <Camera className="h-7 w-7" aria-hidden />
@@ -323,7 +347,7 @@ export default function KoelingCheck() {
       <button
         type="button"
         onClick={handleSave}
-        disabled={isSaving}
+        disabled={isSaving || !restaurantId}
         aria-busy={isSaving}
         className="h-24 w-full rounded-2xl bg-green-600 text-2xl font-bold text-white shadow-md transition-transform hover:bg-green-700 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >

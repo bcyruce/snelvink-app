@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { useState } from "react";
 
 type RejectionReason =
@@ -9,6 +10,9 @@ type RejectionReason =
   | "Anders...";
 
 export default function OntvangstCheck() {
+  const { profile } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
+
   const [isSaving, setIsSaving] = useState(false);
   const [showRejectReasons, setShowRejectReasons] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -18,6 +22,12 @@ export default function OntvangstCheck() {
     status: "approved" | "rejected";
     reason?: RejectionReason;
   }) => {
+    if (!restaurantId) {
+      console.error("Geen restaurant gekoppeld aan dit profiel.");
+      setError(true);
+      return;
+    }
+
     setIsSaving(true);
     setError(false);
     setShowSuccess(false);
@@ -25,7 +35,7 @@ export default function OntvangstCheck() {
     try {
       const { error: insertError } = await supabase
         .from("delivery_logs")
-        .insert([payload]);
+        .insert([{ ...payload, restaurant_id: restaurantId }]);
 
       if (insertError) {
         console.error("Opslaan naar Supabase mislukt:", insertError);
@@ -73,7 +83,7 @@ export default function OntvangstCheck() {
           <button
             type="button"
             onClick={handleApprove}
-            disabled={isSaving}
+            disabled={isSaving || !restaurantId}
             aria-busy={isSaving}
             className={`${primaryButtonClass} bg-green-600 hover:bg-green-700`}
           >
@@ -83,7 +93,7 @@ export default function OntvangstCheck() {
           <button
             type="button"
             onClick={handleRejectFlow}
-            disabled={isSaving}
+            disabled={isSaving || !restaurantId}
             className={`${primaryButtonClass} bg-red-600 hover:bg-red-700`}
           >
             Afgekeurd
@@ -94,7 +104,7 @@ export default function OntvangstCheck() {
           <button
             type="button"
             onClick={() => handleRejectReason("Verpakking Kapot")}
-            disabled={isSaving}
+            disabled={isSaving || !restaurantId}
             aria-busy={isSaving}
             className={secondaryButtonClass}
           >
@@ -104,7 +114,7 @@ export default function OntvangstCheck() {
           <button
             type="button"
             onClick={() => handleRejectReason("Temperatuur te hoog")}
-            disabled={isSaving}
+            disabled={isSaving || !restaurantId}
             aria-busy={isSaving}
             className={secondaryButtonClass}
           >
@@ -114,7 +124,7 @@ export default function OntvangstCheck() {
           <button
             type="button"
             onClick={() => handleRejectReason("Anders...")}
-            disabled={isSaving}
+            disabled={isSaving || !restaurantId}
             aria-busy={isSaving}
             className={secondaryButtonClass}
           >

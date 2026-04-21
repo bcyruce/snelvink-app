@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const STORAGE_KEY = "snelvink-kerntemperatuur-temperature";
@@ -14,6 +15,9 @@ function parseStoredTemperature(raw: string | null): number | null {
 }
 
 export default function KerntemperatuurCheck() {
+  const { profile } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
+
   const [temperature, setTemperature] = useState(DEFAULT_TEMP);
   const [storageReady, setStorageReady] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -104,6 +108,11 @@ export default function KerntemperatuurCheck() {
   };
 
   const handleSave = async () => {
+    if (!restaurantId) {
+      console.error("Geen restaurant gekoppeld aan dit profiel.");
+      return;
+    }
+
     persistLocalBackup();
 
     setIsSaving(true);
@@ -113,6 +122,7 @@ export default function KerntemperatuurCheck() {
         {
           equipment_name: "Kerntemperatuur",
           temperature,
+          restaurant_id: restaurantId,
         },
       ]);
 
@@ -239,7 +249,7 @@ export default function KerntemperatuurCheck() {
       <button
         type="button"
         onClick={handleSave}
-        disabled={isSaving}
+        disabled={isSaving || !restaurantId}
         aria-busy={isSaving}
         className="h-24 w-full rounded-2xl bg-green-600 text-2xl font-bold text-white shadow-md transition-transform hover:bg-green-700 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >

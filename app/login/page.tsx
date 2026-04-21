@@ -5,16 +5,47 @@ import { ChefHat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+type AuthView = "login" | "register";
+type RegisterRole = "owner" | "employee";
+
+const inputClass =
+  "h-16 w-full rounded-2xl border border-gray-200 bg-white px-5 text-xl text-gray-900 shadow-sm outline-none ring-0 transition-colors focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10";
+
+const labelClass = "text-sm font-semibold text-gray-800";
+
+function normalizeKoppelcode(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, 6);
+}
+
+async function generateUniqueInviteCode(): Promise<string> {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const { data } = await supabase
+      .from("restaurants")
+      .select("id")
+      .eq("invite_code", code)
+      .maybeSingle();
+    if (!data) return code;
+  }
+  throw new Error("Geen unieke koppelcode kunnen genereren");
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const [authView, setAuthView] = useState<AuthView>("login");
+  const [registerRole, setRegisterRole] = useState<RegisterRole>("owner");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [restaurantName, setRestaurantName] = useState("");
+  const [koppelcode, setKoppelcode] = useState("");
+
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(false);
+    setError(null);
     setLoading(true);
 
     try {
@@ -25,7 +56,7 @@ export default function LoginPage() {
 
       if (signInError) {
         console.error("Inloggen mislukt:", signInError.message);
-        setError(true);
+        setError("Inloggen mislukt. Controleer je gegevens.");
         return;
       }
 
@@ -33,7 +64,140 @@ export default function LoginPage() {
       router.refresh();
     } catch (err) {
       console.error("Inloggen mislukt:", err);
-      setError(true);
+      setError("Inloggen mislukt. Probeer het opnieuw.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const trimmedEmail = email.trim();
+    const code = normalizeKoppelcode(koppelcode);
+
+    if (registerRole === "employee" && code.length !== 6) {
+      setError("Voer een geldige 6-cijferige koppelcode in.");
+      setLoading(false);
+      return;
+    }
+
+    if (registerRole === "owner" && !restaurantName.trim()) {
+      setError("Vul de restaurantnaam in.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+        });
+
+      if (signUpError) {
+        console.error("Registreren mislukt:", signUpError.message);
+        setError(signUpError.message || "Registreren mislukt.");
+        return;
+      }
+
+      const user = signUpData.user;
+      const session = signUpData.session;
+
+      if (!user) {
+        setError(
+          "Account aangemaakt. Bevestig je e-mail als dat nodig is en meld je daarna aan.",
+        );
+        return;
+      }
+
+      if (!session) {
+        setError(
+          "Bevestig eerst je e-mailadres via de link in je inbox. Zet in Supabase desnoods e-mailbevestiging uit om direct restaurant en profiel aan te maken.",
+        );
+        return;
+      }
+
+      if (registerRole === "owner") {
+        const inviteCode = await generateUniqueInviteCode();
+
+        const { data: restaurant, error: restaurantError } = await supabase
+          .from("restaurants")
+          .insert([
+            {
+              name: restaurantName.trim(),
+              invite_code: inviteCode,
+              plan_type: "free",
+            },
+          ])
+          .select("id")
+          .single();
+
+        if (restaurantError || !restaurant) {
+          console.error("Restaurant aanmaken mislukt:", restaurantError);
+          setError(
+            "Account aangemaakt, maar restaurant kon niet worden opgeslagen. Neem contact op.",
+          );
+          return;
+        }
+
+        const { error: profileError } = await supabase.from("profiles").insert([
+          {
+            id: user.id,
+            role: "owner",
+            restaurant_id: restaurant.id,
+          },
+        ]);
+
+        if (profileError) {
+          console.error("Profiel opslaan mislukt:", profileError);
+          setError(
+            "Account en restaurant aangemaakt, maar profiel kon niet worden gekoppeld. Neem contact op.",
+          );
+          return;
+        }
+      } else {
+        const { data: restaurant, error: lookupError } = await supabase
+          .from("restaurants")
+          .select("id")
+          .eq("invite_code", code)
+          .maybeSingle();
+
+        if (lookupError) {
+          console.error("Restaurant zoeken mislukt:", lookupError);
+          setError("Kon restaurant niet vinden. Controleer de koppelcode.");
+          return;
+        }
+
+        if (!restaurant) {
+          setError("Onbekende koppelcode. Vraag je werkgever om de code.");
+          return;
+        }
+
+        const { error: profileError } = await supabase.from("profiles").insert([
+          {
+            id: user.id,
+            role: "employee",
+            restaurant_id: restaurant.id,
+          },
+        ]);
+
+        if (profileError) {
+          console.error("Profiel opslaan mislukt:", profileError);
+          setError(
+            "Account aangemaakt, maar koppeling aan het restaurant mislukt. Neem contact op.",
+          );
+          return;
+        }
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      console.error("Registreren mislukt:", err);
+      setError("Er ging iets mis. Probeer het opnieuw.");
     } finally {
       setLoading(false);
     }
@@ -52,76 +216,243 @@ export default function LoginPage() {
         </header>
 
         <h1 className="mb-8 text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-          v1.0
+          {authView === "login" ? "Aanmelden" : "Registreren"}
         </h1>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-6"
-          noValidate
-        >
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="login-email"
-              className="text-sm font-semibold text-gray-800"
-            >
-              E-mailadres
-            </label>
-            <input
-              id="login-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={error}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-4 text-lg text-gray-900 shadow-sm outline-none ring-0 transition-colors focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="login-password"
-              className="text-sm font-semibold text-gray-800"
-            >
-              Wachtwoord
-            </label>
-            <input
-              id="login-password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-invalid={error}
-              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-4 text-lg text-gray-900 shadow-sm outline-none ring-0 transition-colors focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
-            />
-          </div>
-
-          {error ? (
-            <p
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-800"
-              role="alert"
-            >
-              Oeps! Inloggen mislukt. Controleer je gegevens.
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={loading}
-            aria-busy={loading}
-            className="mt-2 w-full rounded-2xl bg-gray-900 py-5 text-xl font-bold text-white shadow-md transition-transform hover:bg-gray-800 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        {authView === "login" ? (
+          <form
+            onSubmit={handleLogin}
+            className="flex flex-col gap-5"
+            noValidate
           >
-            {loading ? "Bezig…" : "Aanmelden"}
-          </button>
-        </form>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="login-email" className={labelClass}>
+                E-mailadres
+              </label>
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={!!error}
+                className={inputClass}
+              />
+            </div>
 
-        <p className="mt-10 text-center text-sm leading-relaxed text-gray-500">
-          Nog geen account? Neem contact op
+            <div className="flex flex-col gap-2">
+              <label htmlFor="login-password" className={labelClass}>
+                Wachtwoord
+              </label>
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={!!error}
+                className={inputClass}
+              />
+            </div>
+
+            {error ? (
+              <p
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-base font-medium text-red-800"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={loading}
+              aria-busy={loading}
+              className="mt-2 h-16 w-full rounded-2xl bg-gray-900 text-xl font-bold text-white shadow-md transition-transform hover:bg-gray-800 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Bezig…" : "Aanmelden"}
+            </button>
+          </form>
+        ) : (
+          <form
+            onSubmit={handleRegister}
+            className="flex flex-col gap-5"
+            noValidate
+          >
+            <fieldset className="flex flex-col gap-3 border-0 p-0">
+              <legend className="sr-only">Accounttype</legend>
+              <p className="text-center text-sm font-semibold text-gray-600">
+                Kies je accounttype
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label
+                  className={[
+                    "flex min-h-16 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-colors",
+                    registerRole === "owner"
+                      ? "border-gray-900 bg-gray-100 text-gray-900"
+                      : "border-gray-200 bg-white text-gray-700",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="register-role"
+                    value="owner"
+                    checked={registerRole === "owner"}
+                    onChange={() => setRegisterRole("owner")}
+                    className="sr-only"
+                  />
+                  Ik ben eigenaar
+                </label>
+                <label
+                  className={[
+                    "flex min-h-16 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-colors",
+                    registerRole === "employee"
+                      ? "border-gray-900 bg-gray-100 text-gray-900"
+                      : "border-gray-200 bg-white text-gray-700",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="register-role"
+                    value="employee"
+                    checked={registerRole === "employee"}
+                    onChange={() => setRegisterRole("employee")}
+                    className="sr-only"
+                  />
+                  Ik ben werknemer
+                </label>
+              </div>
+            </fieldset>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="register-email" className={labelClass}>
+                E-mailadres
+              </label>
+              <input
+                id="register-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="register-password" className={labelClass}>
+                Wachtwoord
+              </label>
+              <input
+                id="register-password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            {registerRole === "owner" ? (
+              <div className="flex flex-col gap-2">
+                <label htmlFor="restaurant-naam" className={labelClass}>
+                  Restaurantnaam
+                </label>
+                <input
+                  id="restaurant-naam"
+                  name="restaurantName"
+                  type="text"
+                  autoComplete="organization"
+                  required
+                  value={restaurantName}
+                  onChange={(e) => setRestaurantName(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <label htmlFor="koppelcode" className={labelClass}>
+                  Koppelcode (6 cijfers)
+                </label>
+                <input
+                  id="koppelcode"
+                  name="koppelcode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                  required
+                  value={koppelcode}
+                  onChange={(e) =>
+                    setKoppelcode(normalizeKoppelcode(e.target.value))
+                  }
+                  placeholder="000000"
+                  className={inputClass}
+                />
+              </div>
+            )}
+
+            {error ? (
+              <p
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-base font-medium text-red-800"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={loading}
+              aria-busy={loading}
+              className="mt-2 h-16 w-full rounded-2xl bg-gray-900 text-xl font-bold text-white shadow-md transition-transform hover:bg-gray-800 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Bezig…" : "Account aanmaken"}
+            </button>
+          </form>
+        )}
+
+        <p className="mt-10 text-center text-base leading-relaxed text-gray-600">
+          {authView === "login" ? (
+            <>
+              Nog geen account?{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthView("register");
+                  setError(null);
+                }}
+                className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
+              >
+                Registreren
+              </button>
+            </>
+          ) : (
+            <>
+              Al een account?{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthView("login");
+                  setError(null);
+                }}
+                className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
+              >
+                Aanmelden
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>

@@ -1,6 +1,8 @@
 "use client";
 
+import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { Printer } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -40,25 +42,40 @@ function formatLogDateTime(iso: string): string {
   }).format(d);
 }
 
+const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
+
 export default function HistoryList() {
+  const { profile, isFreePlan } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
+
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPrintUpgradeModal, setShowPrintUpgradeModal] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
-    const sinceIso = new Date(
-      Date.now() - 30 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+
+    if (!restaurantId) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const sinceIso = new Date(Date.now() - FREE_HISTORY_MS).toISOString();
+
+    const tempBase = supabase
+      .from("temperature_logs")
+      .select("id, created_at, equipment_name, temperature, photo_url")
+      .eq("restaurant_id", restaurantId);
+
+    const cleanBase = supabase
+      .from("cleaning_logs")
+      .select("id, created_at, task_name, is_completed")
+      .eq("restaurant_id", restaurantId);
 
     const [tempRes, cleanRes] = await Promise.all([
-      supabase
-        .from("temperature_logs")
-        .select("id, created_at, equipment_name, temperature, photo_url")
-        .gte("created_at", sinceIso),
-      supabase
-        .from("cleaning_logs")
-        .select("id, created_at, task_name, is_completed")
-        .gte("created_at", sinceIso),
+      isFreePlan ? tempBase.gte("created_at", sinceIso) : tempBase,
+      isFreePlan ? cleanBase.gte("created_at", sinceIso) : cleanBase,
     ]);
 
     if (tempRes.error) {
@@ -95,27 +112,45 @@ export default function HistoryList() {
 
     setRows(merged);
     setLoading(false);
-  }, []);
+  }, [restaurantId, isFreePlan]);
 
   useEffect(() => {
     void fetchLogs();
   }, [fetchLogs]);
 
+  const handlePrintClick = () => {
+    if (isFreePlan) {
+      setShowPrintUpgradeModal(true);
+      return;
+    }
+    window.print();
+  };
+
   return (
     <div className="mt-12 border-t border-gray-200 pt-10 print:mt-0 print:border-none print:pt-0">
+      <UpgradePromptModal
+        open={showPrintUpgradeModal}
+        onClose={() => setShowPrintUpgradeModal(false)}
+      >
+        Alleen beschikbaar voor Basic-abonnement. Upgrade om het NVWA-rapport te
+        genereren en te printen.
+      </UpgradePromptModal>
+
       <h1 className="hidden print:mb-6 print:block print:text-4xl print:font-black print:tracking-tight print:text-black">
         HACCP Logboek - SnelVink
       </h1>
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl print:text-black">
-          NVWA Rapport (Laatste 30 dagen)
+          {isFreePlan
+            ? "NVWA Rapport (Laatste 30 dagen)"
+            : "NVWA Rapport (volledige historie)"}
         </h2>
       </div>
 
       <button
         type="button"
-        onClick={() => window.print()}
+        onClick={handlePrintClick}
         className="mb-6 flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 text-2xl font-black text-white shadow-md transition-transform hover:bg-blue-700 active:scale-[0.99] print:hidden"
       >
         <Printer className="h-8 w-8 shrink-0" strokeWidth={2.25} aria-hidden />
@@ -137,9 +172,17 @@ export default function HistoryList() {
         <p className="text-center text-sm text-gray-500">Laden…</p>
       ) : null}
 
-      {!loading && rows.length === 0 ? (
+      {!loading && !restaurantId ? (
         <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600 print:border print:border-black print:bg-white print:text-black">
-          Geen registraties in de afgelopen 30 dagen.
+          Geen restaurant gekoppeld aan je account.
+        </p>
+      ) : null}
+
+      {!loading && restaurantId && rows.length === 0 ? (
+        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600 print:border print:border-black print:bg-white print:text-black">
+          {isFreePlan
+            ? "Geen registraties in de afgelopen 30 dagen."
+            : "Geen registraties gevonden."}
         </p>
       ) : null}
 
@@ -183,6 +226,12 @@ export default function HistoryList() {
             </tbody>
           </table>
         </div>
+      ) : null}
+
+      {isFreePlan && restaurantId ? (
+        <p className="mt-4 text-center text-xs text-gray-500 print:hidden">
+          Gratis versie toont maximaal 30 dagen historie.
+        </p>
       ) : null}
     </div>
   );

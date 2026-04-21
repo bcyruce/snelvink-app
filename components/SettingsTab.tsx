@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { Download, LogOut } from "lucide-react";
 import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
@@ -20,10 +21,19 @@ function formatNlDateTime(iso: string): string {
 
 export default function SettingsTab() {
   const router = useRouter();
+  const { profile, restaurant, isFreePlan } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
+  const isOwner = profile?.role === "owner";
+
   const [isExporting, setIsExporting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const generatePDF = useCallback(async () => {
+    if (!restaurantId) {
+      console.error("Geen restaurant gekoppeld aan dit profiel.");
+      return;
+    }
+
     setIsExporting(true);
 
     try {
@@ -31,11 +41,13 @@ export default function SettingsTab() {
         supabase
           .from("temperature_logs")
           .select("created_at, equipment_name, temperature")
+          .eq("restaurant_id", restaurantId)
           .order("created_at", { ascending: false })
           .limit(10_000),
         supabase
           .from("cleaning_logs")
           .select("created_at, task_name, is_completed")
+          .eq("restaurant_id", restaurantId)
           .order("created_at", { ascending: false })
           .limit(10_000),
       ]);
@@ -104,7 +116,7 @@ export default function SettingsTab() {
     } finally {
       setIsExporting(false);
     }
-  }, []);
+  }, [restaurantId]);
 
   const handleSignOut = useCallback(async () => {
     setIsSigningOut(true);
@@ -126,6 +138,36 @@ export default function SettingsTab() {
       <h2 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
         {"Instellingen & Export"}
       </h2>
+
+      <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Restaurant
+        </p>
+        <p className="mt-1 text-xl font-bold text-gray-900">
+          {restaurant?.name ?? "—"}
+        </p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Abonnement
+        </p>
+        <p className="mt-1 text-lg font-bold text-gray-900">
+          {isFreePlan ? "Gratis" : "Basic"}
+        </p>
+
+        {isOwner && restaurant?.invite_code ? (
+          <div className="mt-6 border-t border-gray-200 pt-6">
+            <p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Koppelcode
+            </p>
+            <p className="mt-3 text-center text-5xl font-black tabular-nums tracking-widest text-gray-900 sm:text-6xl">
+              {restaurant.invite_code}
+            </p>
+            <p className="mt-4 text-center text-sm leading-relaxed text-gray-600">
+              Deel deze code met je werknemers om ze te koppelen.
+            </p>
+          </div>
+        ) : null}
+      </div>
+
       <p className="mb-6 text-sm text-gray-600">
         Download een overzicht van alle temperatuur- en schoonmaakregistraties.
       </p>
@@ -143,7 +185,7 @@ export default function SettingsTab() {
       <button
         type="button"
         onClick={() => void generatePDF()}
-        disabled={isExporting}
+        disabled={isExporting || !restaurantId}
         aria-busy={isExporting}
         className="flex w-full items-center justify-center gap-3 rounded-2xl bg-indigo-600 py-6 text-xl font-bold text-white shadow-md transition-transform hover:bg-indigo-700 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >

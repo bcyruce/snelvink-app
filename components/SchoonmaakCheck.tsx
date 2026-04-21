@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { CheckCircle, Circle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -12,6 +13,9 @@ const TASKS = [
 ] as const;
 
 export default function SchoonmaakCheck() {
+  const { profile } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
+
   const [completed, setCompleted] = useState<Set<string>>(() => new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -38,9 +42,15 @@ export default function SchoonmaakCheck() {
   };
 
   const handleSave = async () => {
+    if (!restaurantId) {
+      console.error("Geen restaurant gekoppeld aan dit profiel.");
+      return;
+    }
+
     const rows = TASKS.filter((t) => completed.has(t.id)).map((t) => ({
       task_name: t.label,
       is_completed: true as const,
+      restaurant_id: restaurantId,
     }));
 
     if (rows.length === 0) return;
@@ -131,7 +141,7 @@ export default function SchoonmaakCheck() {
         <button
           type="button"
           onClick={handleSave}
-          disabled={isSaving || !hasSelection}
+          disabled={isSaving || !hasSelection || !restaurantId}
           aria-busy={isSaving}
           className="h-24 w-full rounded-2xl bg-green-600 text-xl font-bold text-white shadow-md transition-transform hover:bg-green-700 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-2xl"
         >
