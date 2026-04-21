@@ -13,23 +13,6 @@ const inputClass =
 
 const labelClass = "text-sm font-semibold text-gray-800";
 
-function normalizeKoppelcode(raw: string): string {
-  return raw.replace(/\D/g, "").slice(0, 6);
-}
-
-async function generateUniqueInviteCode(): Promise<string> {
-  for (let attempt = 0; attempt < 12; attempt++) {
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const { data } = await supabase
-      .from("restaurants")
-      .select("id")
-      .eq("invite_code", code)
-      .maybeSingle();
-    if (!data) return code;
-  }
-  throw new Error("Geen unieke koppelcode kunnen genereren");
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const [authView, setAuthView] = useState<AuthView>("login");
@@ -38,7 +21,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
-  const [koppelcode, setKoppelcode] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,13 +58,6 @@ export default function LoginPage() {
     setLoading(true);
 
     const trimmedEmail = email.trim();
-    const code = normalizeKoppelcode(koppelcode);
-
-    if (registerRole === "employee" && code.length !== 6) {
-      setError("Voer een geldige 6-cijferige koppelcode in.");
-      setLoading(false);
-      return;
-    }
 
     if (registerRole === "owner" && !restaurantName.trim()) {
       setError("Vul de restaurantnaam in.");
@@ -91,10 +66,23 @@ export default function LoginPage() {
     }
 
     try {
+      const userMetadata =
+        registerRole === "owner"
+          ? {
+              role: "admin" as const,
+              restaurant_name: restaurantName.trim(),
+            }
+          : {
+              role: "staff" as const,
+            };
+
       const { data: signUpData, error: signUpError } =
         await supabase.auth.signUp({
           email: trimmedEmail,
           password,
+          options: {
+            data: userMetadata,
+          },
         });
 
       if (signUpError) {
@@ -103,89 +91,12 @@ export default function LoginPage() {
         return;
       }
 
-      const user = signUpData.user;
-
-      if (!user) {
+      if (!signUpData.user) {
         setError("Registreren mislukt. Probeer opnieuw.");
         return;
       }
 
-      if (registerRole === "owner") {
-        const inviteCode = await generateUniqueInviteCode();
-
-        const { data: restaurant, error: restaurantError } = await supabase
-          .from("restaurants")
-          .insert([
-            {
-              name: restaurantName.trim(),
-              invite_code: inviteCode,
-              plan_type: "free",
-            },
-          ])
-          .select("id")
-          .single();
-
-        if (restaurantError || !restaurant) {
-          console.error("Restaurant aanmaken mislukt:", restaurantError);
-          setError(
-            "Account aangemaakt, maar restaurant kon niet worden opgeslagen. Neem contact op.",
-          );
-          return;
-        }
-
-        const { error: profileError } = await supabase.from("profiles").insert([
-          {
-            id: user.id,
-            role: "owner",
-            restaurant_id: restaurant.id,
-            is_email_verified: false,
-          },
-        ]);
-
-        if (profileError) {
-          console.error("Profiel opslaan mislukt:", profileError);
-          setError(
-            "Account en restaurant aangemaakt, maar profiel kon niet worden gekoppeld. Neem contact op.",
-          );
-          return;
-        }
-      } else {
-        const { data: restaurant, error: lookupError } = await supabase
-          .from("restaurants")
-          .select("id")
-          .eq("invite_code", code)
-          .maybeSingle();
-
-        if (lookupError) {
-          console.error("Restaurant zoeken mislukt:", lookupError);
-          setError("Kon restaurant niet vinden. Controleer de koppelcode.");
-          return;
-        }
-
-        if (!restaurant) {
-          setError("Onbekende koppelcode. Vraag je werkgever om de code.");
-          return;
-        }
-
-        const { error: profileError } = await supabase.from("profiles").insert([
-          {
-            id: user.id,
-            role: "employee",
-            restaurant_id: restaurant.id,
-            is_email_verified: false,
-          },
-        ]);
-
-        if (profileError) {
-          console.error("Profiel opslaan mislukt:", profileError);
-          setError(
-            "Account aangemaakt, maar koppeling aan het restaurant mislukt. Neem contact op.",
-          );
-          return;
-        }
-      }
-
-      router.replace("/");
+      router.push("/");
       router.refresh();
     } catch (err) {
       console.error("Registreren mislukt:", err);
@@ -298,7 +209,7 @@ export default function LoginPage() {
                     onChange={() => setRegisterRole("owner")}
                     className="sr-only"
                   />
-                  Ik ben eigenaar
+                  Eigenaar
                 </label>
                 <label
                   className={[
@@ -316,7 +227,7 @@ export default function LoginPage() {
                     onChange={() => setRegisterRole("employee")}
                     className="sr-only"
                   />
-                  Ik ben werknemer
+                  Personeel
                 </label>
               </div>
             </fieldset>
@@ -372,27 +283,10 @@ export default function LoginPage() {
                 />
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                <label htmlFor="koppelcode" className={labelClass}>
-                  Koppelcode (6 cijfers)
-                </label>
-                <input
-                  id="koppelcode"
-                  name="koppelcode"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  pattern="[0-9]{6}"
-                  required
-                  value={koppelcode}
-                  onChange={(e) =>
-                    setKoppelcode(normalizeKoppelcode(e.target.value))
-                  }
-                  placeholder="000000"
-                  className={inputClass}
-                />
-              </div>
+              <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-center text-sm font-medium text-gray-600">
+                Je account wordt na registratie door het systeem gekoppeld. Vraag
+                je werkgever om hulp als je niet binnenkomt.
+              </p>
             )}
 
             {error ? (

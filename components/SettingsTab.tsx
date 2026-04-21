@@ -23,7 +23,8 @@ export default function SettingsTab() {
   const router = useRouter();
   const { profile, restaurant, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
-  const isOwner = profile?.role === "owner";
+  const isOwner =
+    profile?.role === "owner" || profile?.role === "admin";
 
   const [isExporting, setIsExporting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
