@@ -60,7 +60,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch (err) {
       console.error("Inloggen mislukt:", err);
@@ -185,7 +185,7 @@ export default function LoginPage() {
         }
       }
 
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch (err) {
       console.error("Registreren mislukt:", err);

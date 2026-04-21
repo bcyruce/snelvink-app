@@ -72,7 +72,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (error) {
-      console.error("Profiel ophalen mislukt:", error);
+      console.warn(
+        "Profiel ophalen mislukt (app blijft bruikbaar zonder profiel):",
+        error.message,
+      );
       setProfile(null);
       setRestaurant(null);
       return;
