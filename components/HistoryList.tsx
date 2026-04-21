@@ -25,6 +25,7 @@ type ReportRow = {
   itemName: string;
   valueOrStatus: string;
   source: "temperature" | "cleaning";
+  photoUrl?: string | null;
 };
 
 function formatLogDateTime(iso: string): string {
@@ -52,7 +53,7 @@ export default function HistoryList() {
     const [tempRes, cleanRes] = await Promise.all([
       supabase
         .from("temperature_logs")
-        .select("id, created_at, equipment_name, temperature")
+        .select("id, created_at, equipment_name, temperature, photo_url")
         .gte("created_at", sinceIso),
       supabase
         .from("cleaning_logs")
@@ -74,6 +75,7 @@ export default function HistoryList() {
         itemName: row.equipment_name ?? "Onbekend apparaat",
         valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
         source: "temperature" as const,
+        photoUrl: row.photo_url ?? null,
       })) ?? [];
 
     const cleaningRows =
@@ -83,6 +85,7 @@ export default function HistoryList() {
         itemName: row.task_name ?? "Onbekende taak",
         valueOrStatus: row.is_completed ? "Voltooid" : "Niet voltooid",
         source: "cleaning" as const,
+        photoUrl: null,
       })) ?? [];
 
     const merged = [...tempRows, ...cleaningRows].sort(
@@ -166,7 +169,14 @@ export default function HistoryList() {
                     {row.itemName}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
-                    {row.valueOrStatus}
+                    <p>{row.valueOrStatus}</p>
+                    {row.source === "temperature" && row.photoUrl ? (
+                      <img
+                        src={row.photoUrl}
+                        alt="Toegevoegde foto bij temperatuurmeting"
+                        className="mt-3 h-48 w-full rounded-xl object-cover print:mt-2 print:h-[3cm] print:w-auto print:max-w-[6cm]"
+                      />
+                    ) : null}
                   </td>
                 </tr>
               ))}

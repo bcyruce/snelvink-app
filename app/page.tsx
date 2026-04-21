@@ -8,12 +8,21 @@ import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import SettingsTab from "@/components/SettingsTab";
 import { supabase } from "@/lib/supabase";
+import { Sparkles, Thermometer, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
+type TaskModule =
+  | "dashboard"
+  | "koeling"
+  | "schoonmaak"
+  | "kerntemp"
+  | "ontvangst";
 
 export default function Home() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<BottomNavTab>("tasks");
+  const [activeModule, setActiveModule] = useState<TaskModule>("dashboard");
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
@@ -72,13 +81,60 @@ export default function Home() {
         <div key={activeTab} className="tab-panel-enter">
           {activeTab === "tasks" ? (
             <>
-              <KoelingCheck />
-              <hr className="my-10 border-t border-gray-200" />
-              <KerntemperatuurCheck />
-              <hr className="my-10 border-t border-gray-200" />
-              <OntvangstCheck />
-              <hr className="my-10 border-t border-gray-200" />
-              <SchoonmaakCheck />
+              {activeModule === "dashboard" ? (
+                <div className="mt-8 grid grid-cols-2 gap-5 sm:gap-6">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("koeling")}
+                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
+                  >
+                    <Thermometer className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+                    Koeling 1
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("schoonmaak")}
+                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
+                  >
+                    <Sparkles className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+                    Schoonmaak
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("kerntemp")}
+                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
+                  >
+                    <Thermometer className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+                    Kerntemperatuur
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("ontvangst")}
+                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
+                  >
+                    <Truck className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+                    Ontvangst
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("dashboard")}
+                    className="mb-8 h-20 w-full rounded-2xl bg-gray-900 text-2xl font-black text-white shadow-md transition-transform active:scale-95"
+                  >
+                    Terug
+                  </button>
+
+                  {activeModule === "koeling" ? <KoelingCheck /> : null}
+                  {activeModule === "schoonmaak" ? <SchoonmaakCheck /> : null}
+                  {activeModule === "kerntemp" ? <KerntemperatuurCheck /> : null}
+                  {activeModule === "ontvangst" ? <OntvangstCheck /> : null}
+                </>
+              )}
             </>
           ) : null}
 
