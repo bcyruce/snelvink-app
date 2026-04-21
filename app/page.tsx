@@ -2,7 +2,9 @@
 
 import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
 import HistoryList from "@/components/HistoryList";
+import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
 import KoelingCheck from "@/components/KoelingCheck";
+import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import SettingsTab from "@/components/SettingsTab";
 import { supabase } from "@/lib/supabase";
@@ -71,6 +73,10 @@ export default function Home() {
           {activeTab === "tasks" ? (
             <>
               <KoelingCheck />
+              <hr className="my-10 border-t border-gray-200" />
+              <KerntemperatuurCheck />
+              <hr className="my-10 border-t border-gray-200" />
+              <OntvangstCheck />
               <hr className="my-10 border-t border-gray-200" />
               <SchoonmaakCheck />
             </>
