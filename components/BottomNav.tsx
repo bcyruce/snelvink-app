@@ -22,7 +22,7 @@ const tabs: {
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-gray-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.06)]"
+      className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-gray-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.06)] print:hidden"
       aria-label="Hoofdnavigatie"
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around gap-1 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">

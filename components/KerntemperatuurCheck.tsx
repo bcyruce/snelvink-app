@@ -1,11 +1,10 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { Camera } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "snelvink-koeling1-temperature";
-const DEFAULT_TEMP = 4.0;
+const STORAGE_KEY = "snelvink-kerntemperatuur-temperature";
+const DEFAULT_TEMP = 75.0;
 
 function parseStoredTemperature(raw: string | null): number | null {
   if (raw === null || raw === "") return null;
@@ -14,17 +13,14 @@ function parseStoredTemperature(raw: string | null): number | null {
   return n;
 }
 
-export default function KoelingCheck() {
+export default function KerntemperatuurCheck() {
   const [temperature, setTemperature] = useState(DEFAULT_TEMP);
   const [storageReady, setStorageReady] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showRegistered, setShowRegistered] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
   const registeredTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -64,11 +60,8 @@ export default function KoelingCheck() {
       if (registeredTimerRef.current) {
         clearTimeout(registeredTimerRef.current);
       }
-      if (photoPreviewUrl) {
-        URL.revokeObjectURL(photoPreviewUrl);
-      }
     };
-  }, [photoPreviewUrl]);
+  }, []);
 
   const commitEdit = useCallback(() => {
     const parsed = Number.parseFloat(editText.replace(",", "."));
@@ -116,36 +109,10 @@ export default function KoelingCheck() {
     setIsSaving(true);
     setShowRegistered(false);
     try {
-      let publicUrl: string | null = null;
-
-      if (photoFile) {
-        const ext = photoFile.name.split(".").pop() ?? "jpg";
-        const filePath = `koeling1/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-        const { error: uploadError } = await supabase
-          .storage
-          .from("haccp_photos")
-          .upload(filePath, photoFile, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error("Foto upload mislukt:", uploadError);
-          return;
-        }
-
-        const { data: publicUrlData } = supabase
-          .storage
-          .from("haccp_photos")
-          .getPublicUrl(filePath);
-        publicUrl = publicUrlData.publicUrl ?? null;
-      }
-
       const { error } = await supabase.from("temperature_logs").insert([
         {
-          equipment_name: "Koeling 1",
+          equipment_name: "Kerntemperatuur",
           temperature,
-          ...(publicUrl ? { photo_url: publicUrl } : {}),
         },
       ]);
 
@@ -169,15 +136,11 @@ export default function KoelingCheck() {
     }
   };
 
-  const parsedPreview = Number.parseFloat(
-    editText.replace(",", "."),
-  );
+  const parsedPreview = Number.parseFloat(editText.replace(",", "."));
   const activeValue =
-    isEditing && Number.isFinite(parsedPreview)
-      ? parsedPreview
-      : temperature;
+    isEditing && Number.isFinite(parsedPreview) ? parsedPreview : temperature;
   const tempColor =
-    activeValue <= 7 ? "text-green-500" : "text-red-500";
+    activeValue >= 75 ? "text-green-500" : "text-red-500";
 
   const buttonClass =
     "h-24 w-full rounded-2xl bg-gray-200 text-xl font-black tracking-wide text-gray-800 shadow-md transition-transform active:scale-95 sm:text-2xl";
@@ -206,34 +169,16 @@ export default function KoelingCheck() {
     </button>
   );
 
-  const handlePhotoPickerOpen = () => {
-    photoInputRef.current?.click();
-  };
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    if (!file) return;
-
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl);
-    }
-
-    const nextPreviewUrl = URL.createObjectURL(file);
-    setPhotoFile(file);
-    setPhotoPreviewUrl(nextPreviewUrl);
-  };
-
   return (
     <div className="mt-10 flex flex-col gap-6">
       <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-        Koeling 1
+        Kerntemperatuur (Verhitting)
       </h2>
 
       <p className="text-center text-sm text-gray-500">
         Klik op het getal om handmatig in te voeren
       </p>
 
-      {/* Top: plus. Middle: temperature. Bottom: minus. All rows centered. */}
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4">
         <div className="flex w-full justify-center gap-3">
           <button
@@ -289,35 +234,6 @@ export default function KoelingCheck() {
         >
           Geregistreerd!
         </p>
-      ) : null}
-
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handlePhotoChange}
-      />
-
-      <button
-        type="button"
-        onClick={handlePhotoPickerOpen}
-        disabled={isSaving}
-        className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform hover:bg-gray-50 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        <Camera className="h-7 w-7" aria-hidden />
-        {photoFile ? "Foto toegevoegd" : "Maak een foto (Optioneel)"}
-      </button>
-
-      {photoPreviewUrl ? (
-        <div className="flex justify-center">
-          <img
-            src={photoPreviewUrl}
-            alt="Voorbeeld van toegevoegde foto"
-            className="h-32 w-32 rounded-xl border border-gray-200 object-cover shadow-sm"
-          />
-        </div>
       ) : null}
 
       <button

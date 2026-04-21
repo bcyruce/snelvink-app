@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { Circle } from "lucide-react";
+import { Printer } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type TemperatureLogRow = {
@@ -9,71 +9,117 @@ type TemperatureLogRow = {
   created_at: string;
   equipment_name: string;
   temperature: number;
+  photo_url?: string | null;
 };
 
-const RECENT_MS = 2 * 60 * 1000;
+type CleaningLogRow = {
+  id: string;
+  created_at: string;
+  task_name: string;
+  is_completed: boolean;
+};
 
-function formatLogTime(iso: string): string {
+type ReportRow = {
+  id: string;
+  created_at: string;
+  itemName: string;
+  valueOrStatus: string;
+  source: "temperature" | "cleaning";
+};
+
+function formatLogDateTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  const diffMs = Date.now() - d.getTime();
-  if (diffMs >= 0 && diffMs < RECENT_MS) return "Net weg";
   return new Intl.DateTimeFormat("nl-NL", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(d);
 }
 
 export default function HistoryList() {
-  const [rows, setRows] = useState<TemperatureLogRow[]>([]);
+  const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("temperature_logs")
-      .select("id, created_at, equipment_name, temperature")
-      .order("created_at", { ascending: false })
-      .limit(5);
+    const sinceIso = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
-    if (error) {
-      console.error("Metingen ophalen mislukt:", error);
-      setRows([]);
-    } else {
-      setRows((data as TemperatureLogRow[] | null) ?? []);
+    const [tempRes, cleanRes] = await Promise.all([
+      supabase
+        .from("temperature_logs")
+        .select("id, created_at, equipment_name, temperature")
+        .gte("created_at", sinceIso),
+      supabase
+        .from("cleaning_logs")
+        .select("id, created_at, task_name, is_completed")
+        .gte("created_at", sinceIso),
+    ]);
+
+    if (tempRes.error) {
+      console.error("temperature_logs ophalen mislukt:", tempRes.error);
     }
+    if (cleanRes.error) {
+      console.error("cleaning_logs ophalen mislukt:", cleanRes.error);
+    }
+
+    const tempRows =
+      (tempRes.data as TemperatureLogRow[] | null)?.map((row) => ({
+        id: `t-${row.id}`,
+        created_at: row.created_at,
+        itemName: row.equipment_name ?? "Onbekend apparaat",
+        valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
+        source: "temperature" as const,
+      })) ?? [];
+
+    const cleaningRows =
+      (cleanRes.data as CleaningLogRow[] | null)?.map((row) => ({
+        id: `c-${row.id}`,
+        created_at: row.created_at,
+        itemName: row.task_name ?? "Onbekende taak",
+        valueOrStatus: row.is_completed ? "Voltooid" : "Niet voltooid",
+        source: "cleaning" as const,
+      })) ?? [];
+
+    const merged = [...tempRows, ...cleaningRows].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+
+    setRows(merged);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     void fetchLogs();
-
-    const channel = supabase
-      .channel("temperature_logs_inserts")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "temperature_logs",
-        },
-        () => {
-          void fetchLogs();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
   }, [fetchLogs]);
 
   return (
-    <div className="mt-12 border-t border-gray-200 pt-10">
+    <div className="mt-12 border-t border-gray-200 pt-10 print:mt-0 print:border-none print:pt-0">
+      <h1 className="hidden print:mb-6 print:block print:text-4xl print:font-black print:tracking-tight print:text-black">
+        HACCP Logboek - SnelVink
+      </h1>
+
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-          Laatste Metingen
+        <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl print:text-black">
+          NVWA Rapport (Laatste 30 dagen)
         </h2>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => window.print()}
+        className="mb-6 flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 text-2xl font-black text-white shadow-md transition-transform hover:bg-blue-700 active:scale-[0.99] print:hidden"
+      >
+        <Printer className="h-8 w-8 shrink-0" strokeWidth={2.25} aria-hidden />
+        Genereer NVWA Rapport
+      </button>
+
+      <div className="mb-4 flex items-center justify-end gap-3 print:hidden">
         <button
           type="button"
           onClick={() => void fetchLogs()}
@@ -89,46 +135,44 @@ export default function HistoryList() {
       ) : null}
 
       {!loading && rows.length === 0 ? (
-        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600">
-          Nog geen metingen vandaag.
+        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600 print:border print:border-black print:bg-white print:text-black">
+          Geen registraties in de afgelopen 30 dagen.
         </p>
       ) : null}
 
       {rows.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {rows.map((row) => {
-            const temp = Number(row.temperature);
-            const ok = Number.isFinite(temp) ? temp <= 7 : true;
-            return (
-              <li key={row.id}>
-                <article className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-none">
-                  <Circle
-                    className={
-                      ok
-                        ? "h-3.5 w-3.5 shrink-0 fill-green-500 text-green-500"
-                        : "h-3.5 w-3.5 shrink-0 fill-red-500 text-red-500"
-                    }
-                    strokeWidth={0}
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <span className="text-lg font-bold tabular-nums text-gray-900 sm:text-xl">
-                        {Number.isFinite(temp) ? temp.toFixed(1) : "—"}°C
-                      </span>
-                      <span className="text-sm font-medium text-gray-500">
-                        {formatLogTime(row.created_at)}
-                      </span>
-                    </div>
-                    <p className="truncate text-sm font-medium text-gray-700">
-                      {row.equipment_name}
-                    </p>
-                  </div>
-                </article>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white print:rounded-none print:border-black print:bg-white">
+          <table className="w-full border-collapse text-left print:bg-white">
+            <thead>
+              <tr className="bg-gray-50 print:bg-white">
+                <th className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900 print:border-black print:text-black">
+                  Datum
+                </th>
+                <th className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900 print:border-black print:text-black">
+                  Apparaat / Taak
+                </th>
+                <th className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900 print:border-black print:text-black">
+                  Waarde / Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="align-top">
+                  <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
+                    {formatLogDateTime(row.created_at)}
+                  </td>
+                  <td className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 print:border-black print:text-black">
+                    {row.itemName}
+                  </td>
+                  <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
+                    {row.valueOrStatus}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );
