@@ -15,6 +15,7 @@ import {
 export type AppUserProfile = {
   role: string;
   restaurant_id: string;
+  is_email_verified: boolean;
 };
 
 export type AppRestaurant = {
@@ -35,6 +36,7 @@ export type UserContextValue = {
 type ProfileQueryRow = {
   role: string;
   restaurant_id: string;
+  is_email_verified: boolean | null;
   restaurants: AppRestaurant | AppRestaurant[] | null;
 };
 
@@ -63,7 +65,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("role, restaurant_id, restaurants(name, plan_type, invite_code)")
+      .select(
+        "role, restaurant_id, is_email_verified, restaurants(name, plan_type, invite_code)",
+      )
       .eq("id", authUser.id)
       .maybeSingle();
 
@@ -84,6 +88,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setProfile({
       role: row.role,
       restaurant_id: row.restaurant_id,
+      is_email_verified: row.is_email_verified === true,
     });
     setRestaurant(normalizeRestaurant(row.restaurants));
   }, []);

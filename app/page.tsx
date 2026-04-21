@@ -7,6 +7,7 @@ import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import SettingsTab from "@/components/SettingsTab";
+import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { Sparkles, Thermometer, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -43,6 +44,7 @@ function HomeContent() {
 
   return (
     <>
+      <VerifyEmailBanner />
       <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
         <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-gray-900">
           SnelVink
