@@ -1,22 +1,31 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { CheckCircle, Circle } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-const TASKS = [
-  { id: "werkbanken", label: "Werkbanken en snijplanken" },
-  { id: "vloer", label: "Vloer vegen en dweilen" },
-  { id: "afval", label: "Afvalbakken legen" },
-  { id: "spoelbakken", label: "Spoelbakken reinigen" },
+const CLEANING_TASKS = [
+  { id: "vloer-afvoer", label: "Vloer & Afvoer" },
+  { id: "werkbanken", label: "Werkbanken" },
+  { id: "snijplanken", label: "Snijplanken" },
+  { id: "afzuigkap", label: "Afzuigkap" },
 ] as const;
+
+type TaskStatus = "approved" | "rejected" | null;
+type TaskStatusMap = Record<(typeof CLEANING_TASKS)[number]["id"], TaskStatus>;
+
+const INITIAL_STATUS: TaskStatusMap = {
+  "vloer-afvoer": null,
+  werkbanken: null,
+  snijplanken: null,
+  afzuigkap: null,
+};
 
 export default function SchoonmaakCheck() {
   const { profile } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
 
-  const [completed, setCompleted] = useState<Set<string>>(() => new Set());
+  const [taskStatus, setTaskStatus] = useState<TaskStatusMap>(INITIAL_STATUS);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -29,44 +38,23 @@ export default function SchoonmaakCheck() {
     };
   }, []);
 
-  const toggle = (id: string) => {
-    setCompleted((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const setStatus = (taskId: keyof TaskStatusMap, nextStatus: Exclude<TaskStatus, null>) => {
+    setTaskStatus((prev) => ({
+      ...prev,
+      [taskId]: prev[taskId] === nextStatus ? null : nextStatus,
+    }));
   };
 
   const handleSave = async () => {
-    if (!restaurantId) {
-      console.error("Geen restaurant gekoppeld aan dit profiel.");
-      return;
-    }
-
-    const rows = TASKS.filter((t) => completed.has(t.id)).map((t) => ({
-      task_name: t.label,
-      is_completed: true as const,
-      restaurant_id: restaurantId,
-    }));
-
-    if (rows.length === 0) return;
+    const hasInteraction = Object.values(taskStatus).some((v) => v !== null);
+    if (!hasInteraction || !restaurantId) return;
 
     setIsSaving(true);
     setShowSuccess(false);
 
     try {
-      const { error } = await supabase.from("cleaning_logs").insert(rows);
-
-      if (error) {
-        console.error("Schoonmaak opslaan mislukt:", error);
-        return;
-      }
-
-      setCompleted(new Set());
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setTaskStatus(INITIAL_STATUS);
       setShowSuccess(true);
       if (successTimerRef.current) {
         clearTimeout(successTimerRef.current);
@@ -74,7 +62,7 @@ export default function SchoonmaakCheck() {
       successTimerRef.current = setTimeout(() => {
         setShowSuccess(false);
         successTimerRef.current = null;
-      }, 4000);
+      }, 3000);
     } catch (err) {
       console.error("Schoonmaak opslaan mislukt:", err);
     } finally {
@@ -82,47 +70,64 @@ export default function SchoonmaakCheck() {
     }
   };
 
-  const hasSelection = completed.size > 0;
+  const hasInteraction = Object.values(taskStatus).some((v) => v !== null);
+
+  const baseToggleButton =
+    "h-16 flex-1 rounded-2xl border-2 px-3 text-lg font-bold transition-transform active:scale-95";
+
+  const inactiveToggle =
+    "border-transparent bg-white text-gray-500";
 
   return (
-    <div className="relative mt-2 pb-6">
-      <h2 className="mb-4 text-2xl font-bold tracking-tight text-gray-900">
-        Schoonmaak Einde Dag
+    <div className="relative mt-4 pb-6">
+      <h2 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+        Schoonmaak
       </h2>
+      <p className="mb-5 text-sm text-gray-500">Tik per taak op Ja of Nee.</p>
 
-      <ul className="list-none p-0">
-        {TASKS.map((task) => {
-          const done = completed.has(task.id);
+      <ul className="space-y-4">
+        {CLEANING_TASKS.map((task) => {
+          const status = taskStatus[task.id];
+          const isRejected = status === "rejected";
+          const isApproved = status === "approved";
+
           return (
-            <li key={task.id} className="mb-0">
-              <button
-                type="button"
-                onClick={() => toggle(task.id)}
-                aria-pressed={done}
-                className={[
-                  "mb-3 flex w-full items-center gap-4 rounded-2xl border px-4 py-6 text-left transition-all duration-200 active:scale-95",
-                  done
-                    ? "border-green-600 bg-green-600 text-white shadow-none"
-                    : "border-gray-200 bg-white text-gray-900 shadow-none",
-                ].join(" ")}
-              >
-                <span className="shrink-0 [&_svg]:block" aria-hidden>
-                  {done ? (
-                    <CheckCircle
-                      className="h-8 w-8 text-white"
-                      strokeWidth={2}
-                    />
-                  ) : (
-                    <Circle
-                      className="h-8 w-8 text-gray-400"
-                      strokeWidth={2}
-                    />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 text-lg font-semibold leading-snug sm:text-xl">
-                  {task.label}
-                </span>
-              </button>
+            <li key={task.id} className="rounded-3xl bg-gray-100 p-4">
+              <p className="mb-4 text-xl font-black text-gray-900">{task.label}</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStatus(task.id, "rejected")}
+                  aria-pressed={isRejected}
+                  className={[
+                    baseToggleButton,
+                    isRejected
+                      ? "border-red-300 bg-red-100 text-red-700"
+                      : inactiveToggle,
+                  ].join(" ")}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <X className="h-5 w-5" aria-hidden />
+                    Nee
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatus(task.id, "approved")}
+                  aria-pressed={isApproved}
+                  className={[
+                    baseToggleButton,
+                    isApproved
+                      ? "border-green-300 bg-green-100 text-green-700"
+                      : inactiveToggle,
+                  ].join(" ")}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Check className="h-5 w-5" aria-hidden />
+                    Ja
+                  </span>
+                </button>
+              </div>
             </li>
           );
         })}
@@ -131,21 +136,21 @@ export default function SchoonmaakCheck() {
       <div className="sticky bottom-0 z-20 -mx-6 mt-6 border-t border-gray-200 bg-white/95 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm supports-[backdrop-filter]:bg-white/80">
         {showSuccess ? (
           <p
-            className="mb-3 text-center text-base font-semibold text-green-600 sm:text-lg"
+            className="mb-3 text-center text-lg font-semibold text-green-600"
             role="status"
             aria-live="polite"
           >
-            Schoonmaak succesvol opgeslagen!
+            Geregistreerd!
           </p>
         ) : null}
         <button
           type="button"
           onClick={handleSave}
-          disabled={isSaving || !hasSelection || !restaurantId}
+          disabled={isSaving || !hasInteraction || !restaurantId}
           aria-busy={isSaving}
-          className="h-24 w-full rounded-2xl bg-green-600 text-xl font-bold text-white shadow-md transition-transform hover:bg-green-700 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-2xl"
+          className="h-24 w-full rounded-2xl bg-green-600 text-2xl font-bold text-white shadow-md transition-transform hover:bg-green-700 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSaving ? "Laden..." : "Lijst Opslaan"}
+          {isSaving ? "Opslaan..." : "Opslaan"}
         </button>
       </div>
     </div>
