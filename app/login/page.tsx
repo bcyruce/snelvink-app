@@ -104,19 +104,9 @@ export default function LoginPage() {
       }
 
       const user = signUpData.user;
-      const session = signUpData.session;
 
       if (!user) {
-        setError(
-          "Account aangemaakt. Bevestig je e-mail als dat nodig is en meld je daarna aan.",
-        );
-        return;
-      }
-
-      if (!session) {
-        setError(
-          "Bevestig eerst je e-mailadres via de link in je inbox. Zet in Supabase desnoods e-mailbevestiging uit om direct restaurant en profiel aan te maken.",
-        );
+        setError("Registreren mislukt. Probeer opnieuw.");
         return;
       }
 
@@ -148,6 +138,7 @@ export default function LoginPage() {
             id: user.id,
             role: "owner",
             restaurant_id: restaurant.id,
+            is_email_verified: false,
           },
         ]);
 
@@ -181,6 +172,7 @@ export default function LoginPage() {
             id: user.id,
             role: "employee",
             restaurant_id: restaurant.id,
+            is_email_verified: false,
           },
         ]);
 
