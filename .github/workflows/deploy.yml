@@ -2,7 +2,7 @@ name: Deploy to Hetzner VPS
 
 on:
   push:
-    branches: [ main ] # 当代码推送到 main 分支时触发
+    branches: [main]
 
 jobs:
   deploy:
@@ -15,8 +15,11 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/snelvink-app
+            set -e
+            cd /root/snelvink-app
             git pull origin main
-            npm install
+            npm ci || npm install
             npm run build
-            pm2 restart snelvink
+            pm2 startOrReload ecosystem.config.js --update-env
+            pm2 save
+            pm2 status
