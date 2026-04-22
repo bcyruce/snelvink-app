@@ -69,7 +69,7 @@ export default function LoginPage() {
       const userMetadata =
         registerRole === "owner"
           ? {
-              role: "admin" as const,
+              role: "eigenaar" as const,
               restaurant_name: restaurantName.trim(),
             }
           : {
@@ -96,7 +96,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch (err) {
       console.error("Registreren mislukt:", err);
