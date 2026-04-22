@@ -97,12 +97,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const nextUser = session?.user ?? null;
-    setUser(nextUser);
-    await loadProfileForUser(nextUser);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      await loadProfileForUser(nextUser);
+    } catch (error) {
+      console.warn("Sessie verversen mislukt:", error);
+    }
   }, [loadProfileForUser]);
 
   useEffect(() => {
@@ -110,18 +114,28 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const applySession = async (session: Session | null) => {
       if (!mounted) return;
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-      await loadProfileForUser(nextUser);
-      if (mounted) setIsLoading(false);
+      try {
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+        await loadProfileForUser(nextUser);
+      } catch (error) {
+        console.warn("Sessie toepassen mislukt:", error);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
     };
 
     void (async () => {
-      setIsLoading(true);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      await applySession(session);
+      try {
+        setIsLoading(true);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        await applySession(session);
+      } catch (error) {
+        console.warn("Initiële sessie ophalen mislukt:", error);
+        if (mounted) setIsLoading(false);
+      }
     })();
 
     const {
