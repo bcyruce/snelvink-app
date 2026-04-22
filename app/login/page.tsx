@@ -26,21 +26,50 @@ export default function LoginPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Wordt gezet wanneer login faalt omdat het e-mailadres nog niet bevestigd
+  // is. Toont een aparte gele box met een "opnieuw versturen"-knop.
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
+  const [resendError, setResendError] = useState<string | null>(null);
+
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setUnconfirmedEmail(null);
+    setResendState("idle");
+    setResendError(null);
     setLoading(true);
+
+    const trimmedEmail = email.trim();
 
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
       });
 
       if (signInError) {
         console.error("Inloggen mislukt:", signInError.message);
-        setError("Inloggen mislukt. Controleer je gegevens.");
+
+        // Supabase geeft bij niet-bevestigde e-mail een specifieke foutcode.
+        const code = (
+          signInError as { code?: string; name?: string }
+        ).code;
+        const message = signInError.message?.toLowerCase() ?? "";
+        const isUnconfirmed =
+          code === "email_not_confirmed" ||
+          message.includes("email not confirmed") ||
+          message.includes("not confirmed");
+
+        if (isUnconfirmed) {
+          setUnconfirmedEmail(trimmedEmail);
+          setError(null);
+        } else {
+          setError("Inloggen mislukt. Controleer je gegevens.");
+        }
         return;
       }
 
@@ -51,6 +80,45 @@ export default function LoginPage() {
       setError("Inloggen mislukt. Probeer het opnieuw.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!unconfirmedEmail) return;
+
+    setResendState("sending");
+    setResendError(null);
+
+    try {
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/login`
+          : undefined;
+
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: unconfirmedEmail,
+        options: emailRedirectTo ? { emailRedirectTo } : undefined,
+      });
+
+      if (resendError) {
+        console.error(
+          "Bevestigingsmail opnieuw versturen mislukt:",
+          resendError.message,
+        );
+        setResendState("error");
+        setResendError(
+          resendError.message ||
+            "Kon geen nieuwe bevestigingsmail versturen. Probeer het later opnieuw.",
+        );
+        return;
+      }
+
+      setResendState("sent");
+    } catch (err) {
+      console.error("Bevestigingsmail opnieuw versturen mislukt:", err);
+      setResendState("error");
+      setResendError("Er ging iets mis. Probeer het opnieuw.");
     }
   }
 
@@ -105,6 +173,32 @@ export default function LoginPage() {
         return;
       }
 
+      // Debug: laat zien of Supabase e-mailbevestiging vereist
+      // (identities: [] betekent dat dit adres al bestaat en Supabase dit
+      // verbergt tegen user-enumeration).
+      console.debug("[signup] result", {
+        hasSession: !!signUpData.session,
+        identitiesLength: signUpData.user.identities?.length ?? 0,
+        emailConfirmedAt: signUpData.user.email_confirmed_at,
+      });
+
+      // Wanneer Supabase een bestaande (reeds geregistreerde) e-mail tegenkomt
+      // en e-mailbevestiging aanstaat, krijgen we een "fake" user terug met
+      // identities: []. We tonen dan niet de standaard bevestigingsmelding,
+      // maar sturen de gebruiker naar het inlogscherm met een hint.
+      const isExistingUser =
+        (signUpData.user.identities?.length ?? 0) === 0;
+
+      if (isExistingUser) {
+        setAuthView("login");
+        setPassword("");
+        setRestaurantName("");
+        setInfo(
+          `Dit e-mailadres is al geregistreerd. Log in of klik hieronder op 'Wachtwoord vergeten?'.`,
+        );
+        return;
+      }
+
       // Wanneer e-mailbevestiging aanstaat in Supabase, geeft signUp geen
       // session terug. We sturen de gebruiker dan terug naar het inlogscherm
       // met de instructie om eerst de bevestigingsmail te openen.
@@ -113,7 +207,7 @@ export default function LoginPage() {
         setPassword("");
         setRestaurantName("");
         setInfo(
-          `We hebben een bevestigingsmail naar ${trimmedEmail} gestuurd. Open de link in je inbox om je account te activeren en log daarna in.`,
+          `We hebben een bevestigingsmail naar ${trimmedEmail} gestuurd. Controleer je inbox én je spam-/reclamemap. Klik op de link om je account te activeren en log daarna in.`,
         );
         return;
       }
@@ -192,6 +286,42 @@ export default function LoginPage() {
               >
                 {info}
               </p>
+            ) : null}
+
+            {unconfirmedEmail ? (
+              <div
+                className="flex flex-col gap-3 rounded-2xl border-2 border-amber-300 bg-amber-100 px-4 py-4 text-amber-950"
+                role="status"
+              >
+                <p className="text-center text-base font-bold leading-snug">
+                  Je e-mailadres is nog niet bevestigd. Controleer je inbox én
+                  je spam-/reclamemap voor de bevestigingsmail naar{" "}
+                  <span className="break-all">{unconfirmedEmail}</span>.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleResendVerification()}
+                  disabled={resendState === "sending" || resendState === "sent"}
+                  aria-busy={resendState === "sending"}
+                  className="h-14 w-full rounded-xl border-2 border-amber-900/30 bg-white text-base font-black text-amber-950 shadow-sm transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {resendState === "sending"
+                    ? "Versturen…"
+                    : resendState === "sent"
+                      ? "Verzonden ✓"
+                      : "Bevestigingsmail opnieuw versturen"}
+                </button>
+                {resendState === "sent" ? (
+                  <p className="text-center text-sm font-semibold text-green-900">
+                    Nieuwe bevestigingsmail verstuurd. Vergeet je spam-map niet.
+                  </p>
+                ) : null}
+                {resendState === "error" && resendError ? (
+                  <p className="text-center text-sm font-semibold text-red-800">
+                    {resendError}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
             {error ? (
@@ -350,6 +480,9 @@ export default function LoginPage() {
                   setAuthView("register");
                   setError(null);
                   setInfo(null);
+                  setUnconfirmedEmail(null);
+                  setResendState("idle");
+                  setResendError(null);
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
@@ -365,6 +498,9 @@ export default function LoginPage() {
                   setAuthView("login");
                   setError(null);
                   setInfo(null);
+                  setUnconfirmedEmail(null);
+                  setResendState("idle");
+                  setResendError(null);
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
