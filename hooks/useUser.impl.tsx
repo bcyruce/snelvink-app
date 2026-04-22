@@ -51,7 +51,11 @@ function normalizeRestaurant(
 
 // Geef een Supabase-achtige Promise een harde timeout zodat we nooit
 // oneindig wachten wanneer het netwerk of de client hapert.
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+function withTimeout<T>(
+  promise: PromiseLike<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(`${label} time-out na ${ms}ms`));
