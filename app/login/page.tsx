@@ -23,11 +23,13 @@ export default function LoginPage() {
   const [restaurantName, setRestaurantName] = useState("");
 
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
 
     try {
@@ -55,6 +57,7 @@ export default function LoginPage() {
   async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
 
     const trimmedEmail = email.trim();
@@ -76,12 +79,18 @@ export default function LoginPage() {
               role: "staff" as const,
             };
 
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/login`
+          : undefined;
+
       const { data: signUpData, error: signUpError } =
         await supabase.auth.signUp({
           email: trimmedEmail,
           password,
           options: {
             data: userMetadata,
+            emailRedirectTo,
           },
         });
 
@@ -93,6 +102,19 @@ export default function LoginPage() {
 
       if (!signUpData.user) {
         setError("Registreren mislukt. Probeer opnieuw.");
+        return;
+      }
+
+      // Wanneer e-mailbevestiging aanstaat in Supabase, geeft signUp geen
+      // session terug. We sturen de gebruiker dan terug naar het inlogscherm
+      // met de instructie om eerst de bevestigingsmail te openen.
+      if (!signUpData.session) {
+        setAuthView("login");
+        setPassword("");
+        setRestaurantName("");
+        setInfo(
+          `We hebben een bevestigingsmail naar ${trimmedEmail} gestuurd. Open de link in je inbox om je account te activeren en log daarna in.`,
+        );
         return;
       }
 
@@ -162,6 +184,15 @@ export default function LoginPage() {
                 className={inputClass}
               />
             </div>
+
+            {info ? (
+              <p
+                className="rounded-xl border border-amber-300 bg-amber-100 px-4 py-3 text-center text-base font-semibold leading-snug text-amber-950"
+                role="status"
+              >
+                {info}
+              </p>
+            ) : null}
 
             {error ? (
               <p
@@ -318,6 +349,7 @@ export default function LoginPage() {
                 onClick={() => {
                   setAuthView("register");
                   setError(null);
+                  setInfo(null);
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
@@ -332,6 +364,7 @@ export default function LoginPage() {
                 onClick={() => {
                   setAuthView("login");
                   setError(null);
+                  setInfo(null);
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
