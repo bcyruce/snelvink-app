@@ -2,29 +2,41 @@
 
 import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
 import HistoryList from "@/components/HistoryList";
-import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
-import KoelingCheck from "@/components/KoelingCheck";
-import OntvangstCheck from "@/components/OntvangstCheck";
-import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import SettingsTab from "@/components/SettingsTab";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
-import { Sparkles, Thermometer, Truck } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  DEFAULT_MODULES,
+  getModuleIcon,
+  loadLayout,
+  type TaskModule,
+} from "@/lib/taskModules";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type TaskModule =
-  | "dashboard"
-  | "koeling"
-  | "schoonmaak"
-  | "kerntemp"
-  | "ontvangst";
+const VALID_TABS: readonly BottomNavTab[] = ["tasks", "history", "settings"];
+
+function isBottomNavTab(value: string | null): value is BottomNavTab {
+  return value !== null && (VALID_TABS as readonly string[]).includes(value);
+}
 
 function HomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isLoading } = useUser();
-  const [activeTab, setActiveTab] = useState<BottomNavTab>("tasks");
-  const [activeModule, setActiveModule] = useState<TaskModule>("dashboard");
+
+  const initialTab: BottomNavTab = (() => {
+    const t = searchParams.get("tab");
+    return isBottomNavTab(t) ? t : "tasks";
+  })();
+
+  const [activeTab, setActiveTab] = useState<BottomNavTab>(initialTab);
+  const [modules, setModules] = useState<TaskModule[]>(DEFAULT_MODULES);
+
+  useEffect(() => {
+    setModules(loadLayout());
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -55,62 +67,27 @@ function HomeContent() {
 
         <div key={activeTab} className="tab-panel-enter">
           {activeTab === "tasks" ? (
-            <>
-              {activeModule === "dashboard" ? (
-                <div className="mt-8 grid grid-cols-2 gap-5 sm:gap-6">
-                  <button
-                    type="button"
-                    onClick={() => setActiveModule("koeling")}
+            <div className="mt-8 grid grid-cols-2 gap-5 sm:gap-6">
+              {modules.map((m) => {
+                const Icon = getModuleIcon(m.icon);
+                return (
+                  <Link
+                    key={m.id}
+                    href={m.href}
                     className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
                   >
-                    <Thermometer className="h-11 w-11" strokeWidth={2.25} aria-hidden />
-                    Koeling 1
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveModule("schoonmaak")}
-                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
-                  >
-                    <Sparkles className="h-11 w-11" strokeWidth={2.25} aria-hidden />
-                    Schoonmaak
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveModule("kerntemp")}
-                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
-                  >
-                    <Thermometer className="h-11 w-11" strokeWidth={2.25} aria-hidden />
-                    Kerntemperatuur
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveModule("ontvangst")}
-                    className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-95"
-                  >
-                    <Truck className="h-11 w-11" strokeWidth={2.25} aria-hidden />
-                    Ontvangst
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setActiveModule("dashboard")}
-                    className="mb-8 h-20 w-full rounded-2xl bg-gray-900 text-2xl font-black text-white shadow-md transition-transform active:scale-95"
-                  >
-                    Terug
-                  </button>
-
-                  {activeModule === "koeling" ? <KoelingCheck /> : null}
-                  {activeModule === "schoonmaak" ? <SchoonmaakCheck /> : null}
-                  {activeModule === "kerntemp" ? <KerntemperatuurCheck /> : null}
-                  {activeModule === "ontvangst" ? <OntvangstCheck /> : null}
-                </>
-              )}
-            </>
+                    <Icon
+                      className="h-11 w-11"
+                      strokeWidth={2.25}
+                      aria-hidden
+                    />
+                    <span className="line-clamp-2 leading-tight">
+                      {m.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           ) : null}
 
           {activeTab === "history" ? <HistoryList /> : null}
