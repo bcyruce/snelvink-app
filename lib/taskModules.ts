@@ -73,14 +73,12 @@ export const DEFAULT_MODULES: TaskModule[] = [
     isCustom: false,
     href: "/taken/kerntemperatuur",
   },
-  {
-    id: "frituurvet",
-    name: "Frituurvet registratie",
-    icon: "droplet",
-    isCustom: false,
-    href: "/taken/frituurvet",
-  },
 ];
+
+// Modules die ooit standaard waren maar nu uit de app verwijderd zijn.
+// We filteren ze uit eerder opgeslagen layouts zodat bestaande gebruikers
+// na de update niet alsnog een dode tegel zien.
+const REMOVED_DEFAULT_IDS = new Set<string>(["frituurvet"]);
 
 const STORAGE_KEY = "snelvink:taskModulesLayout:v1";
 
@@ -91,7 +89,7 @@ export function loadLayout(): TaskModule[] {
     if (!raw) return DEFAULT_MODULES;
     const parsed = JSON.parse(raw) as TaskModule[];
     if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_MODULES;
-    return parsed;
+    return parsed.filter((m) => !REMOVED_DEFAULT_IDS.has(m.id));
   } catch {
     return DEFAULT_MODULES;
   }

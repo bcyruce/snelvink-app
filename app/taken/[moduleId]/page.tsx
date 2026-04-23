@@ -1,7 +1,6 @@
 "use client";
 
 import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
-import FrituurvetCheck from "@/components/FrituurvetCheck";
 import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
 import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
@@ -17,7 +16,6 @@ const MODULE_COMPONENTS: Record<string, ComponentType> = {
   ontvangst: OntvangstCheck,
   schoonmaak: SchoonmaakCheck,
   kerntemperatuur: KerntemperatuurCheck,
-  frituurvet: FrituurvetCheck,
 };
 
 function ModuleContent() {
