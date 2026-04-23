@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  const [fullName, setFullName] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -131,6 +132,13 @@ export default function LoginPage() {
 
     const trimmedEmail = email.trim();
 
+    const trimmedFullName = fullName.trim();
+    if (!trimmedFullName) {
+      setError("Vul je naam in.");
+      setLoading(false);
+      return;
+    }
+
     if (registerRole === "owner" && !restaurantName.trim()) {
       setError("Vul de restaurantnaam in.");
       setLoading(false);
@@ -150,10 +158,12 @@ export default function LoginPage() {
           ? {
               role: "eigenaar" as const,
               restaurant_name: restaurantName.trim(),
+              full_name: trimmedFullName,
             }
           : {
               role: "staff" as const,
               invite_code: normalizedInviteCode,
+              full_name: trimmedFullName,
             };
 
       const emailRedirectTo =
@@ -218,6 +228,7 @@ export default function LoginPage() {
         setPassword("");
         setRestaurantName("");
         setInviteCode("");
+        setFullName("");
         setInfo(
           `Dit e-mailadres is al geregistreerd. Log in of klik hieronder op 'Wachtwoord vergeten?'.`,
         );
@@ -232,6 +243,7 @@ export default function LoginPage() {
         setPassword("");
         setRestaurantName("");
         setInviteCode("");
+        setFullName("");
         setInfo(
           `We hebben een bevestigingsmail naar ${trimmedEmail} gestuurd. Controleer je inbox én je spam-/reclamemap. Klik op de link om je account te activeren en log daarna in.`,
         );
@@ -420,6 +432,22 @@ export default function LoginPage() {
             </fieldset>
 
             <div className="flex flex-col gap-2">
+              <label htmlFor="register-fullname" className={labelClass}>
+                Naam
+              </label>
+              <input
+                id="register-fullname"
+                name="fullName"
+                type="text"
+                autoComplete="name"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
               <label htmlFor="register-email" className={labelClass}>
                 E-mailadres
               </label>
@@ -529,6 +557,7 @@ export default function LoginPage() {
                   setResendState("idle");
                   setResendError(null);
                   setInviteCode("");
+                  setFullName("");
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
@@ -548,6 +577,7 @@ export default function LoginPage() {
                   setResendState("idle");
                   setResendError(null);
                   setInviteCode("");
+                  setFullName("");
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >

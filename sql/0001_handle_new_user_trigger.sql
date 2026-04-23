@@ -113,6 +113,7 @@ declare
   v_role           text := lower(trim(coalesce(new.raw_user_meta_data ->> 'role', '')));
   v_restaurant     text := nullif(trim(coalesce(new.raw_user_meta_data ->> 'restaurant_name', '')), '');
   v_invite_code    text := nullif(trim(coalesce(new.raw_user_meta_data ->> 'invite_code', '')), '');
+  v_full_name      text := nullif(trim(coalesce(new.raw_user_meta_data ->> 'full_name', '')), '');
   v_restaurant_id  uuid;
   v_plan_type      text;
   v_staff_count    int := 0;
@@ -126,13 +127,14 @@ begin
     )
     returning id into v_restaurant_id;
 
-    insert into public.profiles (id, email, role, restaurant_name, restaurant_id)
+    insert into public.profiles (id, email, role, restaurant_name, restaurant_id, full_name)
     values (
       new.id,
       new.email,
       'eigenaar',
       v_restaurant,
-      v_restaurant_id
+      v_restaurant_id,
+      v_full_name
     );
 
   elsif v_role = 'staff' then
@@ -169,8 +171,8 @@ begin
         v_plan_type, v_staff_limit;
     end if;
 
-    insert into public.profiles (id, email, role, restaurant_id)
-    values (new.id, new.email, 'staff', v_restaurant_id);
+    insert into public.profiles (id, email, role, restaurant_id, full_name)
+    values (new.id, new.email, 'staff', v_restaurant_id, v_full_name);
 
   else
     raise exception 'Ongeldige role in metadata: %', coalesce(v_role, '<null>');

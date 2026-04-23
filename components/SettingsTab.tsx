@@ -15,6 +15,7 @@ type DocWithAutoTable = jsPDF & {
 type StaffMember = {
   id: string;
   email: string | null;
+  full_name: string | null;
 };
 
 function formatNlDateTime(iso: string): string {
@@ -48,10 +49,10 @@ export default function SettingsTab() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, email")
+        .select("id, email, full_name")
         .eq("restaurant_id", restaurantId)
         .eq("role", "staff")
-        .order("email", { ascending: true });
+        .order("full_name", { ascending: true });
       if (error) {
         console.error("Staff ophalen mislukt:", error);
         setStaff([]);
@@ -271,9 +272,14 @@ export default function SettingsTab() {
                   key={member.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3"
                 >
-                  <p className="truncate text-sm font-medium text-gray-800">
-                    {member.email ?? "Onbekend e-mailadres"}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-gray-900">
+                      {member.full_name?.trim() || "Naamloos"}
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {member.email ?? "Onbekend e-mailadres"}
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => void handleDeleteStaff(member.id)}
