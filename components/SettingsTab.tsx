@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Download, LogOut } from "lucide-react";
+import { Download, LogOut, RefreshCw } from "lucide-react";
 import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ function formatNlDateTime(iso: string): string {
 
 export default function SettingsTab() {
   const router = useRouter();
-  const { profile, restaurant, isFreePlan } = useUser();
+  const { profile, restaurant, isFreePlan, refresh } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
   const isOwner =
     profile?.role === "owner" ||
@@ -36,6 +36,7 @@ export default function SettingsTab() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [isLoadingStaff, setIsLoadingStaff] = useState(false);
   const [deletingStaffId, setDeletingStaffId] = useState<string | null>(null);
@@ -95,6 +96,18 @@ export default function SettingsTab() {
     },
     [isOwner, restaurantId],
   );
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refresh();
+      await loadStaff();
+    } catch (err) {
+      console.error("Gegevens verversen mislukt:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refresh, loadStaff]);
 
   const generatePDF = useCallback(async () => {
     if (!restaurantId) {
@@ -208,12 +221,30 @@ export default function SettingsTab() {
       </h2>
 
       <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Restaurant
-        </p>
-        <p className="mt-1 text-xl font-bold text-gray-900">
-          {restaurant?.name ?? "—"}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Restaurant
+            </p>
+            <p className="mt-1 truncate text-xl font-bold text-gray-900">
+              {restaurant?.name ?? "—"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleRefresh()}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            title="Vernieuwen"
+            className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-700 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw
+              className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
+              strokeWidth={2}
+            />
+          </button>
+        </div>
+
         <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
           Abonnement
         </p>
@@ -221,9 +252,7 @@ export default function SettingsTab() {
           {restaurant?.plan_type
             ? restaurant.plan_type.charAt(0).toUpperCase() +
               restaurant.plan_type.slice(1)
-            : isFreePlan
-              ? "Free"
-              : "Basic"}
+            : "—"}
         </p>
 
         {isOwner ? (
@@ -231,7 +260,11 @@ export default function SettingsTab() {
             <p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
               Koppelcode
             </p>
-            {isFreePlan ? (
+            {!restaurant ? (
+              <p className="mt-3 text-center text-sm text-gray-500">
+                Laden...
+              </p>
+            ) : isFreePlan ? (
               <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-5 text-center">
                 <p className="text-base font-bold text-amber-900">
                   Nog geen koppelcode beschikbaar
@@ -241,7 +274,7 @@ export default function SettingsTab() {
                   koppelen en de koppelcode te ontgrendelen.
                 </p>
               </div>
-            ) : restaurant?.invite_code ? (
+            ) : restaurant.invite_code ? (
               <>
                 <p className="mt-3 text-center text-5xl font-black tabular-nums tracking-widest text-gray-900 sm:text-6xl">
                   {restaurant.invite_code}
@@ -250,7 +283,11 @@ export default function SettingsTab() {
                   Deel deze code met je werknemers om ze te koppelen.
                 </p>
               </>
-            ) : null}
+            ) : (
+              <p className="mt-3 text-center text-sm text-gray-500">
+                Geen koppelcode beschikbaar.
+              </p>
+            )}
           </div>
         ) : null}
       </div>
