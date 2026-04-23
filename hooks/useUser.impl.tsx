@@ -125,7 +125,38 @@ export function UserProvider({ children }: { children: ReactNode }) {
         restaurant_id: row.restaurant_id,
         is_email_verified: row.is_email_verified === true,
       });
-      setRestaurant(normalizeRestaurant(row.restaurants));
+
+      let nextRestaurant = normalizeRestaurant(row.restaurants);
+
+      // Fallback: embed kan null zijn door RLS, schema-cache of een
+      // ontbrekende FK-relatie. Probeer dan direct een query op restaurants.
+      if (!nextRestaurant && row.restaurant_id) {
+        try {
+          const { data: restaurantData, error: restaurantError } =
+            await withTimeout(
+              supabase
+                .from("restaurants")
+                .select("name, plan_type, invite_code")
+                .eq("id", row.restaurant_id)
+                .maybeSingle(),
+              10_000,
+              "Restaurant ophalen",
+            );
+
+          if (restaurantError) {
+            console.warn(
+              "Restaurant direct ophalen mislukt:",
+              restaurantError.message,
+            );
+          } else if (restaurantData) {
+            nextRestaurant = restaurantData as AppRestaurant;
+          }
+        } catch (restaurantErr) {
+          console.warn("Restaurant direct ophalen mislukt:", restaurantErr);
+        }
+      }
+
+      setRestaurant(nextRestaurant);
     } catch (error) {
       console.warn("Profiel ophalen mislukt:", error);
       setProfile(null);
