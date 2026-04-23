@@ -1,6 +1,7 @@
 "use client";
 
 import UpgradePromptModal from "@/components/UpgradePromptModal";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { Camera } from "lucide-react";
@@ -17,6 +18,7 @@ function parseStoredTemperature(raw: string | null): number | null {
 }
 
 export default function KoelingCheck() {
+  const { t } = useTranslation();
   const { profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
 
@@ -205,14 +207,16 @@ export default function KoelingCheck() {
       onBlur={commitEdit}
       onKeyDown={onInputKeyDown}
       className={`w-full max-w-full rounded-2xl border-2 border-gray-300 bg-white px-2 py-3 text-center text-7xl font-black tabular-nums leading-none shadow-inner outline-none focus:border-gray-500 sm:px-3 ${tempColor}`}
-      aria-label="Temperatuur handmatig invoeren"
+      aria-label={t("manualTemperatureInput")}
     />
   ) : (
     <button
       type="button"
       onClick={startEditing}
       className={`w-full cursor-pointer rounded-2xl border-2 border-transparent px-2 py-2 text-center text-7xl font-black tabular-nums leading-none transition-colors hover:border-gray-200 hover:bg-gray-50 ${tempColor}`}
-      aria-label={`Huidige temperatuur ${temperature.toFixed(1)} °C, tik om handmatig in te voeren`}
+      aria-label={t("currentTemperatureAria", {
+        temp: temperature.toFixed(1),
+      })}
     >
       {temperature.toFixed(1)}°C
     </button>
@@ -245,16 +249,15 @@ export default function KoelingCheck() {
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
       >
-        Alleen beschikbaar voor Basic-abonnement. Upgrade om foto&apos;s toe te
-        voegen als bewijs voor de NVWA.
+        {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
       <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-        Koeling 1
+        {t("koelingOne")}
       </h2>
 
       <p className="text-center text-sm text-gray-500">
-        Klik op het getal om handmatig in te voeren
+        {t("clickToEditTemperature")}
       </p>
 
       {/* Top: plus. Middle: temperature. Bottom: minus. All rows centered. */}
@@ -264,7 +267,7 @@ export default function KoelingCheck() {
             type="button"
             onClick={() => adjust(1)}
             className={`${buttonClass} min-w-0 flex-1`}
-            aria-label="Eén graad hoger"
+            aria-label={t("increaseOneDegree")}
           >
             +1
           </button>
@@ -272,7 +275,7 @@ export default function KoelingCheck() {
             type="button"
             onClick={() => adjust(0.1)}
             className={`${buttonClass} min-w-0 flex-1`}
-            aria-label="Nul komma één hoger"
+            aria-label={t("increaseTenthDegree")}
           >
             +0,1
           </button>
@@ -290,7 +293,7 @@ export default function KoelingCheck() {
             type="button"
             onClick={() => adjust(-1)}
             className={`${buttonClass} min-w-0 flex-1`}
-            aria-label="Eén graad lager"
+            aria-label={t("decreaseOneDegree")}
           >
             −1
           </button>
@@ -298,7 +301,7 @@ export default function KoelingCheck() {
             type="button"
             onClick={() => adjust(-0.1)}
             className={`${buttonClass} min-w-0 flex-1`}
-            aria-label="Nul komma één lager"
+            aria-label={t("decreaseTenthDegree")}
           >
             −0,1
           </button>
@@ -311,7 +314,7 @@ export default function KoelingCheck() {
           role="status"
           aria-live="polite"
         >
-          Geregistreerd!
+          {t("registered")}
         </p>
       ) : null}
 
@@ -331,14 +334,14 @@ export default function KoelingCheck() {
         className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform hover:bg-gray-50 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <Camera className="h-7 w-7" aria-hidden />
-        {photoFile ? "Foto toegevoegd" : "Maak een foto (Optioneel)"}
+        {photoFile ? t("photoAdded") : t("takePhotoOptional")}
       </button>
 
       {photoPreviewUrl ? (
         <div className="flex justify-center">
           <img
             src={photoPreviewUrl}
-            alt="Voorbeeld van toegevoegde foto"
+            alt={t("photoPreviewAlt")}
             className="h-32 w-32 rounded-xl border border-gray-200 object-cover shadow-sm"
           />
         </div>
@@ -351,7 +354,7 @@ export default function KoelingCheck() {
         aria-busy={isSaving}
         className="h-24 w-full rounded-2xl bg-green-600 text-2xl font-bold text-white shadow-md transition-transform hover:bg-green-700 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {isSaving ? "Laden..." : "Opslaan"}
+        {isSaving ? t("saving") : t("save")}
       </button>
     </div>
   );

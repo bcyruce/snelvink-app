@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Download, LogOut, RefreshCw } from "lucide-react";
 import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
@@ -27,6 +28,7 @@ function formatNlDateTime(iso: string): string {
 
 export default function SettingsTab() {
   const router = useRouter();
+  const { language, setLanguage, t } = useTranslation();
   const { profile, restaurant, isFreePlan, refresh } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
   const isOwner =
@@ -219,6 +221,37 @@ export default function SettingsTab() {
       <h2 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
         {"Instellingen & Export"}
       </h2>
+
+      <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-4">
+        <h3 className="text-base font-bold text-gray-900">{t("languageSectionTitle")}</h3>
+        <p className="mt-1 text-sm text-gray-600">{t("languageSectionSubtitle")}</p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setLanguage("nl")}
+            aria-pressed={language === "nl"}
+            className={`min-h-12 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors ${
+              language === "nl"
+                ? "border-blue-600 bg-blue-50 text-blue-800"
+                : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            🇳🇱 Nederlands
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage("en")}
+            aria-pressed={language === "en"}
+            className={`min-h-12 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors ${
+              language === "en"
+                ? "border-blue-600 bg-blue-50 text-blue-800"
+                : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            EN English
+          </button>
+        </div>
+      </section>
 
       <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
         <div className="flex items-start justify-between gap-3">

@@ -1,6 +1,7 @@
 "use client";
 
 import UpgradePromptModal from "@/components/UpgradePromptModal";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { Printer } from "lucide-react";
@@ -45,6 +46,7 @@ function formatLogDateTime(iso: string): string {
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function HistoryList() {
+  const { translateHaccpText } = useTranslation();
   const { profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
 
@@ -209,10 +211,10 @@ export default function HistoryList() {
                     {formatLogDateTime(row.created_at)}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 print:border-black print:text-black">
-                    {row.itemName}
+                    {translateHaccpText(row.itemName)}
                   </td>
                   <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
-                    <p>{row.valueOrStatus}</p>
+                    <p>{translateHaccpText(row.valueOrStatus)}</p>
                     {row.source === "temperature" && row.photoUrl ? (
                       <img
                         src={row.photoUrl}
