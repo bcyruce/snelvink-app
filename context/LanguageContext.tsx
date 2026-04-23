@@ -112,7 +112,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<LanguageContextValue>(() => {
     const t = (key: TranslationKey, vars?: Record<string, string | number>) => {
-      let template = translations[language][key] ?? translations.nl[key] ?? key;
+      let template: string =
+        translations[language][key] ?? translations.nl[key] ?? key;
       if (!vars) return template;
       Object.entries(vars).forEach(([varKey, varValue]) => {
         template = template.replace(`{${varKey}}`, String(varValue));
