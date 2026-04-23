@@ -6,10 +6,15 @@ import { Download, LogOut } from "lucide-react";
 import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type DocWithAutoTable = jsPDF & {
   lastAutoTable?: { finalY: number };
+};
+
+type StaffMember = {
+  id: string;
+  email: string | null;
 };
 
 function formatNlDateTime(iso: string): string {
@@ -24,10 +29,71 @@ export default function SettingsTab() {
   const { profile, restaurant, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
   const isOwner =
-    profile?.role === "owner" || profile?.role === "admin";
+    profile?.role === "owner" ||
+    profile?.role === "admin" ||
+    profile?.role === "eigenaar";
 
   const [isExporting, setIsExporting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+  const [deletingStaffId, setDeletingStaffId] = useState<string | null>(null);
+
+  const loadStaff = useCallback(async () => {
+    if (!restaurantId || !isOwner) {
+      setStaff([]);
+      return;
+    }
+    setIsLoadingStaff(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .eq("restaurant_id", restaurantId)
+        .eq("role", "staff")
+        .order("email", { ascending: true });
+      if (error) {
+        console.error("Staff ophalen mislukt:", error);
+        setStaff([]);
+        return;
+      }
+      setStaff((data ?? []) as StaffMember[]);
+    } catch (err) {
+      console.error("Staff ophalen mislukt:", err);
+      setStaff([]);
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  }, [isOwner, restaurantId]);
+
+  useEffect(() => {
+    void loadStaff();
+  }, [loadStaff]);
+
+  const handleDeleteStaff = useCallback(
+    async (staffId: string) => {
+      if (!restaurantId || !isOwner) return;
+      setDeletingStaffId(staffId);
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .delete()
+          .eq("id", staffId)
+          .eq("restaurant_id", restaurantId)
+          .eq("role", "staff");
+        if (error) {
+          console.error("Staff verwijderen mislukt:", error);
+          return;
+        }
+        setStaff((prev) => prev.filter((member) => member.id !== staffId));
+      } catch (err) {
+        console.error("Staff verwijderen mislukt:", err);
+      } finally {
+        setDeletingStaffId(null);
+      }
+    },
+    [isOwner, restaurantId],
+  );
 
   const generatePDF = useCallback(async () => {
     if (!restaurantId) {
@@ -151,7 +217,12 @@ export default function SettingsTab() {
           Abonnement
         </p>
         <p className="mt-1 text-lg font-bold text-gray-900">
-          {isFreePlan ? "Gratis" : "Basic"}
+          {restaurant?.plan_type
+            ? restaurant.plan_type.charAt(0).toUpperCase() +
+              restaurant.plan_type.slice(1)
+            : isFreePlan
+              ? "Free"
+              : "Basic"}
         </p>
 
         {isOwner && restaurant?.invite_code ? (
@@ -168,6 +239,41 @@ export default function SettingsTab() {
           </div>
         ) : null}
       </div>
+
+      {isOwner ? (
+        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-5">
+          <h3 className="text-lg font-bold text-gray-900">Personeel</h3>
+          <p className="mt-1 text-sm text-gray-600">
+            Gekoppelde medewerkers van dit restaurant.
+          </p>
+          {isLoadingStaff ? (
+            <p className="mt-4 text-sm text-gray-500">Laden...</p>
+          ) : staff.length === 0 ? (
+            <p className="mt-4 text-sm text-gray-500">Nog geen personeel gekoppeld.</p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {staff.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3"
+                >
+                  <p className="truncate text-sm font-medium text-gray-800">
+                    {member.email ?? "Onbekend e-mailadres"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteStaff(member.id)}
+                    disabled={deletingStaffId === member.id}
+                    className="shrink-0 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingStaffId === member.id ? "Bezig..." : "Verwijderen"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
 
       <p className="mb-6 text-sm text-gray-600">
         Download een overzicht van alle temperatuur- en schoonmaakregistraties.

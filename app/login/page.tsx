@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -136,6 +137,13 @@ export default function LoginPage() {
       return;
     }
 
+    const normalizedInviteCode = inviteCode.replace(/\D/g, "").slice(0, 6);
+    if (registerRole === "employee" && normalizedInviteCode.length !== 6) {
+      setError("Vul een geldige 6-cijferige uitnodigingscode in.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const userMetadata =
         registerRole === "owner"
@@ -145,6 +153,7 @@ export default function LoginPage() {
             }
           : {
               role: "staff" as const,
+              invite_code: normalizedInviteCode,
             };
 
       const emailRedirectTo =
@@ -193,6 +202,7 @@ export default function LoginPage() {
         setAuthView("login");
         setPassword("");
         setRestaurantName("");
+        setInviteCode("");
         setInfo(
           `Dit e-mailadres is al geregistreerd. Log in of klik hieronder op 'Wachtwoord vergeten?'.`,
         );
@@ -206,6 +216,7 @@ export default function LoginPage() {
         setAuthView("login");
         setPassword("");
         setRestaurantName("");
+        setInviteCode("");
         setInfo(
           `We hebben een bevestigingsmail naar ${trimmedEmail} gestuurd. Controleer je inbox én je spam-/reclamemap. Klik op de link om je account te activeren en log daarna in.`,
         );
@@ -444,10 +455,29 @@ export default function LoginPage() {
                 />
               </div>
             ) : (
-              <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-center text-sm font-medium text-gray-600">
-                Je account wordt na registratie door het systeem gekoppeld. Vraag
-                je werkgever om hulp als je niet binnenkomt.
-              </p>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="invite-code" className={labelClass}>
+                  Uitnodigingscode
+                </label>
+                <input
+                  id="invite-code"
+                  name="inviteCode"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  required
+                  maxLength={6}
+                  value={inviteCode}
+                  onChange={(e) =>
+                    setInviteCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  placeholder="Bijv. 123456"
+                  className={inputClass}
+                />
+                <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-center text-sm font-medium text-gray-600">
+                  Vraag deze 6-cijferige code aan je werkgever.
+                </p>
+              </div>
             )}
 
             {error ? (
@@ -483,6 +513,7 @@ export default function LoginPage() {
                   setUnconfirmedEmail(null);
                   setResendState("idle");
                   setResendError(null);
+                  setInviteCode("");
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
@@ -501,6 +532,7 @@ export default function LoginPage() {
                   setUnconfirmedEmail(null);
                   setResendState("idle");
                   setResendError(null);
+                  setInviteCode("");
                 }}
                 className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
               >
