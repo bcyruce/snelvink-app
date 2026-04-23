@@ -225,17 +225,31 @@ export default function SettingsTab() {
               : "Basic"}
         </p>
 
-        {isOwner && restaurant?.invite_code ? (
+        {isOwner ? (
           <div className="mt-6 border-t border-gray-200 pt-6">
             <p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
               Koppelcode
             </p>
-            <p className="mt-3 text-center text-5xl font-black tabular-nums tracking-widest text-gray-900 sm:text-6xl">
-              {restaurant.invite_code}
-            </p>
-            <p className="mt-4 text-center text-sm leading-relaxed text-gray-600">
-              Deel deze code met je werknemers om ze te koppelen.
-            </p>
+            {isFreePlan ? (
+              <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-5 text-center">
+                <p className="text-base font-bold text-amber-900">
+                  Nog geen koppelcode beschikbaar
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-amber-900">
+                  Upgrade je abonnement naar Basic of Pro om medewerkers te kunnen
+                  koppelen en de koppelcode te ontgrendelen.
+                </p>
+              </div>
+            ) : restaurant?.invite_code ? (
+              <>
+                <p className="mt-3 text-center text-5xl font-black tabular-nums tracking-widest text-gray-900 sm:text-6xl">
+                  {restaurant.invite_code}
+                </p>
+                <p className="mt-4 text-center text-sm leading-relaxed text-gray-600">
+                  Deel deze code met je werknemers om ze te koppelen.
+                </p>
+              </>
+            ) : null}
           </div>
         ) : null}
       </div>

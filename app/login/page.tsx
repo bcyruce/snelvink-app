@@ -173,7 +173,22 @@ export default function LoginPage() {
 
       if (signUpError) {
         console.error("Registreren mislukt:", signUpError.message);
-        setError(signUpError.message || "Registreren mislukt.");
+        const rawMessage = signUpError.message ?? "";
+        const lowered = rawMessage.toLowerCase();
+        let friendly: string;
+        if (lowered.includes("plan limiet bereikt")) {
+          friendly =
+            "Het restaurant heeft het maximale aantal medewerkers bereikt. Vraag je werkgever om zijn abonnement te upgraden.";
+        } else if (
+          lowered.includes("ongeldige invite code") ||
+          lowered.includes("invite code is verplicht")
+        ) {
+          friendly =
+            "De uitnodigingscode klopt niet. Vraag je werkgever om de juiste 6-cijferige code.";
+        } else {
+          friendly = rawMessage || "Registreren mislukt.";
+        }
+        setError(friendly);
         return;
       }
 
