@@ -22,14 +22,36 @@ type CleaningLogRow = {
   is_completed: boolean;
 };
 
+type HaccpRecordRow = {
+  id: string;
+  recorded_at: string;
+  module_type: "koeling" | "kerntemperatuur";
+  temperature: number;
+  image_urls: string[] | null;
+  haccp_equipments: { name: string | null } | { name: string | null }[] | null;
+};
+
 type ReportRow = {
   id: string;
   created_at: string;
   itemName: string;
   valueOrStatus: string;
-  source: "temperature" | "cleaning";
-  photoUrl?: string | null;
+  source: "temperature" | "cleaning" | "haccp";
+  photoUrls: string[];
 };
+
+function moduleLabel(type: HaccpRecordRow["module_type"]): string {
+  if (type === "koeling") return "Koeling";
+  if (type === "kerntemperatuur") return "Kerntemperatuur";
+  return type;
+}
+
+function equipmentName(row: HaccpRecordRow): string {
+  const e = row.haccp_equipments;
+  if (!e) return "Onbekend apparaat";
+  if (Array.isArray(e)) return e[0]?.name ?? "Onbekend apparaat";
+  return e.name ?? "Onbekend apparaat";
+}
 
 function formatLogDateTime(iso: string): string {
   const d = new Date(iso);
@@ -75,9 +97,17 @@ export default function HistoryList() {
       .select("id, created_at, task_name, is_completed")
       .eq("restaurant_id", restaurantId);
 
-    const [tempRes, cleanRes] = await Promise.all([
+    const haccpBase = supabase
+      .from("haccp_records")
+      .select(
+        "id, recorded_at, module_type, temperature, image_urls, haccp_equipments ( name )",
+      )
+      .eq("restaurant_id", restaurantId);
+
+    const [tempRes, cleanRes, haccpRes] = await Promise.all([
       isFreePlan ? tempBase.gte("created_at", sinceIso) : tempBase,
       isFreePlan ? cleanBase.gte("created_at", sinceIso) : cleanBase,
+      isFreePlan ? haccpBase.gte("recorded_at", sinceIso) : haccpBase,
     ]);
 
     if (tempRes.error) {
@@ -85,6 +115,9 @@ export default function HistoryList() {
     }
     if (cleanRes.error) {
       console.error("cleaning_logs ophalen mislukt:", cleanRes.error);
+    }
+    if (haccpRes.error) {
+      console.error("haccp_records ophalen mislukt:", haccpRes.error);
     }
 
     const tempRows =
@@ -94,7 +127,7 @@ export default function HistoryList() {
         itemName: row.equipment_name ?? "Onbekend apparaat",
         valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
         source: "temperature" as const,
-        photoUrl: row.photo_url ?? null,
+        photoUrls: row.photo_url ? [row.photo_url] : [],
       })) ?? [];
 
     const cleaningRows =
@@ -104,10 +137,20 @@ export default function HistoryList() {
         itemName: row.task_name ?? "Onbekende taak",
         valueOrStatus: row.is_completed ? "Voltooid" : "Niet voltooid",
         source: "cleaning" as const,
-        photoUrl: null,
+        photoUrls: [],
       })) ?? [];
 
-    const merged = [...tempRows, ...cleaningRows].sort(
+    const haccpRows =
+      (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => ({
+        id: `h-${row.id}`,
+        created_at: row.recorded_at,
+        itemName: `${moduleLabel(row.module_type)} · ${equipmentName(row)}`,
+        valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
+        source: "haccp" as const,
+        photoUrls: row.image_urls ?? [],
+      })) ?? [];
+
+    const merged = [...tempRows, ...cleaningRows, ...haccpRows].sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
@@ -215,12 +258,17 @@ export default function HistoryList() {
                   </td>
                   <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
                     <p>{translateHaccpText(row.valueOrStatus)}</p>
-                    {row.source === "temperature" && row.photoUrl ? (
-                      <img
-                        src={row.photoUrl}
-                        alt="Toegevoegde foto bij temperatuurmeting"
-                        className="mt-3 h-48 w-full rounded-xl object-cover print:mt-2 print:h-[3cm] print:w-auto print:max-w-[6cm]"
-                      />
+                    {row.photoUrls.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2 print:mt-2">
+                        {row.photoUrls.map((url, i) => (
+                          <img
+                            key={`${row.id}-img-${i}`}
+                            src={url}
+                            alt={`Foto ${i + 1} bij registratie`}
+                            className="h-32 w-32 rounded-xl object-cover print:h-[3cm] print:w-auto print:max-w-[6cm]"
+                          />
+                        ))}
+                      </div>
                     ) : null}
                   </td>
                 </tr>

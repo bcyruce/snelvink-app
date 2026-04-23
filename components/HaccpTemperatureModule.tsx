@@ -42,21 +42,25 @@ function pad2(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-function formatTimeFromDate(d: Date): string {
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+/**
+ * Formatteer een Date naar het formaat dat <input type="datetime-local">
+ * verwacht: "YYYY-MM-DDTHH:mm" (lokale tijd, geen TZ).
+ */
+function formatLocalDateTime(d: Date): string {
+  return (
+    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
+    `T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+  );
 }
 
 /**
- * Combineer een datum (vandaag) met een HH:mm string tot een ISO-string die
- * we naar Supabase kunnen sturen als `recorded_at`.
+ * Zet een "YYYY-MM-DDTHH:mm" string om in een ISO timestamp voor Supabase.
+ * Valt terug op "nu" als de invoer onvolledig is.
  */
-function buildRecordedAt(timeHHmm: string): string {
-  const now = new Date();
-  const [hh, mm] = timeHHmm.split(":").map((s) => Number.parseInt(s, 10));
-  if (Number.isFinite(hh) && Number.isFinite(mm)) {
-    now.setHours(hh, mm, 0, 0);
-  }
-  return now.toISOString();
+function buildRecordedAt(local: string): string {
+  const parsed = new Date(local);
+  if (Number.isNaN(parsed.getTime())) return new Date().toISOString();
+  return parsed.toISOString();
 }
 
 export default function HaccpTemperatureModule({
@@ -81,7 +85,9 @@ export default function HaccpTemperatureModule({
   const [activeEquipment, setActiveEquipment] = useState<Equipment | null>(
     null,
   );
-  const [time, setTime] = useState<string>(() => formatTimeFromDate(new Date()));
+  const [recordedAtLocal, setRecordedAtLocal] = useState<string>(() =>
+    formatLocalDateTime(new Date()),
+  );
   const [temperature, setTemperature] = useState<number>(defaultTemperature);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -224,7 +230,7 @@ export default function HaccpTemperatureModule({
   const enterRecord = useCallback(
     (eq: Equipment) => {
       setActiveEquipment(eq);
-      setTime(formatTimeFromDate(new Date()));
+      setRecordedAtLocal(formatLocalDateTime(new Date()));
       setTemperature(
         typeof eq.last_temp === "number" ? eq.last_temp : defaultTemperature,
       );
@@ -257,12 +263,20 @@ export default function HaccpTemperatureModule({
   }, []);
 
   // ---------- long-press +/- ----------
-  const incPress = useLongPress({
+  const incOnePress = useLongPress({
     onTrigger: () => setTemperature((v) => roundTenth(v + 1)),
     disabled: isSaving,
   });
-  const decPress = useLongPress({
+  const incTenthPress = useLongPress({
+    onTrigger: () => setTemperature((v) => roundTenth(v + 0.1)),
+    disabled: isSaving,
+  });
+  const decOnePress = useLongPress({
     onTrigger: () => setTemperature((v) => roundTenth(v - 1)),
+    disabled: isSaving,
+  });
+  const decTenthPress = useLongPress({
+    onTrigger: () => setTemperature((v) => roundTenth(v - 0.1)),
     disabled: isSaving,
   });
 
@@ -327,7 +341,7 @@ export default function HaccpTemperatureModule({
         }
       }
 
-      const recordedAt = buildRecordedAt(time);
+      const recordedAt = buildRecordedAt(recordedAtLocal);
 
       const { error: insertError } = await supabase
         .from("haccp_records")
@@ -403,12 +417,14 @@ export default function HaccpTemperatureModule({
         <RecordView
           title={title}
           equipment={activeEquipment}
-          time={time}
-          onTimeChange={setTime}
+          recordedAtLocal={recordedAtLocal}
+          onRecordedAtChange={setRecordedAtLocal}
           temperature={temperature}
           tempColorClass={tempColorClass}
-          incPress={incPress}
-          decPress={decPress}
+          incOnePress={incOnePress}
+          incTenthPress={incTenthPress}
+          decOnePress={decOnePress}
+          decTenthPress={decTenthPress}
           onSetTemperature={setTemperature}
           photoFiles={photoFiles}
           photoPreviews={photoPreviews}
@@ -558,12 +574,14 @@ function ListView({
 type RecordViewProps = {
   title: string;
   equipment: Equipment | null;
-  time: string;
-  onTimeChange: (v: string) => void;
+  recordedAtLocal: string;
+  onRecordedAtChange: (v: string) => void;
   temperature: number;
   tempColorClass: string;
-  incPress: ReturnType<typeof useLongPress>;
-  decPress: ReturnType<typeof useLongPress>;
+  incOnePress: ReturnType<typeof useLongPress>;
+  incTenthPress: ReturnType<typeof useLongPress>;
+  decOnePress: ReturnType<typeof useLongPress>;
+  decTenthPress: ReturnType<typeof useLongPress>;
   onSetTemperature: (v: number) => void;
   photoFiles: File[];
   photoPreviews: string[];
@@ -581,12 +599,14 @@ type RecordViewProps = {
 function RecordView({
   title,
   equipment,
-  time,
-  onTimeChange,
+  recordedAtLocal,
+  onRecordedAtChange,
   temperature,
   tempColorClass,
-  incPress,
-  decPress,
+  incOnePress,
+  incTenthPress,
+  decOnePress,
+  decTenthPress,
   onSetTemperature,
   photoFiles,
   photoPreviews,
@@ -628,16 +648,16 @@ function RecordView({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Tijd-header */}
+      {/* Datum & tijd van meting */}
       <label className="flex flex-col gap-2">
         <span className="text-sm font-bold uppercase tracking-wide text-gray-500">
-          Tijd van meting
+          Datum &amp; tijd van meting
         </span>
         <input
-          type="time"
-          value={time}
-          onChange={(e) => onTimeChange(e.target.value)}
-          className="h-20 w-full rounded-2xl border-2 border-gray-300 bg-white px-5 text-center text-4xl font-black tabular-nums text-gray-900 shadow-sm outline-none focus:border-gray-900"
+          type="datetime-local"
+          value={recordedAtLocal}
+          onChange={(e) => onRecordedAtChange(e.target.value)}
+          className="h-20 w-full rounded-2xl border-2 border-gray-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-gray-900 shadow-sm outline-none focus:border-gray-900 sm:text-3xl"
         />
       </label>
 
@@ -660,18 +680,33 @@ function RecordView({
         </p>
       ) : null}
 
-      {/* Temperatuur-rij: [-]   <temp>   [+] */}
-      <div className="flex items-stretch justify-between gap-3">
-        <button
-          type="button"
-          {...decPress}
-          aria-label="Eén graad lager (houd ingedrukt voor sneller)"
-          className="flex h-40 w-28 select-none items-center justify-center rounded-3xl bg-gray-200 text-6xl font-black text-gray-800 shadow-md transition-transform active:scale-95 sm:w-32"
-        >
-          −
-        </button>
+      {/*
+        Temperatuur-blok – verticale layout:
+          [ +1  ][+0.1]   <- groot & klein, allebei met long-press
+              <temp>
+          [ -1  ][-0.1]
+      */}
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3">
+        <div className="flex w-full items-stretch gap-3">
+          <button
+            type="button"
+            {...incOnePress}
+            aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
+            className="flex h-24 flex-[2] select-none items-center justify-center rounded-3xl bg-gray-900 text-4xl font-black text-white shadow-md transition-transform active:scale-95"
+          >
+            + 1°
+          </button>
+          <button
+            type="button"
+            {...incTenthPress}
+            aria-label="0,1 graad hoger (houd ingedrukt voor sneller)"
+            className="flex h-24 flex-1 select-none items-center justify-center rounded-3xl bg-gray-200 text-2xl font-black text-gray-800 shadow-md transition-transform active:scale-95"
+          >
+            + 0,1°
+          </button>
+        </div>
 
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex w-full min-h-[6rem] items-center justify-center py-2">
           {isManualEdit ? (
             <input
               ref={manualInputRef}
@@ -696,26 +731,36 @@ function RecordView({
               type="button"
               onClick={startManual}
               aria-label={`Huidige temperatuur ${tempLabel}, tik om handmatig in te voeren`}
-              className={`w-full rounded-2xl px-2 py-2 text-center text-7xl font-black tabular-nums leading-none ${tempColorClass}`}
+              className={`w-full rounded-2xl px-2 py-2 text-center text-8xl font-black tabular-nums leading-none ${tempColorClass}`}
             >
               {tempLabel}
             </button>
           )}
         </div>
 
-        <button
-          type="button"
-          {...incPress}
-          aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
-          className="flex h-40 w-28 select-none items-center justify-center rounded-3xl bg-gray-200 text-6xl font-black text-gray-800 shadow-md transition-transform active:scale-95 sm:w-32"
-        >
-          +
-        </button>
+        <div className="flex w-full items-stretch gap-3">
+          <button
+            type="button"
+            {...decOnePress}
+            aria-label="Eén graad lager (houd ingedrukt voor sneller)"
+            className="flex h-24 flex-[2] select-none items-center justify-center rounded-3xl bg-gray-900 text-4xl font-black text-white shadow-md transition-transform active:scale-95"
+          >
+            − 1°
+          </button>
+          <button
+            type="button"
+            {...decTenthPress}
+            aria-label="0,1 graad lager (houd ingedrukt voor sneller)"
+            className="flex h-24 flex-1 select-none items-center justify-center rounded-3xl bg-gray-200 text-2xl font-black text-gray-800 shadow-md transition-transform active:scale-95"
+          >
+            − 0,1°
+          </button>
+        </div>
       </div>
 
       <p className="text-center text-sm text-gray-500">
-        Houd <span className="font-bold">−</span> of <span className="font-bold">+</span>{" "}
-        ingedrukt om snel aan te passen.
+        Houd een knop ingedrukt om snel aan te passen. Tik op het getal om
+        handmatig in te voeren.
       </p>
 
       {/* Foto-knop */}
