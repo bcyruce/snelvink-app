@@ -13,7 +13,7 @@ import {
 } from "@/lib/taskModules";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 const VALID_TABS: readonly BottomNavTab[] = ["tasks", "history", "settings"];
 
@@ -101,10 +101,22 @@ function HomeContent() {
   );
 }
 
+function HomeLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <p className="text-center text-lg font-semibold text-gray-600">
+        SnelVink laden...
+      </p>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <UserProvider>
-      <HomeContent />
+      <Suspense fallback={<HomeLoading />}>
+        <HomeContent />
+      </Suspense>
     </UserProvider>
   );
 }
