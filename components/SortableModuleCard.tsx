@@ -31,7 +31,7 @@ export default function SortableModuleCard({
 
   const Icon = getModuleIcon(module.icon);
 
-  const style: React.CSSProperties = {
+  const outerStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 20 : undefined,
@@ -43,7 +43,7 @@ export default function SortableModuleCard({
 
   if (!isEditing) {
     return (
-      <div ref={setNodeRef} style={style}>
+      <div ref={setNodeRef} style={outerStyle}>
         <Link
           href={module.href}
           className={`${cardClass} transition-transform active:scale-95`}
@@ -58,37 +58,35 @@ export default function SortableModuleCard({
   const animationClass = isDragging ? "" : wiggleClass;
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`${animationClass} touch-none`}
-    >
-      <div className={cardClass}>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(module.id);
-          }}
-          aria-label={`Verwijder ${module.name}`}
-          className="absolute -left-2 -top-2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-4 ring-white transition-transform active:scale-90"
-        >
-          <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-        </button>
+    <div ref={setNodeRef} style={outerStyle} className="touch-none">
+      <div className={animationClass}>
+        <div className={cardClass}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(module.id);
+            }}
+            aria-label={`Verwijder ${module.name}`}
+            className="absolute -left-2 -top-2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-4 ring-white transition-transform active:scale-90"
+          >
+            <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+          </button>
 
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          aria-label={`Verplaats ${module.name}`}
-          className="absolute -right-2 -top-2 z-10 flex h-12 w-12 cursor-grab items-center justify-center rounded-full bg-gray-900 text-white shadow-lg ring-4 ring-white active:cursor-grabbing"
-          {...listeners}
-          {...attributes}
-        >
-          <GripVertical className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-        </button>
+          <button
+            ref={setActivatorNodeRef}
+            type="button"
+            aria-label={`Verplaats ${module.name}`}
+            className="absolute -right-2 -top-2 z-10 flex h-12 w-12 cursor-grab items-center justify-center rounded-full bg-gray-900 text-white shadow-lg ring-4 ring-white active:cursor-grabbing"
+            {...listeners}
+            {...attributes}
+          >
+            <GripVertical className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+          </button>
 
-        <Icon className="h-11 w-11" strokeWidth={2.25} aria-hidden />
-        <span className="line-clamp-2 leading-tight">{module.name}</span>
+          <Icon className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+          <span className="line-clamp-2 leading-tight">{module.name}</span>
+        </div>
       </div>
     </div>
   );

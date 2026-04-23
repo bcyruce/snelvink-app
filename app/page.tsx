@@ -169,33 +169,29 @@ function HomeContent() {
   return (
     <>
       <VerifyEmailBanner />
-      <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-gray-900">
-              SnelVink
-            </h1>
-            <p className="mt-5 text-lg text-gray-600 sm:text-xl">
-              De keuken is open.
-            </p>
-          </div>
+      <section className="relative px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
+        {activeTab === "tasks" ? (
+          <button
+            type="button"
+            onClick={toggleEditing}
+            aria-pressed={isEditing}
+            className={[
+              "absolute right-6 top-6 z-20 h-12 rounded-2xl px-4 text-base font-black shadow-md transition-transform active:scale-95 sm:right-10 sm:top-10 sm:h-14 sm:px-5 sm:text-lg",
+              isEditing
+                ? "bg-green-600 text-white"
+                : "bg-gray-900 text-white",
+            ].join(" ")}
+          >
+            {isEditing ? "Klaar" : "Wijzigen"}
+          </button>
+        ) : null}
 
-          {activeTab === "tasks" ? (
-            <button
-              type="button"
-              onClick={toggleEditing}
-              aria-pressed={isEditing}
-              className={[
-                "mt-2 h-14 shrink-0 rounded-2xl px-5 text-lg font-black shadow-md transition-transform active:scale-95 sm:h-16 sm:px-6 sm:text-xl",
-                isEditing
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-900 text-white",
-              ].join(" ")}
-            >
-              {isEditing ? "Klaar" : "Wijzigen"}
-            </button>
-          ) : null}
-        </div>
+        <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-gray-900">
+          SnelVink
+        </h1>
+        <p className="mt-5 text-lg text-gray-600 sm:text-xl">
+          De keuken is open.
+        </p>
 
         <div key={activeTab} className="tab-panel-enter">
           {activeTab === "tasks" ? (
