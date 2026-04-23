@@ -22,7 +22,11 @@ type CleaningLogRow = {
   is_completed: boolean;
 };
 
-type HaccpModuleType = "koeling" | "kerntemperatuur" | "ontvangst";
+type HaccpModuleType =
+  | "koeling"
+  | "kerntemperatuur"
+  | "ontvangst"
+  | "schoonmaak";
 
 type HaccpRecordRow = {
   id: string;
@@ -32,6 +36,8 @@ type HaccpRecordRow = {
   status: "goedgekeurd" | "afgekeurd" | null;
   reason: string | null;
   product_name: string | null;
+  location_name: string | null;
+  completed_tasks: string[] | null;
   image_urls: string[] | null;
   haccp_equipments: { name: string | null } | { name: string | null }[] | null;
 };
@@ -49,6 +55,7 @@ function moduleLabel(type: HaccpModuleType): string {
   if (type === "koeling") return "Koeling";
   if (type === "kerntemperatuur") return "Kerntemperatuur";
   if (type === "ontvangst") return "Ontvangst";
+  if (type === "schoonmaak") return "Schoonmaak";
   return type;
 }
 
@@ -77,6 +84,18 @@ function describeHaccpRow(row: HaccpRecordRow): {
         : status;
     return {
       itemName: `Ontvangst · ${productName}`,
+      valueOrStatus,
+    };
+  }
+  if (row.module_type === "schoonmaak") {
+    const location = row.location_name ?? "Onbekende locatie";
+    const tasks = row.completed_tasks ?? [];
+    const valueOrStatus =
+      tasks.length > 0
+        ? `Voltooid: ${tasks.join(", ")}`
+        : "Geen taken aangevinkt";
+    return {
+      itemName: `Schoonmaak · ${location}`,
       valueOrStatus,
     };
   }
@@ -136,7 +155,7 @@ export default function HistoryList() {
     const haccpBase = supabase
       .from("haccp_records")
       .select(
-        "id, recorded_at, module_type, temperature, status, reason, product_name, image_urls, haccp_equipments ( name )",
+        "id, recorded_at, module_type, temperature, status, reason, product_name, location_name, completed_tasks, image_urls, haccp_equipments ( name )",
       )
       .eq("restaurant_id", restaurantId);
 
