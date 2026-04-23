@@ -23,6 +23,9 @@ export type AppRestaurant = {
   name: string;
   plan_type: string;
   invite_code: string;
+  plan: string | null;
+  plan_status: string | null;
+  plan_period_end: string | null;
 };
 
 export type UserContextValue = {
@@ -95,7 +98,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         supabase
           .from("profiles")
           .select(
-            "role, restaurant_id, is_email_verified, restaurants(name, plan_type, invite_code)",
+            "role, restaurant_id, is_email_verified, restaurants(name, plan_type, invite_code, plan, plan_status, plan_period_end)",
           )
           .eq("id", authUser.id)
           .maybeSingle(),
@@ -136,7 +139,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
             await withTimeout(
               supabase
                 .from("restaurants")
-                .select("name, plan_type, invite_code")
+                .select(
+                  "name, plan_type, invite_code, plan, plan_status, plan_period_end",
+                )
                 .eq("id", row.restaurant_id)
                 .maybeSingle(),
               10_000,
@@ -262,7 +267,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       user,
       profile,
       restaurant,
-      isFreePlan: restaurant?.plan_type === "free",
+      isFreePlan:
+        (restaurant?.plan ?? restaurant?.plan_type ?? "free") === "free",
       isLoading,
       refresh,
     }),

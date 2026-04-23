@@ -3,7 +3,8 @@
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTranslation } from "@/hooks/useTranslation";
-import { Download, LogOut, RefreshCw } from "lucide-react";
+import { planLabel, planStatusLabel } from "@/lib/plans";
+import { ChevronRight, Download, LogOut, RefreshCw } from "lucide-react";
 import autoTable from "jspdf-autotable";
 import jsPDF from "jspdf";
 import { useRouter } from "next/navigation";
@@ -281,12 +282,33 @@ export default function SettingsTab() {
         <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
           Abonnement
         </p>
-        <p className="mt-1 text-lg font-bold text-gray-900">
-          {restaurant?.plan_type
-            ? restaurant.plan_type.charAt(0).toUpperCase() +
-              restaurant.plan_type.slice(1)
-            : "—"}
-        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard/subscription")}
+          className="mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border-2 border-gray-200 bg-white px-4 py-4 text-left shadow-sm transition-transform active:scale-[0.99] hover:border-gray-300"
+        >
+          <div className="min-w-0">
+            <p className="truncate text-xl font-black text-gray-900">
+              {planLabel(restaurant?.plan ?? restaurant?.plan_type ?? "free")}
+            </p>
+            {restaurant?.plan_status ? (
+              <p className="mt-0.5 truncate text-xs font-semibold text-gray-500">
+                {planStatusLabel(restaurant.plan_status).label}
+              </p>
+            ) : (
+              <p className="mt-0.5 truncate text-xs text-gray-500">
+                {isOwner
+                  ? "Beheer abonnement"
+                  : "Bekijk het abonnement van dit restaurant"}
+              </p>
+            )}
+          </div>
+          <ChevronRight
+            className="h-6 w-6 shrink-0 text-gray-400"
+            strokeWidth={2.5}
+            aria-hidden
+          />
+        </button>
 
         {isOwner ? (
           <div className="mt-6 border-t border-gray-200 pt-6">
