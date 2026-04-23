@@ -1,159 +1,529 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
+import UpgradePromptModal from "@/components/UpgradePromptModal";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
-import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Camera, Check, Pencil, Plus, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type RejectionReason =
-  | "Verpakking Kapot"
-  | "Temperatuur te hoog"
-  | "Anders...";
+const MAX_PHOTOS = 5;
+const STORAGE_BUCKET = "haccp_photos";
+
+const DEFAULT_REJECT_REASONS: readonly string[] = [
+  "Temperatuur te hoog",
+  "Verpakking beschadigd",
+  "THT/TGT verstreken",
+  "Verkeerd product",
+  "Kwaliteit onvoldoende",
+];
+
+type Product = {
+  id: string;
+  name: string;
+};
+
+type Status = "goedgekeurd" | "afgekeurd";
+
+function pad2(n: number) {
+  return n.toString().padStart(2, "0");
+}
+function formatLocalDateTime(d: Date): string {
+  return (
+    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
+    `T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+  );
+}
+function buildRecordedAt(local: string): string {
+  const parsed = new Date(local);
+  if (Number.isNaN(parsed.getTime())) return new Date().toISOString();
+  return parsed.toISOString();
+}
 
 export default function OntvangstCheck() {
-  const { profile } = useUser();
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { user, profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [showRejectReasons, setShowRejectReasons] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [error, setError] = useState(false);
+  // ---------- form state ----------
+  const [recordedAtLocal, setRecordedAtLocal] = useState<string>(() =>
+    formatLocalDateTime(new Date()),
+  );
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-  const saveLog = async (payload: {
-    status: "approved" | "rejected";
-    reason?: RejectionReason;
-  }) => {
-    if (!restaurantId) {
-      console.error("Geen restaurant gekoppeld aan dit profiel.");
-      setError(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [status, setStatus] = useState<Status | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
+
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // ---------- load products ----------
+  const loadProducts = useCallback(async () => {
+    if (!restaurantId) return;
+    setLoadingProducts(true);
+    setErrorMessage(null);
+
+    const { data, error } = await supabase
+      .from("haccp_products")
+      .select("id, name")
+      .eq("restaurant_id", restaurantId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("haccp_products laden mislukt:", error);
+      setErrorMessage("Producten laden mislukt. Probeer opnieuw.");
+    } else {
+      setProducts((data ?? []) as Product[]);
+    }
+    setLoadingProducts(false);
+  }, [restaurantId]);
+
+  useEffect(() => {
+    void loadProducts();
+  }, [loadProducts]);
+
+  // ---------- product CRUD ----------
+  const handleAddProduct = useCallback(async () => {
+    if (!restaurantId) return;
+    const input = window.prompt("Naam van het nieuwe product");
+    if (!input) return;
+    const name = input.trim();
+    if (!name) return;
+
+    const { data, error } = await supabase
+      .from("haccp_products")
+      .insert({ restaurant_id: restaurantId, name })
+      .select("id, name")
+      .single();
+
+    if (error) {
+      console.error("Product toevoegen mislukt:", error);
+      setErrorMessage("Product toevoegen mislukt.");
       return;
     }
+    if (data) {
+      const next = data as Product;
+      setProducts((prev) => [...prev, next]);
+      setSelectedProduct(next);
+    }
+  }, [restaurantId]);
+
+  // ---------- photo handling ----------
+  useEffect(() => {
+    return () => {
+      photoPreviews.forEach((u) => URL.revokeObjectURL(u));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePickPhotos = () => {
+    if (isFreePlan) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    if (photoFiles.length >= MAX_PHOTOS) return;
+    photoInputRef.current?.click();
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    const room = MAX_PHOTOS - photoFiles.length;
+    const accepted = files.slice(0, room);
+    const newPreviews = accepted.map((f) => URL.createObjectURL(f));
+    setPhotoFiles((prev) => [...prev, ...accepted]);
+    setPhotoPreviews((prev) => [...prev, ...newPreviews]);
+    e.target.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed);
+      return next;
+    });
+  };
+
+  // ---------- reset helpers ----------
+  const resetProduct = () => {
+    setSelectedProduct(null);
+    setStatus(null);
+    setReason(null);
+  };
+  const resetStatus = () => {
+    setStatus(null);
+    setReason(null);
+  };
+  const resetReason = () => {
+    setReason(null);
+  };
+
+  // ---------- step derivation ----------
+  const currentStep: "product" | "beoordeling" | "reden" | "foto" =
+    !selectedProduct
+      ? "product"
+      : !status
+        ? "beoordeling"
+        : status === "afgekeurd" && !reason
+          ? "reden"
+          : "foto";
+
+  const canSave =
+    !!selectedProduct &&
+    !!status &&
+    !(status === "afgekeurd" && !reason) &&
+    !!restaurantId &&
+    !isSaving;
+
+  // ---------- save ----------
+  const handleSave = async () => {
+    if (!canSave || !restaurantId || !selectedProduct || !status) return;
 
     setIsSaving(true);
-    setError(false);
-    setShowSuccess(false);
-
+    setErrorMessage(null);
     try {
+      const uploadedUrls: string[] = [];
+      if (!isFreePlan && photoFiles.length > 0) {
+        for (const file of photoFiles) {
+          const ext = file.name.split(".").pop() ?? "jpg";
+          const path = `ontvangst/${restaurantId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(path, file, { cacheControl: "3600", upsert: false });
+          if (uploadError) {
+            console.error("Foto upload mislukt:", uploadError);
+            setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
+            return;
+          }
+          const { data } = supabase.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(path);
+          if (data.publicUrl) uploadedUrls.push(data.publicUrl);
+        }
+      }
+
       const { error: insertError } = await supabase
-        .from("delivery_logs")
-        .insert([{ ...payload, restaurant_id: restaurantId }]);
+        .from("haccp_records")
+        .insert({
+          restaurant_id: restaurantId,
+          user_id: user?.id ?? null,
+          module_type: "ontvangst",
+          equipment_id: null,
+          product_name: selectedProduct.name,
+          status,
+          reason: status === "afgekeurd" ? reason : null,
+          temperature: null,
+          recorded_at: buildRecordedAt(recordedAtLocal),
+          image_urls: uploadedUrls,
+        });
 
       if (insertError) {
-        console.error("Opslaan naar Supabase mislukt:", insertError);
-        setError(true);
+        console.error("Registratie opslaan mislukt:", insertError);
+        setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
         return;
       }
 
-      setShowSuccess(true);
+      router.push("/");
     } catch (err) {
-      console.error("Opslaan mislukt:", err);
-      setError(true);
+      console.error("Onverwachte fout bij opslaan:", err);
+      setErrorMessage("Onverwachte fout. Probeer opnieuw.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleApprove = async () => {
-    await saveLog({ status: "approved" });
-  };
-
-  const handleRejectFlow = () => {
-    setShowSuccess(false);
-    setError(false);
-    setShowRejectReasons(true);
-  };
-
-  const handleRejectReason = async (reason: RejectionReason) => {
-    await saveLog({ status: "rejected", reason });
-  };
-
-  const primaryButtonClass =
-    "h-32 w-full rounded-2xl text-3xl font-bold text-white shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70";
-
-  const secondaryButtonClass =
-    "h-24 w-full rounded-2xl bg-gray-200 text-2xl font-bold text-gray-900 shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70";
+  // =========================================================================
+  // Render
+  // =========================================================================
+  const photoSlotsLeft = MAX_PHOTOS - photoFiles.length;
 
   return (
-    <div className="mt-10 flex flex-col gap-6">
-      <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-        Levering Controleren
+    <div className="mt-2 flex flex-col gap-6">
+      <UpgradePromptModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      >
+        {t("basicPlanPhotoMessage")}
+      </UpgradePromptModal>
+
+      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">
+        Ontvangst
       </h2>
 
-      {!showRejectReasons ? (
-        <div className="flex w-full flex-col gap-4">
-          <button
-            type="button"
-            onClick={handleApprove}
-            disabled={isSaving || !restaurantId}
-            aria-busy={isSaving}
-            className={`${primaryButtonClass} bg-green-600 hover:bg-green-700`}
-          >
-            Goedgekeurd
-          </button>
+      {/* Datum & tijd van ontvangst */}
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-bold uppercase tracking-wide text-gray-500">
+          Datum &amp; tijd van ontvangst
+        </span>
+        <input
+          type="datetime-local"
+          value={recordedAtLocal}
+          onChange={(e) => setRecordedAtLocal(e.target.value)}
+          className="h-20 w-full rounded-2xl border-2 border-gray-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-gray-900 shadow-sm outline-none focus:border-gray-900 sm:text-3xl"
+        />
+      </label>
 
-          <button
-            type="button"
-            onClick={handleRejectFlow}
-            disabled={isSaving || !restaurantId}
-            className={`${primaryButtonClass} bg-red-600 hover:bg-red-700`}
-          >
-            Afgekeurd
-          </button>
-        </div>
-      ) : (
-        <div className="flex w-full flex-col gap-4">
-          <button
-            type="button"
-            onClick={() => handleRejectReason("Verpakking Kapot")}
-            disabled={isSaving || !restaurantId}
-            aria-busy={isSaving}
-            className={secondaryButtonClass}
-          >
-            Verpakking Kapot
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleRejectReason("Temperatuur te hoog")}
-            disabled={isSaving || !restaurantId}
-            aria-busy={isSaving}
-            className={secondaryButtonClass}
-          >
-            Temperatuur te hoog
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleRejectReason("Anders...")}
-            disabled={isSaving || !restaurantId}
-            aria-busy={isSaving}
-            className={secondaryButtonClass}
-          >
-            Anders...
-          </button>
-        </div>
-      )}
-
-      {isSaving ? (
-        <p className="text-center text-lg font-semibold text-gray-600" role="status">
-          Laden...
+      {errorMessage ? (
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
+          {errorMessage}
         </p>
       ) : null}
 
-      {showSuccess ? (
-        <p
-          className="text-center text-lg font-semibold text-green-600"
-          role="status"
-          aria-live="polite"
+      {!restaurantId ? (
+        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600">
+          Geen restaurant gekoppeld aan je account.
+        </p>
+      ) : null}
+
+      {/* ===== Product sectie ===== */}
+      <Section
+        title="Product"
+        summary={selectedProduct?.name ?? null}
+        onEdit={selectedProduct ? resetProduct : null}
+        collapsed={currentStep !== "product"}
+      >
+        {loadingProducts ? (
+          <p className="text-center text-gray-500">Producten laden…</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {products.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setSelectedProduct(p)}
+                className="flex h-20 w-full items-center justify-between rounded-2xl bg-gray-100 px-5 text-left text-2xl font-black text-gray-900 shadow-sm transition-transform active:scale-[0.98]"
+              >
+                <span className="flex-1 truncate">{p.name}</span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={handleAddProduct}
+              className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform active:scale-95"
+            >
+              <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+              Product toevoegen
+            </button>
+          </div>
+        )}
+      </Section>
+
+      {/* ===== Beoordeling sectie ===== */}
+      {selectedProduct ? (
+        <Section
+          title="Beoordeling"
+          summary={
+            status === "goedgekeurd"
+              ? "✓ Goedgekeurd"
+              : status === "afgekeurd"
+                ? "✕ Afgekeurd"
+                : null
+          }
+          onEdit={status ? resetStatus : null}
+          collapsed={currentStep !== "beoordeling"}
+          summaryAccentClass={
+            status === "goedgekeurd"
+              ? "text-green-700"
+              : status === "afgekeurd"
+                ? "text-red-700"
+                : undefined
+          }
         >
-          Opgeslagen!
-        </p>
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setStatus("goedgekeurd")}
+              className="flex h-28 w-full items-center justify-center gap-3 rounded-3xl bg-green-600 text-3xl font-black text-white shadow-md transition-transform active:scale-95 hover:bg-green-700"
+            >
+              <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
+              Goedgekeurd
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatus("afgekeurd")}
+              className="flex h-28 w-full items-center justify-center gap-3 rounded-3xl bg-red-600 text-3xl font-black text-white shadow-md transition-transform active:scale-95 hover:bg-red-700"
+            >
+              <X className="h-9 w-9" strokeWidth={3} aria-hidden />
+              Afgekeurd
+            </button>
+          </div>
+        </Section>
       ) : null}
 
-      {error ? (
-        <p className="text-center text-lg font-semibold text-red-600" role="alert">
-          Opslaan mislukt. Probeer opnieuw.
-        </p>
+      {/* ===== Reden sectie (alleen bij afkeuring) ===== */}
+      {selectedProduct && status === "afgekeurd" ? (
+        <Section
+          title="Reden afkeuring"
+          summary={reason}
+          summaryAccentClass="text-red-700"
+          onEdit={reason ? resetReason : null}
+          collapsed={currentStep !== "reden"}
+        >
+          <div className="flex flex-col gap-3">
+            {DEFAULT_REJECT_REASONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setReason(r)}
+                className="flex h-20 w-full items-center justify-center rounded-2xl bg-gray-100 px-5 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-[0.98]"
+              >
+                {r}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const custom = window.prompt("Beschrijf de reden van afkeuring");
+                if (!custom) return;
+                const trimmed = custom.trim();
+                if (trimmed) setReason(trimmed);
+              }}
+              className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform active:scale-95"
+            >
+              <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+              Anders…
+            </button>
+          </div>
+        </Section>
+      ) : null}
+
+      {/* ===== Foto + opslaan ===== */}
+      {currentStep === "foto" ? (
+        <div className="flex flex-col gap-4">
+          <h3 className="text-xl font-black uppercase tracking-wide text-gray-500">
+            Foto&apos;s (optioneel)
+          </h3>
+
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+
+          <button
+            type="button"
+            onClick={handlePickPhotos}
+            disabled={isSaving || photoSlotsLeft <= 0}
+            className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            <Camera className="h-7 w-7" aria-hidden />
+            {photoSlotsLeft <= 0
+              ? `Maximaal ${MAX_PHOTOS} foto's`
+              : photoFiles.length > 0
+                ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
+                : "Foto maken of kiezen (max 5)"}
+          </button>
+
+          {photoPreviews.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              {photoPreviews.map((url, i) => (
+                <div key={url} className="relative">
+                  <img
+                    src={url}
+                    alt={`Foto ${i + 1}`}
+                    className="h-28 w-full rounded-xl border border-gray-200 object-cover shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    aria-label={`Foto ${i + 1} verwijderen`}
+                    className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-4 ring-white transition-transform active:scale-90"
+                  >
+                    <X className="h-4 w-4" strokeWidth={3} aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!canSave}
+            aria-busy={isSaving}
+            className="flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-green-600 text-2xl font-black text-white shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSaving ? (
+              "Opslaan…"
+            ) : (
+              <>
+                <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
+                Opslaan
+              </>
+            )}
+          </button>
+        </div>
       ) : null}
     </div>
+  );
+}
+
+// =========================================================================
+// Section – samenvatting + wijzig-knop. Ingeklapte secties tonen alleen
+// de samenvatting zodat de gebruiker altijd ziet wat hij/zij eerder koos.
+// =========================================================================
+type SectionProps = {
+  title: string;
+  summary: string | null;
+  onEdit: (() => void) | null;
+  collapsed: boolean;
+  summaryAccentClass?: string;
+  children: React.ReactNode;
+};
+
+function Section({
+  title,
+  summary,
+  onEdit,
+  collapsed,
+  summaryAccentClass,
+  children,
+}: SectionProps) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+          {title}
+        </h3>
+        {collapsed && summary && onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="flex h-10 items-center gap-1.5 rounded-full bg-gray-100 px-3 text-sm font-bold text-gray-700 transition-transform active:scale-95"
+          >
+            <Pencil className="h-4 w-4" aria-hidden />
+            Wijzigen
+          </button>
+        ) : null}
+      </div>
+
+      {collapsed && summary ? (
+        <p
+          className={`truncate rounded-2xl bg-gray-100 px-5 py-5 text-2xl font-black text-gray-900 shadow-sm ${
+            summaryAccentClass ?? ""
+          }`}
+        >
+          {summary}
+        </p>
+      ) : (
+        children
+      )}
+    </section>
   );
 }

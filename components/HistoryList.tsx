@@ -22,11 +22,16 @@ type CleaningLogRow = {
   is_completed: boolean;
 };
 
+type HaccpModuleType = "koeling" | "kerntemperatuur" | "ontvangst";
+
 type HaccpRecordRow = {
   id: string;
   recorded_at: string;
-  module_type: "koeling" | "kerntemperatuur";
-  temperature: number;
+  module_type: HaccpModuleType;
+  temperature: number | null;
+  status: "goedgekeurd" | "afgekeurd" | null;
+  reason: string | null;
+  product_name: string | null;
   image_urls: string[] | null;
   haccp_equipments: { name: string | null } | { name: string | null }[] | null;
 };
@@ -40,9 +45,10 @@ type ReportRow = {
   photoUrls: string[];
 };
 
-function moduleLabel(type: HaccpRecordRow["module_type"]): string {
+function moduleLabel(type: HaccpModuleType): string {
   if (type === "koeling") return "Koeling";
   if (type === "kerntemperatuur") return "Kerntemperatuur";
+  if (type === "ontvangst") return "Ontvangst";
   return type;
 }
 
@@ -51,6 +57,36 @@ function equipmentName(row: HaccpRecordRow): string {
   if (!e) return "Onbekend apparaat";
   if (Array.isArray(e)) return e[0]?.name ?? "Onbekend apparaat";
   return e.name ?? "Onbekend apparaat";
+}
+
+function describeHaccpRow(row: HaccpRecordRow): {
+  itemName: string;
+  valueOrStatus: string;
+} {
+  if (row.module_type === "ontvangst") {
+    const productName = row.product_name ?? "Onbekend product";
+    const status =
+      row.status === "goedgekeurd"
+        ? "Goedgekeurd"
+        : row.status === "afgekeurd"
+          ? "Afgekeurd"
+          : "Onbekend";
+    const valueOrStatus =
+      row.status === "afgekeurd" && row.reason
+        ? `${status} — ${row.reason}`
+        : status;
+    return {
+      itemName: `Ontvangst · ${productName}`,
+      valueOrStatus,
+    };
+  }
+  return {
+    itemName: `${moduleLabel(row.module_type)} · ${equipmentName(row)}`,
+    valueOrStatus:
+      typeof row.temperature === "number"
+        ? `${Number(row.temperature).toFixed(1)} °C`
+        : "—",
+  };
 }
 
 function formatLogDateTime(iso: string): string {
@@ -100,7 +136,7 @@ export default function HistoryList() {
     const haccpBase = supabase
       .from("haccp_records")
       .select(
-        "id, recorded_at, module_type, temperature, image_urls, haccp_equipments ( name )",
+        "id, recorded_at, module_type, temperature, status, reason, product_name, image_urls, haccp_equipments ( name )",
       )
       .eq("restaurant_id", restaurantId);
 
@@ -141,14 +177,17 @@ export default function HistoryList() {
       })) ?? [];
 
     const haccpRows =
-      (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => ({
-        id: `h-${row.id}`,
-        created_at: row.recorded_at,
-        itemName: `${moduleLabel(row.module_type)} · ${equipmentName(row)}`,
-        valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
-        source: "haccp" as const,
-        photoUrls: row.image_urls ?? [],
-      })) ?? [];
+      (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => {
+        const { itemName, valueOrStatus } = describeHaccpRow(row);
+        return {
+          id: `h-${row.id}`,
+          created_at: row.recorded_at,
+          itemName,
+          valueOrStatus,
+          source: "haccp" as const,
+          photoUrls: row.image_urls ?? [],
+        };
+      }) ?? [];
 
     const merged = [...tempRows, ...cleaningRows, ...haccpRows].sort(
       (a, b) =>
