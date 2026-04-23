@@ -1,5 +1,6 @@
 "use client";
 
+import AddModuleModal from "@/components/AddModuleModal";
 import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
 import HistoryList from "@/components/HistoryList";
 import SettingsTab from "@/components/SettingsTab";
@@ -29,6 +30,7 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
@@ -57,6 +59,7 @@ function HomeContent() {
   const [modules, setModules] = useState<TaskModule[]>(DEFAULT_MODULES);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
     null,
   );
@@ -156,6 +159,11 @@ function HomeContent() {
     setIsEditing((v) => !v);
   }, []);
 
+  const handleCreateModule = useCallback((module: TaskModule) => {
+    setModules((items) => [...items, module]);
+    setIsAddModalOpen(false);
+  }, []);
+
   if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
@@ -221,6 +229,17 @@ function HomeContent() {
             </DndContext>
           ) : null}
 
+          {activeTab === "tasks" && isEditing ? (
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 py-10 text-lg font-black text-gray-600 shadow-sm transition-transform hover:bg-gray-100 active:scale-[0.98] sm:text-xl"
+            >
+              <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
+              Toevoegen
+            </button>
+          ) : null}
+
           {activeTab === "history" ? <HistoryList /> : null}
 
           {activeTab === "settings" ? <SettingsTab /> : null}
@@ -236,6 +255,12 @@ function HomeContent() {
           onDismiss={handleDismissDelete}
         />
       ) : null}
+
+      <AddModuleModal
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreate={handleCreateModule}
+      />
 
       <BottomNav active={activeTab} onChange={setActiveTab} />
     </>

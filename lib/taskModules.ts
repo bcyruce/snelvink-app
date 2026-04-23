@@ -1,8 +1,12 @@
 import {
+  Clock,
   Droplet,
+  Flame,
+  Snowflake,
   Sparkles,
   Thermometer,
   Truck,
+  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,7 +23,22 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   truck: Truck,
   sparkles: Sparkles,
   droplet: Droplet,
+  flame: Flame,
+  snowflake: Snowflake,
+  clock: Clock,
+  utensils: UtensilsCrossed,
 };
+
+export const AVAILABLE_ICONS: readonly string[] = [
+  "thermometer",
+  "truck",
+  "sparkles",
+  "droplet",
+  "flame",
+  "snowflake",
+  "clock",
+  "utensils",
+];
 
 export function getModuleIcon(iconKey: string): LucideIcon {
   return ICON_MAP[iconKey] ?? Thermometer;
