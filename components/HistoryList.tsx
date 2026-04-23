@@ -4,7 +4,7 @@ import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Printer } from "lucide-react";
+import { ImageIcon, Printer } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type TemperatureLogRow = {
@@ -258,14 +258,40 @@ export default function HistoryList() {
                   </td>
                   <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
                     <p>{translateHaccpText(row.valueOrStatus)}</p>
+
+                    {/* Scherm: alleen tekstuele links. Op mobiel opent de
+                        browser de foto in een nieuwe tab met pinch-zoom en
+                        long-press-opslaan. */}
                     {row.photoUrls.length > 0 ? (
-                      <div className="mt-3 flex flex-wrap gap-2 print:mt-2">
+                      <div className="mt-2 flex flex-wrap gap-2 print:hidden">
+                        {row.photoUrls.map((url, i) => (
+                          <a
+                            key={`${row.id}-link-${i}`}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700 underline decoration-blue-400 underline-offset-2 transition-colors hover:bg-blue-100 active:scale-95"
+                          >
+                            <ImageIcon
+                              className="h-4 w-4"
+                              strokeWidth={2.25}
+                              aria-hidden
+                            />
+                            foto {i + 1}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {/* Print: toon de foto's alsnog voor het NVWA-rapport. */}
+                    {row.photoUrls.length > 0 ? (
+                      <div className="mt-2 hidden flex-wrap gap-2 print:flex">
                         {row.photoUrls.map((url, i) => (
                           <img
-                            key={`${row.id}-img-${i}`}
+                            key={`${row.id}-print-${i}`}
                             src={url}
                             alt={`Foto ${i + 1} bij registratie`}
-                            className="h-32 w-32 rounded-xl object-cover print:h-[3cm] print:w-auto print:max-w-[6cm]"
+                            className="h-[3cm] w-auto max-w-[6cm] rounded-none border border-black object-cover"
                           />
                         ))}
                       </div>
