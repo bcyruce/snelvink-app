@@ -10,14 +10,39 @@ jobs:
     steps:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_STRIPE_PRICE_BASIC: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_BASIC }}
+          NEXT_PUBLIC_STRIPE_PRICE_PRO: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_PRO }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,NEXT_PUBLIC_STRIPE_PRICE_BASIC,NEXT_PUBLIC_STRIPE_PRICE_PRO,NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,RESEND_API_KEY
           script: |
             set -e
             cd /root/snelvink-app
             git pull origin main
+
+            cat > .env.local <<EOF
+            NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+            SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+            STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+            STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+            NEXT_PUBLIC_STRIPE_PRICE_BASIC=${NEXT_PUBLIC_STRIPE_PRICE_BASIC}
+            NEXT_PUBLIC_STRIPE_PRICE_PRO=${NEXT_PUBLIC_STRIPE_PRICE_PRO}
+            NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+            RESEND_API_KEY=${RESEND_API_KEY}
+            EOF
+            chmod 600 .env.local
+
             npm ci || npm install
             npm run build
             pm2 startOrReload ecosystem.config.js --update-env
