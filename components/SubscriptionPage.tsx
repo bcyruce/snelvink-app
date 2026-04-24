@@ -8,8 +8,17 @@ import {
   type PlanDefinition,
   type PlanId,
 } from "@/lib/plans";
-import { ArrowLeft, Check, Crown, ShieldCheck, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import {
+  ArrowLeft,
+  Check,
+  Crown,
+  ExternalLink,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 function formatPeriodEnd(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -21,7 +30,24 @@ function formatPeriodEnd(iso: string | null | undefined): string | null {
 
 export default function SubscriptionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { profile, restaurant } = useUser();
+
+  const [busy, setBusy] = useState<"checkout" | "portal" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  // Toon een success/cancel banner na een redirect vanaf Stripe.
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status === "success") {
+      setFlash(
+        "Betaling geslaagd – je abonnement wordt binnen enkele seconden bijgewerkt.",
+      );
+    } else if (status === "cancel") {
+      setFlash("Betaling geannuleerd. Je plan is niet gewijzigd.");
+    }
+  }, [searchParams]);
 
   const currentPlan = (restaurant?.plan ??
     restaurant?.plan_type ??
@@ -34,16 +60,75 @@ export default function SubscriptionPage() {
     profile?.role === "admin" ||
     profile?.role === "eigenaar";
 
+  const hasActiveSubscription =
+    currentPlan !== "free" && restaurant?.plan_status !== null;
+
   const orderedPlans: PlanDefinition[] = [
     PLAN_DEFINITIONS.free,
     PLAN_DEFINITIONS.basic,
     PLAN_DEFINITIONS.pro,
   ];
 
-  // Phase 1 – knop doet nog niets. In Phase 2 hangen we hier de Checkout
-  // Session aan.
-  const handleUpgrade = (plan: PlanId) => {
-    console.info(`[Phase 1] Upgrade-knop gebruikt – plan: ${plan}`);
+  async function getAccessToken(): Promise<string | null> {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
+
+  const handleUpgrade = async (plan: PlanId) => {
+    if (plan === "free") return;
+    setError(null);
+    setBusy("checkout");
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        throw new Error("Niet ingelogd. Meld je opnieuw aan.");
+      }
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "Kon Stripe Checkout niet starten.");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(null);
+    }
+  };
+
+  const handleManage = async () => {
+    setError(null);
+    setBusy("portal");
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        throw new Error("Niet ingelogd. Meld je opnieuw aan.");
+      }
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "Kon Customer Portal niet openen.");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(null);
+    }
   };
 
   return (
@@ -66,6 +151,17 @@ export default function SubscriptionPage() {
         </p>
       </header>
 
+      {flash ? (
+        <div className="mb-6 rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-900">
+          {flash}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-900">
+          {error}
+        </div>
+      ) : null}
+
       {/* Huidig plan */}
       <div className="mb-8 rounded-3xl border-2 border-gray-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-black uppercase tracking-wide text-gray-500">
@@ -87,6 +183,18 @@ export default function SubscriptionPage() {
             Huidige periode loopt tot <strong>{periodEnd}</strong>.
           </p>
         ) : null}
+
+        {isOwner && hasActiveSubscription ? (
+          <button
+            type="button"
+            onClick={handleManage}
+            disabled={busy !== null}
+            className="mt-5 inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm font-black text-gray-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            {busy === "portal" ? "Openen…" : "Abonnement beheren"}
+          </button>
+        ) : null}
       </div>
 
       {!isOwner ? (
@@ -104,6 +212,7 @@ export default function SubscriptionPage() {
             plan={plan}
             isCurrent={plan.id === currentPlan}
             canUpgrade={isOwner && plan.id !== currentPlan && plan.id !== "free"}
+            isBusy={busy === "checkout"}
             onUpgrade={() => handleUpgrade(plan.id)}
           />
         ))}
@@ -124,10 +233,17 @@ type PlanCardProps = {
   plan: PlanDefinition;
   isCurrent: boolean;
   canUpgrade: boolean;
+  isBusy: boolean;
   onUpgrade: () => void;
 };
 
-function PlanCard({ plan, isCurrent, canUpgrade, onUpgrade }: PlanCardProps) {
+function PlanCard({
+  plan,
+  isCurrent,
+  canUpgrade,
+  isBusy,
+  onUpgrade,
+}: PlanCardProps) {
   const accent =
     plan.id === "pro"
       ? "bg-gradient-to-br from-gray-900 to-gray-700 text-white"
@@ -215,14 +331,19 @@ function PlanCard({ plan, isCurrent, canUpgrade, onUpgrade }: PlanCardProps) {
         <button
           type="button"
           onClick={onUpgrade}
-          disabled={!canUpgrade}
+          disabled={!canUpgrade || isBusy}
+          aria-busy={isBusy}
           className={`mt-2 flex h-20 w-full items-center justify-center gap-3 rounded-2xl text-2xl font-black shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
             plan.id === "pro"
               ? "bg-white text-gray-900"
               : "bg-green-600 text-white hover:bg-green-700"
           }`}
         >
-          {isCurrent ? "Actief" : `Upgraden naar ${plan.name}`}
+          {isCurrent
+            ? "Actief"
+            : isBusy
+              ? "Bezig…"
+              : `Upgraden naar ${plan.name}`}
         </button>
       )}
     </article>
