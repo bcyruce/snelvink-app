@@ -5,7 +5,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { ImageIcon, Printer } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 
 type TemperatureLogRow = {
   id: string;
@@ -45,10 +45,32 @@ type HaccpRecordRow = {
 type ReportRow = {
   id: string;
   created_at: string;
-  itemName: string;
+  apparaat: string;
+  taskName: string;
   valueOrStatus: string;
-  source: "temperature" | "cleaning" | "haccp";
+  remarks: string;
+  source: "temperature" | "cleaning" | "haccp" | "custom";
   photoUrls: string[];
+};
+
+type CustomModuleLogValue = {
+  field_id: string;
+  name: string;
+  value: number;
+  unit: string;
+  remark: string | null;
+};
+
+type CustomModuleLogData = {
+  module_name?: string;
+  values?: CustomModuleLogValue[];
+};
+
+type CustomModuleLogRow = {
+  id: string;
+  created_at: string;
+  custom_module_id: string | null;
+  log_data: unknown;
 };
 
 function moduleLabel(type: HaccpModuleType): string {
@@ -67,8 +89,10 @@ function equipmentName(row: HaccpRecordRow): string {
 }
 
 function describeHaccpRow(row: HaccpRecordRow): {
-  itemName: string;
+  apparaat: string;
+  taskName: string;
   valueOrStatus: string;
+  remarks: string;
 } {
   if (row.module_type === "ontvangst") {
     const productName = row.product_name ?? "Onbekend product";
@@ -78,46 +102,90 @@ function describeHaccpRow(row: HaccpRecordRow): {
         : row.status === "afgekeurd"
           ? "Afgekeurd"
           : "Onbekend";
-    const valueOrStatus =
-      row.status === "afgekeurd" && row.reason
-        ? `${status} — ${row.reason}`
-        : status;
     return {
-      itemName: `Ontvangst · ${productName}`,
-      valueOrStatus,
+      apparaat: productName,
+      taskName: "Ontvangst",
+      valueOrStatus: status,
+      remarks: row.reason ?? "",
     };
   }
   if (row.module_type === "schoonmaak") {
     const location = row.location_name ?? "Onbekende locatie";
     const tasks = row.completed_tasks ?? [];
-    const valueOrStatus =
-      tasks.length > 0
-        ? `Voltooid: ${tasks.join(", ")}`
-        : "Geen taken aangevinkt";
     return {
-      itemName: `Schoonmaak · ${location}`,
-      valueOrStatus,
+      apparaat: location,
+      taskName: "Schoonmaak",
+      valueOrStatus: tasks.length > 0 ? "Voltooid" : "Geen taken aangevinkt",
+      remarks: tasks.length > 0 ? tasks.join(", ") : "",
     };
   }
   return {
-    itemName: `${moduleLabel(row.module_type)} · ${equipmentName(row)}`,
+    apparaat: equipmentName(row),
+    taskName:
+      row.module_type === "koeling"
+        ? "Temperatuur check"
+        : moduleLabel(row.module_type),
     valueOrStatus:
       typeof row.temperature === "number"
         ? `${Number(row.temperature).toFixed(1)} °C`
         : "—",
+    remarks: "",
   };
 }
 
-function formatLogDateTime(iso: string): string {
+function formatLogTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat("nl-NL", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(d);
+}
+
+function groupDateLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Onbekende datum";
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  if (sameDay(d, today)) return "Vandaag";
+  if (sameDay(d, yesterday)) return "Gisteren";
+
+  return new Intl.DateTimeFormat("nl-NL", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(d);
+}
+
+function groupRowsByDate(
+  rows: ReportRow[],
+): { label: string; rows: ReportRow[] }[] {
+  const groups = new Map<string, ReportRow[]>();
+
+  rows.forEach((row) => {
+    const label = groupDateLabel(row.created_at);
+    groups.set(label, [...(groups.get(label) ?? []), row]);
+  });
+
+  return Array.from(groups.entries()).map(([label, groupedRows]) => ({
+    label,
+    rows: groupedRows,
+  }));
+}
+
+function isCustomLogData(value: unknown): value is CustomModuleLogData {
+  if (!value || typeof value !== "object") return false;
+  const maybe = value as CustomModuleLogData;
+  return Array.isArray(maybe.values);
 }
 
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
@@ -159,10 +227,16 @@ export default function HistoryList() {
       )
       .eq("restaurant_id", restaurantId);
 
-    const [tempRes, cleanRes, haccpRes] = await Promise.all([
+    const customBase = supabase
+      .from("custom_module_logs")
+      .select("id, created_at, custom_module_id, log_data")
+      .eq("restaurant_id", restaurantId);
+
+    const [tempRes, cleanRes, haccpRes, customRes] = await Promise.all([
       isFreePlan ? tempBase.gte("created_at", sinceIso) : tempBase,
       isFreePlan ? cleanBase.gte("created_at", sinceIso) : cleanBase,
       isFreePlan ? haccpBase.gte("recorded_at", sinceIso) : haccpBase,
+      isFreePlan ? customBase.gte("created_at", sinceIso) : customBase,
     ]);
 
     if (tempRes.error) {
@@ -174,13 +248,18 @@ export default function HistoryList() {
     if (haccpRes.error) {
       console.error("haccp_records ophalen mislukt:", haccpRes.error);
     }
+    if (customRes.error) {
+      console.error("custom_module_logs ophalen mislukt:", customRes.error);
+    }
 
     const tempRows =
       (tempRes.data as TemperatureLogRow[] | null)?.map((row) => ({
         id: `t-${row.id}`,
         created_at: row.created_at,
-        itemName: row.equipment_name ?? "Onbekend apparaat",
+        apparaat: row.equipment_name ?? "Onbekend apparaat",
+        taskName: "Temperatuur check",
         valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
+        remarks: "",
         source: "temperature" as const,
         photoUrls: row.photo_url ? [row.photo_url] : [],
       })) ?? [];
@@ -189,26 +268,56 @@ export default function HistoryList() {
       (cleanRes.data as CleaningLogRow[] | null)?.map((row) => ({
         id: `c-${row.id}`,
         created_at: row.created_at,
-        itemName: row.task_name ?? "Onbekende taak",
+        apparaat: row.task_name ?? "Onbekende taak",
+        taskName: "Schoonmaak",
         valueOrStatus: row.is_completed ? "Voltooid" : "Niet voltooid",
+        remarks: "",
         source: "cleaning" as const,
         photoUrls: [],
       })) ?? [];
 
     const haccpRows =
       (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => {
-        const { itemName, valueOrStatus } = describeHaccpRow(row);
+        const { apparaat, taskName, valueOrStatus, remarks } =
+          describeHaccpRow(row);
         return {
           id: `h-${row.id}`,
           created_at: row.recorded_at,
-          itemName,
+          apparaat,
+          taskName,
           valueOrStatus,
+          remarks,
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
         };
       }) ?? [];
 
-    const merged = [...tempRows, ...cleaningRows, ...haccpRows].sort(
+    const customRows =
+      (customRes.data as CustomModuleLogRow[] | null)?.flatMap((row) => {
+        const logData = row.log_data;
+        if (!isCustomLogData(logData)) return [];
+
+        const moduleName =
+          logData.module_name ?? "Aangepast onderdeel";
+
+        return (logData.values ?? []).map((value, index) => ({
+          id: `custom-${row.id}-${value.field_id}-${index}`,
+          created_at: row.created_at,
+          apparaat: value.name ?? "Getalveld",
+          taskName: moduleName,
+          valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
+          remarks: value.remark ?? "",
+          source: "custom" as const,
+          photoUrls: [],
+        }));
+      }) ?? [];
+
+    const merged = [
+      ...tempRows,
+      ...cleaningRows,
+      ...haccpRows,
+      ...customRows,
+    ].sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
@@ -229,8 +338,10 @@ export default function HistoryList() {
     window.print();
   };
 
+  const groupedRows = groupRowsByDate(rows);
+
   return (
-    <div className="mt-12 border-t border-gray-200 pt-10 print:mt-0 print:border-none print:pt-0">
+    <div className="mt-12 border-t border-slate-200 pt-10 print:mt-0 print:border-none print:pt-0">
       <UpgradePromptModal
         open={showPrintUpgradeModal}
         onClose={() => setShowPrintUpgradeModal(false)}
@@ -244,7 +355,7 @@ export default function HistoryList() {
       </h1>
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl print:text-black">
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl print:text-black">
           {isFreePlan
             ? "NVWA Rapport (Laatste 30 dagen)"
             : "NVWA Rapport (volledige historie)"}
@@ -254,7 +365,7 @@ export default function HistoryList() {
       <button
         type="button"
         onClick={handlePrintClick}
-        className="mb-6 flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 text-2xl font-black text-white shadow-md transition-transform hover:bg-blue-700 active:scale-[0.99] print:hidden"
+        className="mb-6 flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 text-2xl font-black text-white shadow-sm transition-transform hover:bg-blue-700 active:scale-[0.99] print:hidden"
       >
         <Printer className="h-8 w-8 shrink-0" strokeWidth={2.25} aria-hidden />
         Genereer NVWA Rapport
@@ -265,24 +376,24 @@ export default function HistoryList() {
           type="button"
           onClick={() => void fetchLogs()}
           disabled={loading}
-          className="shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-none transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[48px] shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Vernieuwen
         </button>
       </div>
 
       {loading && rows.length === 0 ? (
-        <p className="text-center text-sm text-gray-500">Laden…</p>
+        <p className="text-center text-sm text-slate-500">Laden…</p>
       ) : null}
 
       {!loading && !restaurantId ? (
-        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600 print:border print:border-black print:bg-white print:text-black">
+        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm print:border print:border-black print:bg-white print:text-black">
           Geen restaurant gekoppeld aan je account.
         </p>
       ) : null}
 
       {!loading && restaurantId && rows.length === 0 ? (
-        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600 print:border print:border-black print:bg-white print:text-black">
+        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm print:border print:border-black print:bg-white print:text-black">
           {isFreePlan
             ? "Geen registraties in de afgelopen 30 dagen."
             : "Geen registraties gevonden."}
@@ -290,72 +401,96 @@ export default function HistoryList() {
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white print:rounded-none print:border-black print:bg-white">
-          <table className="w-full border-collapse text-left print:bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm print:rounded-none print:border-black print:bg-white print:shadow-none">
+          <table className="min-w-[760px] w-full border-collapse text-left print:min-w-0 print:bg-white">
             <thead>
-              <tr className="bg-gray-50 print:bg-white">
-                <th className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900 print:border-black print:text-black">
-                  Datum
+              <tr className="bg-slate-50 print:bg-white">
+                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                  Tijd
                 </th>
-                <th className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900 print:border-black print:text-black">
-                  Apparaat / Taak
+                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                  Apparaat
                 </th>
-                <th className="border-b border-gray-200 px-4 py-3 text-sm font-bold text-gray-900 print:border-black print:text-black">
-                  Waarde / Status
+                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                  Taak
+                </th>
+                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                  Waarde/Status
+                </th>
+                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                  Opmerkingen
                 </th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="align-top">
-                  <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
-                    {formatLogDateTime(row.created_at)}
-                  </td>
-                  <td className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 print:border-black print:text-black">
-                    {translateHaccpText(row.itemName)}
-                  </td>
-                  <td className="border-b border-gray-200 px-4 py-3 text-sm text-gray-800 print:border-black print:text-black">
-                    <p>{translateHaccpText(row.valueOrStatus)}</p>
+              {groupedRows.map((group) => (
+                <Fragment key={group.label}>
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-base font-black text-slate-900 print:border-black print:bg-white print:text-black"
+                    >
+                      {group.label}
+                    </td>
+                  </tr>
+                  {group.rows.map((row) => (
+                    <tr key={row.id} className="align-top">
+                      <td className="whitespace-nowrap border-b border-slate-100 px-4 py-5 text-base font-black tabular-nums text-slate-900 print:border-black print:text-black">
+                        {formatLogTime(row.created_at)}
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-5 text-base font-bold text-slate-900 print:border-black print:text-black">
+                        {translateHaccpText(row.apparaat)}
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-5 text-base font-semibold text-slate-600 print:border-black print:text-black">
+                        {translateHaccpText(row.taskName)}
+                      </td>
+                      <td className="whitespace-nowrap border-b border-slate-100 px-4 py-5 text-base font-black text-slate-900 print:border-black print:text-black">
+                        {translateHaccpText(row.valueOrStatus)}
+                      </td>
+                      <td className="border-b border-slate-100 px-4 py-5 text-base text-slate-700 print:border-black print:text-black">
+                        <p className="font-medium">
+                          {row.remarks
+                            ? translateHaccpText(row.remarks)
+                            : "—"}
+                        </p>
 
-                    {/* Scherm: alleen tekstuele links. Op mobiel opent de
-                        browser de foto in een nieuwe tab met pinch-zoom en
-                        long-press-opslaan. */}
-                    {row.photoUrls.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-2 print:hidden">
-                        {row.photoUrls.map((url, i) => (
-                          <a
-                            key={`${row.id}-link-${i}`}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700 underline decoration-blue-400 underline-offset-2 transition-colors hover:bg-blue-100 active:scale-95"
-                          >
-                            <ImageIcon
-                              className="h-4 w-4"
-                              strokeWidth={2.25}
-                              aria-hidden
-                            />
-                            foto {i + 1}
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
+                        {row.photoUrls.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-2 print:hidden">
+                            {row.photoUrls.map((url, i) => (
+                              <a
+                                key={`${row.id}-link-${i}`}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700 underline decoration-blue-400 underline-offset-2 transition-colors hover:bg-blue-100 active:scale-95"
+                              >
+                                <ImageIcon
+                                  className="h-4 w-4"
+                                  strokeWidth={2.25}
+                                  aria-hidden
+                                />
+                                foto {i + 1}
+                              </a>
+                            ))}
+                          </div>
+                        ) : null}
 
-                    {/* Print: toon de foto's alsnog voor het NVWA-rapport. */}
-                    {row.photoUrls.length > 0 ? (
-                      <div className="mt-2 hidden flex-wrap gap-2 print:flex">
-                        {row.photoUrls.map((url, i) => (
-                          <img
-                            key={`${row.id}-print-${i}`}
-                            src={url}
-                            alt={`Foto ${i + 1} bij registratie`}
-                            className="h-[3cm] w-auto max-w-[6cm] rounded-none border border-black object-cover"
-                          />
-                        ))}
-                      </div>
-                    ) : null}
-                  </td>
-                </tr>
+                        {row.photoUrls.length > 0 ? (
+                          <div className="mt-2 hidden flex-wrap gap-2 print:flex">
+                            {row.photoUrls.map((url, i) => (
+                              <img
+                                key={`${row.id}-print-${i}`}
+                                src={url}
+                                alt={`Foto ${i + 1} bij registratie`}
+                                className="h-[3cm] w-auto max-w-[6cm] rounded-none border border-black object-cover"
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -363,7 +498,7 @@ export default function HistoryList() {
       ) : null}
 
       {isFreePlan && restaurantId ? (
-        <p className="mt-4 text-center text-xs text-gray-500 print:hidden">
+        <p className="mt-4 text-center text-xs text-slate-500 print:hidden">
           Gratis versie toont maximaal 30 dagen historie.
         </p>
       ) : null}
