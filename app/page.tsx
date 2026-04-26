@@ -286,6 +286,7 @@ function HomeContent() {
         open={isAddModalOpen}
         onClose={handleCloseModuleModal}
         onCreate={handleCreateModule}
+        onCustomModuleAdded={handleCreateModule}
         onUpdate={handleUpdateModule}
         existingModuleIds={modules.map((module) => module.id)}
         editingModule={editingModule}

@@ -6,6 +6,8 @@ import {
   getModuleIcon,
   type TaskModule,
 } from "@/lib/taskModules";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/useUser";
 import { Trash2, X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
@@ -25,6 +27,7 @@ type AddModuleModalProps = {
   open: boolean;
   onClose: () => void;
   onCreate: (module: TaskModule) => void;
+  onCustomModuleAdded: (module: TaskModule) => void;
   onUpdate?: (module: TaskModule) => void;
   existingModuleIds: string[];
   editingModule?: TaskModule | null;
@@ -50,15 +53,19 @@ export default function AddModuleModal({
   open,
   onClose,
   onCreate,
+  onCustomModuleAdded,
   onUpdate,
   existingModuleIds,
   editingModule = null,
 }: AddModuleModalProps) {
+  const { profile } = useUser();
   const [activeTab, setActiveTab] = useState<AddModuleTab>("standard");
   const [name, setName] = useState("");
   const [iconKey, setIconKey] = useState<string>(AVAILABLE_ICONS[0]);
   const [moduleType, setModuleType] = useState<ModuleType>("number");
   const [numberInputs, setNumberInputs] = useState<NumberInputConfig[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditing = editingModule !== null;
 
@@ -69,6 +76,8 @@ export default function AddModuleModal({
       setIconKey(editingModule?.icon ?? AVAILABLE_ICONS[0]);
       setModuleType("number");
       setNumberInputs([createNumberInput(1)]);
+      setErrorMessage(null);
+      setIsSaving(false);
       if (isEditing) {
         requestAnimationFrame(() => inputRef.current?.focus());
       }
@@ -84,11 +93,22 @@ export default function AddModuleModal({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+  const resetCustomForm = useCallback(() => {
+    setName("");
+    setIconKey(AVAILABLE_ICONS[0]);
+    setModuleType("number");
+    setNumberInputs([createNumberInput(1)]);
+    setErrorMessage(null);
+  }, []);
+
+  const handleSaveCustomModule = useCallback(
+    async (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = name.trim();
-      if (!trimmed) return;
+      if (!trimmed) {
+        setErrorMessage("Vul een naam voor het onderdeel in.");
+        return;
+      }
 
       if (editingModule) {
         onUpdate?.({
@@ -100,17 +120,64 @@ export default function AddModuleModal({
         return;
       }
 
-      const id = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const newModule: TaskModule = {
-        id,
-        name: trimmed,
-        icon: iconKey,
-        isCustom: true,
-        href: `/taken/custom/${id}`,
-      };
-      onCreate(newModule);
+      const restaurantId = profile?.restaurant_id ?? null;
+      if (!restaurantId) {
+        setErrorMessage("Geen restaurant gekoppeld aan je account.");
+        return;
+      }
+
+      setIsSaving(true);
+      setErrorMessage(null);
+
+      try {
+        const { data, error } = await supabase
+          .from("custom_modules")
+          .insert({
+            restaurant_id: restaurantId,
+            name: trimmed,
+            icon: iconKey,
+            module_type: "temperature",
+            settings: numberInputs,
+            is_active: true,
+          })
+          .select("id, name, icon")
+          .single();
+
+        if (error) {
+          console.error("Custom module opslaan mislukt:", error);
+          setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
+          return;
+        }
+
+        const savedModule: TaskModule = {
+          id: String(data.id),
+          name: data.name ?? trimmed,
+          icon: data.icon ?? iconKey,
+          isCustom: true,
+          href: `/taken/custom/${data.id}`,
+        };
+
+        resetCustomForm();
+        onCustomModuleAdded(savedModule);
+        onClose();
+      } catch (error) {
+        console.error("Onverwachte fout bij opslaan custom module:", error);
+        setErrorMessage("Onverwachte fout. Probeer opnieuw.");
+      } finally {
+        setIsSaving(false);
+      }
     },
-    [editingModule, name, iconKey, onCreate, onUpdate],
+    [
+      editingModule,
+      name,
+      iconKey,
+      numberInputs,
+      profile?.restaurant_id,
+      onCustomModuleAdded,
+      onClose,
+      onUpdate,
+      resetCustomForm,
+    ],
   );
 
   const handleAddNumberInput = useCallback(() => {
@@ -231,7 +298,13 @@ export default function AddModuleModal({
             })}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form onSubmit={handleSaveCustomModule} className="flex flex-col gap-6">
+            {errorMessage ? (
+              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-base font-bold text-red-700">
+                {errorMessage}
+              </p>
+            ) : null}
+
             <section className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
                 <label
@@ -330,10 +403,14 @@ export default function AddModuleModal({
             <div className="flex flex-col gap-3 pt-2">
               <button
                 type="submit"
-                disabled={!isValid}
+                disabled={!isValid || isSaving}
                 className="min-h-[64px] w-full rounded-2xl bg-green-600 px-6 py-5 text-xl font-black text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isEditing ? "Wijzigingen opslaan" : "Opslaan"}
+                {isSaving
+                  ? "Bezig met opslaan..."
+                  : isEditing
+                    ? "Wijzigingen opslaan"
+                    : "Opslaan"}
               </button>
               <button
                 type="button"
