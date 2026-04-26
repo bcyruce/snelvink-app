@@ -41,6 +41,11 @@ function createNumberInput(index: number): NumberInputConfig {
   };
 }
 
+function formatStep(step: number): string {
+  if (!Number.isFinite(step)) return "0";
+  return Number.isInteger(step) ? String(step) : String(step).replace(".", ",");
+}
+
 export default function AddModuleModal({
   open,
   onClose,
@@ -369,131 +374,135 @@ function NumberInputsBuilder({
       </button>
 
       <div className="flex flex-col gap-4">
-        {numberInputs.map((input) => (
-          <div
-            key={input.id}
-            className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5"
-          >
-            <div className="flex items-start gap-3">
-              <label className="flex flex-1 flex-col gap-2">
-                <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                  Naam veld
-                </span>
-                <input
-                  type="text"
-                  value={input.name}
-                  onChange={(e) =>
-                    onUpdate(input.id, { name: e.target.value })
-                  }
-                  className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-                />
-              </label>
+        {numberInputs.map((input) => {
+          const stepLabel = formatStep(input.step);
+
+          return (
+            <div
+              key={input.id}
+              className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5"
+            >
+              <div className="flex items-start gap-3">
+                <label className="flex flex-1 flex-col gap-2">
+                  <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                    Naam veld
+                  </span>
+                  <input
+                    type="text"
+                    value={input.name}
+                    onChange={(e) =>
+                      onUpdate(input.id, { name: e.target.value })
+                    }
+                    className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => onRemove(input.id)}
+                  aria-label={`${input.name} verwijderen`}
+                  className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+                >
+                  <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+                </button>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
+                  Voorbeeld
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
+                    - {stepLabel}
+                  </div>
+                  <div className="min-w-0 flex-[1.4] text-center">
+                    <p className="truncate text-5xl font-black tabular-nums text-slate-900">
+                      {input.defaultValue}
+                      {input.unit}
+                    </p>
+                  </div>
+                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
+                    + {stepLabel}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <label className="flex min-w-0 flex-col gap-2">
+                  <span className="text-xs font-bold text-slate-500">
+                    Stapgrootte
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={input.step}
+                    onChange={(e) =>
+                      onUpdate(input.id, {
+                        step: Number.parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                  />
+                </label>
+
+                <label className="flex min-w-0 flex-col gap-2">
+                  <span className="text-xs font-bold text-slate-500">
+                    Standaardwaarde
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={input.defaultValue}
+                    onChange={(e) =>
+                      onUpdate(input.id, {
+                        defaultValue: Number.parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                  />
+                </label>
+
+                <label className="flex min-w-0 flex-col gap-2">
+                  <span className="text-xs font-bold text-slate-500">
+                    Eenheid
+                  </span>
+                  <input
+                    type="text"
+                    value={input.unit}
+                    onChange={(e) =>
+                      onUpdate(input.id, { unit: e.target.value })
+                    }
+                    className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                  />
+                </label>
+              </div>
 
               <button
                 type="button"
-                onClick={() => onRemove(input.id)}
-                aria-label={`${input.name} verwijderen`}
-                className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+                onClick={() =>
+                  onUpdate(input.id, { hasRemark: !input.hasRemark })
+                }
+                className={[
+                  "mt-5 text-left text-lg font-black transition-opacity active:opacity-60",
+                  input.hasRemark ? "text-red-600" : "text-blue-600",
+                ].join(" ")}
               >
-                <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+                {input.hasRemark
+                  ? "- Opmerking verwijderen"
+                  : "+ Opmerking toevoegen"}
               </button>
-            </div>
 
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
-                Voorbeeld
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-2xl bg-slate-900 text-3xl font-black text-white">
-                  -
-                </div>
-                <div className="min-w-0 flex-[1.4] text-center">
-                  <p className="truncate text-5xl font-black tabular-nums text-slate-900">
-                    {input.defaultValue}
-                    {input.unit}
-                  </p>
-                </div>
-                <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-2xl bg-slate-900 text-3xl font-black text-white">
-                  +
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <label className="flex min-w-0 flex-col gap-2">
-                <span className="text-xs font-bold text-slate-500">
-                  Stapgrootte
-                </span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={input.step}
-                  onChange={(e) =>
-                    onUpdate(input.id, {
-                      step: Number.parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+              {input.hasRemark ? (
+                <textarea
+                  disabled
+                  rows={3}
+                  placeholder="Opmerking"
+                  className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-400 shadow-sm"
                 />
-              </label>
-
-              <label className="flex min-w-0 flex-col gap-2">
-                <span className="text-xs font-bold text-slate-500">
-                  Standaardwaarde
-                </span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={input.defaultValue}
-                  onChange={(e) =>
-                    onUpdate(input.id, {
-                      defaultValue: Number.parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
-                />
-              </label>
-
-              <label className="flex min-w-0 flex-col gap-2">
-                <span className="text-xs font-bold text-slate-500">
-                  Eenheid
-                </span>
-                <input
-                  type="text"
-                  value={input.unit}
-                  onChange={(e) =>
-                    onUpdate(input.id, { unit: e.target.value })
-                  }
-                  className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
-                />
-              </label>
+              ) : null}
             </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                onUpdate(input.id, { hasRemark: !input.hasRemark })
-              }
-              className={[
-                "mt-5 text-left text-lg font-black transition-opacity active:opacity-60",
-                input.hasRemark ? "text-red-600" : "text-blue-600",
-              ].join(" ")}
-            >
-              {input.hasRemark
-                ? "- Opmerking verwijderen"
-                : "+ Opmerking toevoegen"}
-            </button>
-
-            {input.hasRemark ? (
-              <textarea
-                disabled
-                rows={3}
-                placeholder="Opmerking"
-                className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-400 shadow-sm"
-              />
-            ) : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
