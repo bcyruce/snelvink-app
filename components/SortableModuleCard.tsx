@@ -65,7 +65,7 @@ export default function SortableModuleCard({
     </>
   );
 
-  const animationClass = isDragging ? "" : wiggleClass;
+  const animationClass = isEditing && !isDragging ? wiggleClass : "";
 
   return (
     <div
