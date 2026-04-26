@@ -61,6 +61,7 @@ create table if not exists public.custom_module_logs (
   id                uuid primary key default gen_random_uuid(),
   restaurant_id     uuid not null references public.restaurants(id) on delete cascade,
   user_id           uuid references auth.users(id) on delete set null,
+  module_id         uuid references public.custom_modules(id) on delete set null,
   custom_module_id  uuid references public.custom_modules(id) on delete set null,
   log_data          jsonb not null default '{}'::jsonb,
   created_at        timestamptz not null default now()
@@ -68,6 +69,7 @@ create table if not exists public.custom_module_logs (
 
 alter table public.custom_module_logs add column if not exists restaurant_id uuid references public.restaurants(id) on delete cascade;
 alter table public.custom_module_logs add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.custom_module_logs add column if not exists module_id uuid references public.custom_modules(id) on delete set null;
 alter table public.custom_module_logs add column if not exists custom_module_id uuid references public.custom_modules(id) on delete set null;
 alter table public.custom_module_logs add column if not exists log_data jsonb not null default '{}'::jsonb;
 alter table public.custom_module_logs add column if not exists created_at timestamptz not null default now();

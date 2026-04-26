@@ -69,6 +69,7 @@ type CustomModuleLogData = {
 type CustomModuleLogRow = {
   id: string;
   created_at: string;
+  module_id: string | null;
   custom_module_id: string | null;
   log_data: unknown;
 };
@@ -229,7 +230,7 @@ export default function HistoryList() {
 
     const customBase = supabase
       .from("custom_module_logs")
-      .select("id, created_at, custom_module_id, log_data")
+      .select("id, created_at, module_id, custom_module_id, log_data")
       .eq("restaurant_id", restaurantId);
 
     const [tempRes, cleanRes, haccpRes, customRes] = await Promise.all([

@@ -146,7 +146,7 @@ export default function AddModuleModal({
 
         if (error) {
           console.error("Custom module opslaan mislukt:", error);
-          setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
+          setErrorMessage(`Opslaan mislukt: ${error.message}`);
           return;
         }
 
@@ -163,7 +163,11 @@ export default function AddModuleModal({
         onClose();
       } catch (error) {
         console.error("Onverwachte fout bij opslaan custom module:", error);
-        setErrorMessage("Onverwachte fout. Probeer opnieuw.");
+        setErrorMessage(
+          error instanceof Error
+            ? `Onverwachte fout: ${error.message}`
+            : "Onverwachte fout. Probeer opnieuw.",
+        );
       } finally {
         setIsSaving(false);
       }

@@ -171,13 +171,14 @@ function CustomModuleContent() {
     const { error } = await supabase.from("custom_module_logs").insert({
       restaurant_id: profile.restaurant_id,
       user_id: user.id,
+      module_id: module.id,
       custom_module_id: module.id,
       log_data: logData,
     });
 
     if (error) {
       console.error("Custom module log opslaan mislukt:", error);
-      setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
+      setErrorMessage(`Opslaan mislukt: ${error.message}`);
       setIsSaving(false);
       return;
     }
