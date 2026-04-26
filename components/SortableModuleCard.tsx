@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { createElement } from "react";
 
 type SortableModuleCardProps = {
   module: TaskModule;
@@ -29,8 +30,6 @@ export default function SortableModuleCard({
     isDragging,
   } = useSortable({ id: module.id, disabled: !isEditing });
 
-  const Icon = getModuleIcon(module.icon);
-
   const outerStyle: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -39,7 +38,7 @@ export default function SortableModuleCard({
   };
 
   const cardClass =
-    "relative flex h-40 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-gray-100 px-4 text-center text-xl font-black text-gray-900 shadow-sm";
+    "relative flex min-h-[176px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-slate-100 bg-white px-5 text-center text-xl font-black text-slate-900 shadow-sm";
 
   if (!isEditing) {
     return (
@@ -48,7 +47,11 @@ export default function SortableModuleCard({
           href={module.href}
           className={`${cardClass} transition-transform active:scale-95`}
         >
-          <Icon className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+          {createElement(getModuleIcon(module.icon), {
+            className: "h-11 w-11",
+            strokeWidth: 2.25,
+            "aria-hidden": true,
+          })}
           <span className="line-clamp-2 leading-tight">{module.name}</span>
         </Link>
       </div>
@@ -68,7 +71,7 @@ export default function SortableModuleCard({
               onDelete(module.id);
             }}
             aria-label={`Verwijder ${module.name}`}
-            className="absolute -left-2 -top-2 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-lg ring-4 ring-white transition-transform active:scale-90"
+            className="absolute -left-3 -top-3 z-10 flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-[#F7F9FC] transition-transform active:scale-95"
           >
             <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
           </button>
@@ -77,14 +80,18 @@ export default function SortableModuleCard({
             ref={setActivatorNodeRef}
             type="button"
             aria-label={`Verplaats ${module.name}`}
-            className="absolute -right-2 -top-2 z-10 flex h-12 w-12 cursor-grab items-center justify-center rounded-full bg-gray-900 text-white shadow-lg ring-4 ring-white active:cursor-grabbing"
+            className="absolute -right-3 -top-3 z-10 flex h-16 w-16 cursor-grab items-center justify-center rounded-full bg-slate-900 text-white shadow-sm ring-4 ring-[#F7F9FC] active:cursor-grabbing"
             {...listeners}
             {...attributes}
           >
             <GripVertical className="h-6 w-6" strokeWidth={2.5} aria-hidden />
           </button>
 
-          <Icon className="h-11 w-11" strokeWidth={2.25} aria-hidden />
+          {createElement(getModuleIcon(module.icon), {
+            className: "h-11 w-11",
+            strokeWidth: 2.25,
+            "aria-hidden": true,
+          })}
           <span className="line-clamp-2 leading-tight">{module.name}</span>
         </div>
       </div>

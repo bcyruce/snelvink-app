@@ -258,20 +258,20 @@ export default function OntvangstCheck() {
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">
+      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
         Ontvangst
       </h2>
 
       {/* Datum & tijd van ontvangst */}
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-gray-500">
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
           Datum &amp; tijd van ontvangst
         </span>
         <input
           type="datetime-local"
           value={recordedAtLocal}
           onChange={(e) => setRecordedAtLocal(e.target.value)}
-          className="h-20 w-full rounded-2xl border-2 border-gray-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-gray-900 shadow-sm outline-none focus:border-gray-900 sm:text-3xl"
+          className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
         />
       </label>
 
@@ -282,7 +282,7 @@ export default function OntvangstCheck() {
       ) : null}
 
       {!restaurantId ? (
-        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600">
+        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
           Geen restaurant gekoppeld aan je account.
         </p>
       ) : null}
@@ -295,7 +295,7 @@ export default function OntvangstCheck() {
         collapsed={currentStep !== "product"}
       >
         {loadingProducts ? (
-          <p className="text-center text-gray-500">Producten laden…</p>
+          <p className="text-center text-slate-500">Producten laden…</p>
         ) : (
           <div className="flex flex-col gap-3">
             {products.map((p) => (
@@ -303,7 +303,7 @@ export default function OntvangstCheck() {
                 key={p.id}
                 type="button"
                 onClick={() => setSelectedProduct(p)}
-                className="flex h-20 w-full items-center justify-between rounded-2xl bg-gray-100 px-5 text-left text-2xl font-black text-gray-900 shadow-sm transition-transform active:scale-[0.98]"
+                className="flex min-h-[80px] w-full items-center justify-between rounded-2xl border border-slate-100 bg-white px-5 text-left text-2xl font-black text-slate-900 shadow-sm transition-transform active:scale-[0.98]"
               >
                 <span className="flex-1 truncate">{p.name}</span>
               </button>
@@ -312,7 +312,7 @@ export default function OntvangstCheck() {
             <button
               type="button"
               onClick={handleAddProduct}
-              className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform active:scale-95"
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-xl font-black text-slate-600 shadow-sm transition-transform active:scale-95"
             >
               <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
               Product toevoegen
@@ -346,7 +346,7 @@ export default function OntvangstCheck() {
             <button
               type="button"
               onClick={() => setStatus("goedgekeurd")}
-              className="flex h-28 w-full items-center justify-center gap-3 rounded-3xl bg-green-600 text-3xl font-black text-white shadow-md transition-transform active:scale-95 hover:bg-green-700"
+              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl bg-green-600 px-6 py-5 text-3xl font-black text-white shadow-sm transition-transform active:scale-95 hover:bg-green-700"
             >
               <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
               Goedgekeurd
@@ -354,7 +354,7 @@ export default function OntvangstCheck() {
             <button
               type="button"
               onClick={() => setStatus("afgekeurd")}
-              className="flex h-28 w-full items-center justify-center gap-3 rounded-3xl bg-red-600 text-3xl font-black text-white shadow-md transition-transform active:scale-95 hover:bg-red-700"
+              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl bg-red-600 px-6 py-5 text-3xl font-black text-white shadow-sm transition-transform active:scale-95 hover:bg-red-700"
             >
               <X className="h-9 w-9" strokeWidth={3} aria-hidden />
               Afgekeurd
@@ -378,7 +378,7 @@ export default function OntvangstCheck() {
                 key={r}
                 type="button"
                 onClick={() => setReason(r)}
-                className="flex h-20 w-full items-center justify-center rounded-2xl bg-gray-100 px-5 text-center text-xl font-black text-gray-900 shadow-sm transition-transform active:scale-[0.98]"
+                className="flex min-h-[80px] w-full items-center justify-center rounded-2xl border border-slate-100 bg-white px-5 text-center text-xl font-black text-slate-900 shadow-sm transition-transform active:scale-[0.98]"
               >
                 {r}
               </button>
@@ -391,7 +391,7 @@ export default function OntvangstCheck() {
                 const trimmed = custom.trim();
                 if (trimmed) setReason(trimmed);
               }}
-              className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform active:scale-95"
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-xl font-black text-slate-600 shadow-sm transition-transform active:scale-95"
             >
               <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
               Anders…
@@ -403,7 +403,7 @@ export default function OntvangstCheck() {
       {/* ===== Foto + opslaan ===== */}
       {currentStep === "foto" ? (
         <div className="flex flex-col gap-4">
-          <h3 className="text-xl font-black uppercase tracking-wide text-gray-500">
+          <h3 className="text-xl font-black uppercase tracking-wide text-slate-500">
             Foto&apos;s (optioneel)
           </h3>
 
@@ -420,7 +420,7 @@ export default function OntvangstCheck() {
             type="button"
             onClick={handlePickPhotos}
             disabled={isSaving || photoSlotsLeft <= 0}
-            className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-xl font-bold text-slate-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <Camera className="h-7 w-7" aria-hidden />
             {photoSlotsLeft <= 0
@@ -437,13 +437,13 @@ export default function OntvangstCheck() {
                   <img
                     src={url}
                     alt={`Foto ${i + 1}`}
-                    className="h-28 w-full rounded-xl border border-gray-200 object-cover shadow-sm"
+                    className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => removePhoto(i)}
                     aria-label={`Foto ${i + 1} verwijderen`}
-                    className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-4 ring-white transition-transform active:scale-90"
+                    className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
                   >
                     <X className="h-4 w-4" strokeWidth={3} aria-hidden />
                   </button>
@@ -457,7 +457,7 @@ export default function OntvangstCheck() {
             onClick={handleSave}
             disabled={!canSave}
             aria-busy={isSaving}
-            className="flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-green-600 text-2xl font-black text-white shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex min-h-[96px] w-full items-center justify-center gap-3 rounded-2xl bg-green-600 px-6 py-5 text-2xl font-black text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSaving ? (
               "Opslaan…"
@@ -498,14 +498,14 @@ function Section({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
           {title}
         </h3>
         {collapsed && summary && onEdit ? (
           <button
             type="button"
             onClick={onEdit}
-            className="flex h-10 items-center gap-1.5 rounded-full bg-gray-100 px-3 text-sm font-bold text-gray-700 transition-transform active:scale-95"
+            className="flex min-h-[64px] items-center gap-2 rounded-2xl bg-white px-5 text-base font-bold text-slate-700 shadow-sm transition-transform active:scale-95"
           >
             <Pencil className="h-4 w-4" aria-hidden />
             Wijzigen
@@ -515,7 +515,7 @@ function Section({
 
       {collapsed && summary ? (
         <p
-          className={`truncate rounded-2xl bg-gray-100 px-5 py-5 text-2xl font-black text-gray-900 shadow-sm ${
+          className={`truncate rounded-2xl border border-slate-100 bg-white px-5 py-5 text-2xl font-black text-slate-900 shadow-sm ${
             summaryAccentClass ?? ""
           }`}
         >

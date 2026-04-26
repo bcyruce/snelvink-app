@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "SnelVink",
@@ -14,9 +20,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl">
-      <body className="bg-gray-100 text-gray-900 antialiased">
+      <body
+        className={`${inter.variable} bg-[#F7F9FC] text-slate-900 antialiased`}
+      >
         <Providers>
-          <main className="max-w-md mx-auto min-h-screen bg-white shadow-xl relative overflow-x-hidden">
+          <main className="relative mx-auto min-h-screen max-w-md overflow-x-hidden bg-[#F7F9FC]">
             {children}
           </main>
         </Providers>

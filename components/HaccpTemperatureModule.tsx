@@ -96,7 +96,7 @@ export default function HaccpTemperatureModule({
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // ---------- derived ----------
-  const tempColorClass = "text-black"; // expliciete eis: nul-zwart
+  const tempColorClass = "text-slate-900";
   const canSave = !isSaving && !!restaurantId && !!activeEquipment;
 
   // ---------- load equipments ----------
@@ -476,15 +476,15 @@ function ListView({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {title}
         </h2>
         <button
           type="button"
           onClick={onToggleManaging}
           aria-pressed={isManaging}
-          className={`h-12 rounded-2xl px-4 text-base font-black shadow-sm transition-transform active:scale-95 ${
-            isManaging ? "bg-green-600 text-white" : "bg-gray-900 text-white"
+          className={`min-h-[64px] rounded-2xl px-6 text-xl font-black shadow-sm transition-transform active:scale-95 ${
+            isManaging ? "bg-green-600 text-white" : "bg-slate-900 text-white"
           }`}
         >
           {isManaging ? "Klaar" : "Wijzigen"}
@@ -492,7 +492,7 @@ function ListView({
       </div>
 
       {!restaurantReady ? (
-        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600">
+        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
           Geen restaurant gekoppeld aan je account.
         </p>
       ) : null}
@@ -504,21 +504,21 @@ function ListView({
       ) : null}
 
       {loading ? (
-        <p className="text-center text-gray-500">Apparaten laden…</p>
+        <p className="text-center text-slate-500">Apparaten laden…</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {equipments.map((eq) => (
             <li key={eq.id}>
               {isManaging ? (
-                <div className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white px-4 py-4 shadow-sm">
-                  <span className="flex-1 truncate text-xl font-bold text-gray-900">
+                <div className="flex min-h-[80px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+                  <span className="flex-1 truncate text-xl font-bold text-slate-900">
                     {eq.name}
                   </span>
                   <button
                     type="button"
                     onClick={() => onRename(eq)}
                     aria-label={`Hernoem ${eq.name}`}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-gray-700 transition-transform active:scale-90"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition-transform active:scale-95"
                   >
                     <Pencil className="h-5 w-5" aria-hidden />
                   </button>
@@ -526,7 +526,7 @@ function ListView({
                     type="button"
                     onClick={() => onDelete(eq)}
                     aria-label={`Verwijder ${eq.name}`}
-                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500 text-white transition-transform active:scale-90"
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500 text-white transition-transform active:scale-95"
                   >
                     <Trash2 className="h-5 w-5" aria-hidden />
                   </button>
@@ -535,16 +535,16 @@ function ListView({
                 <button
                   type="button"
                   onClick={() => onPick(eq)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl bg-gray-100 px-5 py-6 text-left text-2xl font-black text-gray-900 shadow-sm transition-transform active:scale-[0.98]"
+                  className="flex min-h-[88px] w-full items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-5 py-6 text-left text-2xl font-black text-slate-900 shadow-sm transition-transform active:scale-[0.98]"
                 >
                   <span className="flex-1 truncate">{eq.name}</span>
-                  <span className="text-base font-bold text-gray-500">
+                  <span className="text-base font-bold text-slate-500">
                     {typeof eq.last_temp === "number"
                       ? `${eq.last_temp.toFixed(1)} °C`
                       : "—"}
                   </span>
                   <ChevronRight
-                    className="h-7 w-7 text-gray-500"
+                    className="h-7 w-7 text-slate-500"
                     strokeWidth={2.5}
                     aria-hidden
                   />
@@ -559,7 +559,7 @@ function ListView({
         type="button"
         onClick={onAdd}
         disabled={!restaurantReady}
-        className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-5 text-xl font-black text-slate-600 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
         Apparaat toevoegen
@@ -650,14 +650,14 @@ function RecordView({
     <div className="flex flex-col gap-6">
       {/* Datum & tijd van meting */}
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-gray-500">
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
           Datum &amp; tijd van meting
         </span>
         <input
           type="datetime-local"
           value={recordedAtLocal}
           onChange={(e) => onRecordedAtChange(e.target.value)}
-          className="h-20 w-full rounded-2xl border-2 border-gray-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-gray-900 shadow-sm outline-none focus:border-gray-900 sm:text-3xl"
+          className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
         />
       </label>
 
@@ -665,11 +665,11 @@ function RecordView({
         <button
           type="button"
           onClick={onCancel}
-          className="h-12 rounded-2xl bg-gray-200 px-4 text-base font-black text-gray-800 transition-transform active:scale-95"
+          className="min-h-[64px] rounded-2xl bg-white px-5 text-base font-black text-slate-800 shadow-sm transition-transform active:scale-95"
         >
           ← Terug naar lijst
         </button>
-        <h3 className="flex-1 truncate text-right text-2xl font-extrabold text-gray-900">
+        <h3 className="flex-1 truncate text-right text-2xl font-extrabold text-slate-900">
           {equipment?.name ?? title}
         </h3>
       </div>
@@ -692,7 +692,7 @@ function RecordView({
             type="button"
             {...incOnePress}
             aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
-            className="flex h-24 flex-[2] select-none items-center justify-center rounded-3xl bg-gray-900 text-4xl font-black text-white shadow-md transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl bg-slate-900 text-4xl font-black text-white shadow-sm transition-transform active:scale-95"
           >
             + 1°
           </button>
@@ -700,7 +700,7 @@ function RecordView({
             type="button"
             {...incTenthPress}
             aria-label="0,1 graad hoger (houd ingedrukt voor sneller)"
-            className="flex h-24 flex-1 select-none items-center justify-center rounded-3xl bg-gray-200 text-2xl font-black text-gray-800 shadow-md transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 bg-white text-2xl font-black text-slate-800 shadow-sm transition-transform active:scale-95"
           >
             + 0,1°
           </button>
@@ -723,7 +723,7 @@ function RecordView({
                 }
                 if (e.key === "Escape") setIsManualEdit(false);
               }}
-              className={`w-full rounded-2xl border-2 border-gray-300 bg-white px-2 py-3 text-center text-7xl font-black tabular-nums leading-none shadow-inner outline-none focus:border-gray-900 ${tempColorClass}`}
+              className={`w-full rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center text-7xl font-black tabular-nums leading-none shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 ${tempColorClass}`}
               aria-label="Temperatuur handmatig invoeren"
             />
           ) : (
@@ -731,7 +731,7 @@ function RecordView({
               type="button"
               onClick={startManual}
               aria-label={`Huidige temperatuur ${tempLabel}, tik om handmatig in te voeren`}
-              className={`w-full rounded-2xl px-2 py-2 text-center text-8xl font-black tabular-nums leading-none ${tempColorClass}`}
+            className={`min-h-[112px] w-full rounded-3xl border border-slate-100 bg-white px-2 py-4 text-center text-8xl font-black tabular-nums leading-none shadow-sm ${tempColorClass}`}
             >
               {tempLabel}
             </button>
@@ -743,7 +743,7 @@ function RecordView({
             type="button"
             {...decOnePress}
             aria-label="Eén graad lager (houd ingedrukt voor sneller)"
-            className="flex h-24 flex-[2] select-none items-center justify-center rounded-3xl bg-gray-900 text-4xl font-black text-white shadow-md transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl bg-slate-900 text-4xl font-black text-white shadow-sm transition-transform active:scale-95"
           >
             − 1°
           </button>
@@ -751,14 +751,14 @@ function RecordView({
             type="button"
             {...decTenthPress}
             aria-label="0,1 graad lager (houd ingedrukt voor sneller)"
-            className="flex h-24 flex-1 select-none items-center justify-center rounded-3xl bg-gray-200 text-2xl font-black text-gray-800 shadow-md transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 bg-white text-2xl font-black text-slate-800 shadow-sm transition-transform active:scale-95"
           >
             − 0,1°
           </button>
         </div>
       </div>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-slate-500">
         Houd een knop ingedrukt om snel aan te passen. Tik op het getal om
         handmatig in te voeren.
       </p>
@@ -776,7 +776,7 @@ function RecordView({
         type="button"
         onClick={onPickPhotos}
         disabled={isSaving || photoSlotsLeft <= 0}
-        className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-xl font-bold text-slate-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >
         <Camera className="h-7 w-7" aria-hidden />
         {photoSlotsLeft <= 0
@@ -793,13 +793,13 @@ function RecordView({
               <img
                 src={url}
                 alt={`Foto ${i + 1}`}
-                className="h-28 w-full rounded-xl border border-gray-200 object-cover shadow-sm"
+                className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
               />
               <button
                 type="button"
                 onClick={() => onRemovePhoto(i)}
                 aria-label={`Foto ${i + 1} verwijderen`}
-                className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-4 ring-white transition-transform active:scale-90"
+                className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
               >
                 <X className="h-4 w-4" strokeWidth={3} aria-hidden />
               </button>
@@ -814,7 +814,7 @@ function RecordView({
         onClick={onSave}
         disabled={!canSave}
         aria-busy={isSaving}
-        className="flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-green-600 text-2xl font-black text-white shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-[96px] w-full items-center justify-center gap-3 rounded-2xl bg-green-600 px-6 py-5 text-2xl font-black text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSaving ? (
           "Opslaan…"

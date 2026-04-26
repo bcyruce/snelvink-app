@@ -167,7 +167,7 @@ function HomeContent() {
   if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
-        <p className="text-center text-lg font-semibold text-gray-600">
+        <p className="text-center text-lg font-semibold text-slate-500">
           SnelVink laden...
         </p>
       </div>
@@ -184,20 +184,20 @@ function HomeContent() {
             onClick={toggleEditing}
             aria-pressed={isEditing}
             className={[
-              "absolute right-6 top-6 z-20 h-12 rounded-2xl px-4 text-base font-black shadow-md transition-transform active:scale-95 sm:right-10 sm:top-10 sm:h-14 sm:px-5 sm:text-lg",
+              "absolute right-6 top-6 z-20 min-h-[64px] rounded-2xl px-6 text-xl font-black shadow-sm transition-transform active:scale-95 sm:right-10 sm:top-10",
               isEditing
                 ? "bg-green-600 text-white"
-                : "bg-gray-900 text-white",
+                : "bg-slate-900 text-white",
             ].join(" ")}
           >
             {isEditing ? "Klaar" : "Wijzigen"}
           </button>
         ) : null}
 
-        <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tight text-gray-900">
+        <h1 className="text-6xl font-extrabold tracking-tight text-slate-900 sm:text-7xl">
           SnelVink
         </h1>
-        <p className="mt-5 text-lg text-gray-600 sm:text-xl">
+        <p className="mt-5 text-lg text-slate-500 sm:text-xl">
           De keuken is open.
         </p>
 
@@ -233,7 +233,7 @@ function HomeContent() {
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 py-10 text-lg font-black text-gray-600 shadow-sm transition-transform hover:bg-gray-100 active:scale-[0.98] sm:text-xl"
+              className="mt-6 flex min-h-[96px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-200 bg-white py-8 text-xl font-black text-slate-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-[0.98]"
             >
               <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
               Toevoegen
@@ -270,7 +270,7 @@ function HomeContent() {
 function HomeLoading() {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
-      <p className="text-center text-lg font-semibold text-gray-600">
+      <p className="text-center text-lg font-semibold text-slate-500">
         SnelVink laden...
       </p>
     </div>
