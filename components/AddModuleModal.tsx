@@ -6,10 +6,20 @@ import {
   getModuleIcon,
   type TaskModule,
 } from "@/lib/taskModules";
-import { X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
 type AddModuleTab = "standard" | "custom";
+type ModuleType = "number" | "boolean" | "list";
+
+type NumberInputConfig = {
+  id: string;
+  name: string;
+  step: number;
+  defaultValue: number;
+  unit: string;
+  hasRemark: boolean;
+};
 
 type AddModuleModalProps = {
   open: boolean;
@@ -19,6 +29,17 @@ type AddModuleModalProps = {
   existingModuleIds: string[];
   editingModule?: TaskModule | null;
 };
+
+function createNumberInput(index: number): NumberInputConfig {
+  return {
+    id: `number-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: `Getalveld ${index}`,
+    step: 1,
+    defaultValue: 0,
+    unit: "°C",
+    hasRemark: false,
+  };
+}
 
 export default function AddModuleModal({
   open,
@@ -31,6 +52,8 @@ export default function AddModuleModal({
   const [activeTab, setActiveTab] = useState<AddModuleTab>("standard");
   const [name, setName] = useState("");
   const [iconKey, setIconKey] = useState<string>(AVAILABLE_ICONS[0]);
+  const [moduleType, setModuleType] = useState<ModuleType>("number");
+  const [numberInputs, setNumberInputs] = useState<NumberInputConfig[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditing = editingModule !== null;
 
@@ -39,6 +62,8 @@ export default function AddModuleModal({
       setActiveTab(isEditing ? "custom" : "standard");
       setName(editingModule?.name ?? "");
       setIconKey(editingModule?.icon ?? AVAILABLE_ICONS[0]);
+      setModuleType("number");
+      setNumberInputs([createNumberInput(1)]);
       if (isEditing) {
         requestAnimationFrame(() => inputRef.current?.focus());
       }
@@ -81,6 +106,28 @@ export default function AddModuleModal({
       onCreate(newModule);
     },
     [editingModule, name, iconKey, onCreate, onUpdate],
+  );
+
+  const handleAddNumberInput = useCallback(() => {
+    setNumberInputs((current) => [
+      ...current,
+      createNumberInput(current.length + 1),
+    ]);
+  }, []);
+
+  const handleRemoveNumberInput = useCallback((id: string) => {
+    setNumberInputs((current) => current.filter((input) => input.id !== id));
+  }, []);
+
+  const handleUpdateNumberInput = useCallback(
+    (id: string, updates: Partial<NumberInputConfig>) => {
+      setNumberInputs((current) =>
+        current.map((input) =>
+          input.id === id ? { ...input, ...updates } : input,
+        ),
+      );
+    },
+    [],
   );
 
   if (!open) return null;
@@ -180,55 +227,100 @@ export default function AddModuleModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="module-name"
-                className="text-base font-bold text-slate-800"
-              >
-                Naam van de module
-              </label>
-              <input
-                id="module-name"
-                ref={inputRef}
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Bijv. Allergenen"
-                maxLength={40}
-                className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-bold text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-              />
-            </div>
+            <section className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="module-name"
+                  className="text-base font-bold text-slate-800"
+                >
+                  Naam onderdeel
+                </label>
+                <input
+                  id="module-name"
+                  ref={inputRef}
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Bijv. Kerntemperatuur soep"
+                  maxLength={40}
+                  className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-bold text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                />
+              </div>
 
-            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3">
+                <span className="text-base font-bold text-slate-800">
+                  Kies een icoon
+                </span>
+                <div className="grid grid-cols-4 gap-3">
+                  {AVAILABLE_ICONS.map((key) => {
+                    const selected = key === iconKey;
+                    return (
+                      <button
+                        type="button"
+                        key={key}
+                        onClick={() => setIconKey(key)}
+                        aria-pressed={selected}
+                        className={[
+                          "flex min-h-[64px] items-center justify-center rounded-2xl border transition-transform active:scale-95",
+                          selected
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-100 bg-white text-slate-700 shadow-sm",
+                        ].join(" ")}
+                      >
+                        {createElement(getModuleIcon(key), {
+                          className: "h-7 w-7",
+                          strokeWidth: 2.25,
+                          "aria-hidden": true,
+                        })}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-3">
               <span className="text-base font-bold text-slate-800">
-                Kies een icoon
+                Type onderdeel
               </span>
-              <div className="grid grid-cols-4 gap-3">
-                {AVAILABLE_ICONS.map((key) => {
-                  const selected = key === iconKey;
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  ["number", "Getal/Temperatuur"],
+                  ["boolean", "Ja/Nee"],
+                  ["list", "Lijst"],
+                ].map(([value, label]) => {
+                  const active = moduleType === value;
+                  const disabled = value !== "number";
                   return (
                     <button
+                      key={value}
                       type="button"
-                      key={key}
-                      onClick={() => setIconKey(key)}
-                      aria-pressed={selected}
+                      disabled={disabled}
+                      onClick={() => setModuleType(value as ModuleType)}
+                      aria-pressed={active}
                       className={[
-                        "flex min-h-[64px] items-center justify-center rounded-2xl border transition-transform active:scale-95",
-                        selected
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-100 bg-white text-slate-700 shadow-sm",
+                        "min-h-[64px] rounded-2xl border px-5 text-left text-lg font-black transition-transform active:scale-[0.98]",
+                        active
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-slate-100 bg-white text-slate-500 shadow-sm",
+                        disabled ? "cursor-not-allowed opacity-55" : "",
                       ].join(" ")}
                     >
-                      {createElement(getModuleIcon(key), {
-                        className: "h-7 w-7",
-                        strokeWidth: 2.25,
-                        "aria-hidden": true,
-                      })}
+                      {label}
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </section>
+
+            {moduleType === "number" ? (
+              <NumberInputsBuilder
+                numberInputs={numberInputs}
+                onAdd={handleAddNumberInput}
+                onRemove={handleRemoveNumberInput}
+                onUpdate={handleUpdateNumberInput}
+              />
+            ) : null}
 
             <div className="flex flex-col gap-3 pt-2">
               <button
@@ -250,5 +342,159 @@ export default function AddModuleModal({
         )}
       </div>
     </div>
+  );
+}
+
+type NumberInputsBuilderProps = {
+  numberInputs: NumberInputConfig[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<NumberInputConfig>) => void;
+};
+
+function NumberInputsBuilder({
+  numberInputs,
+  onAdd,
+  onRemove,
+  onUpdate,
+}: NumberInputsBuilderProps) {
+  return (
+    <section className="flex flex-col gap-4">
+      <button
+        type="button"
+        onClick={onAdd}
+        className="self-start text-lg font-black text-blue-600 transition-opacity active:opacity-60"
+      >
+        + Getalveld toevoegen
+      </button>
+
+      <div className="flex flex-col gap-4">
+        {numberInputs.map((input) => (
+          <div
+            key={input.id}
+            className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5"
+          >
+            <div className="flex items-start gap-3">
+              <label className="flex flex-1 flex-col gap-2">
+                <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                  Naam veld
+                </span>
+                <input
+                  type="text"
+                  value={input.name}
+                  onChange={(e) =>
+                    onUpdate(input.id, { name: e.target.value })
+                  }
+                  className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => onRemove(input.id)}
+                aria-label={`${input.name} verwijderen`}
+                className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+              >
+                <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
+                Voorbeeld
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-2xl bg-slate-900 text-3xl font-black text-white">
+                  -
+                </div>
+                <div className="min-w-0 flex-[1.4] text-center">
+                  <p className="truncate text-5xl font-black tabular-nums text-slate-900">
+                    {input.defaultValue}
+                    {input.unit}
+                  </p>
+                </div>
+                <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-2xl bg-slate-900 text-3xl font-black text-white">
+                  +
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <label className="flex min-w-0 flex-col gap-2">
+                <span className="text-xs font-bold text-slate-500">
+                  Stapgrootte
+                </span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={input.step}
+                  onChange={(e) =>
+                    onUpdate(input.id, {
+                      step: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                />
+              </label>
+
+              <label className="flex min-w-0 flex-col gap-2">
+                <span className="text-xs font-bold text-slate-500">
+                  Standaardwaarde
+                </span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={input.defaultValue}
+                  onChange={(e) =>
+                    onUpdate(input.id, {
+                      defaultValue: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                />
+              </label>
+
+              <label className="flex min-w-0 flex-col gap-2">
+                <span className="text-xs font-bold text-slate-500">
+                  Eenheid
+                </span>
+                <input
+                  type="text"
+                  value={input.unit}
+                  onChange={(e) =>
+                    onUpdate(input.id, { unit: e.target.value })
+                  }
+                  className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                />
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                onUpdate(input.id, { hasRemark: !input.hasRemark })
+              }
+              className={[
+                "mt-5 text-left text-lg font-black transition-opacity active:opacity-60",
+                input.hasRemark ? "text-red-600" : "text-blue-600",
+              ].join(" ")}
+            >
+              {input.hasRemark
+                ? "- Opmerking verwijderen"
+                : "+ Opmerking toevoegen"}
+            </button>
+
+            {input.hasRemark ? (
+              <textarea
+                disabled
+                rows={3}
+                placeholder="Opmerking"
+                className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-400 shadow-sm"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
