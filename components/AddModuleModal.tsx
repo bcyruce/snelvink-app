@@ -58,7 +58,7 @@ export default function AddModuleModal({
   existingModuleIds,
   editingModule = null,
 }: AddModuleModalProps) {
-  const { profile } = useUser();
+  const { user, profile } = useUser();
   const [activeTab, setActiveTab] = useState<AddModuleTab>("standard");
   const [name, setName] = useState("");
   const [iconKey, setIconKey] = useState<string>(AVAILABLE_ICONS[0]);
@@ -134,6 +134,7 @@ export default function AddModuleModal({
           .from("custom_modules")
           .insert({
             restaurant_id: restaurantId,
+            user_id: user?.id ?? null,
             name: trimmed,
             icon: iconKey,
             module_type: "temperature",
@@ -172,6 +173,7 @@ export default function AddModuleModal({
       name,
       iconKey,
       numberInputs,
+      user?.id,
       profile?.restaurant_id,
       onCustomModuleAdded,
       onClose,

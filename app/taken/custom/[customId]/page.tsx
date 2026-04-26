@@ -148,7 +148,7 @@ function CustomModuleContent() {
   );
 
   const handleSave = useCallback(async () => {
-    if (!module || isSaving) return;
+    if (!module || !user || isSaving) return;
     if (!profile?.restaurant_id) {
       setErrorMessage("Geen restaurant gekoppeld aan je account.");
       return;
@@ -170,6 +170,7 @@ function CustomModuleContent() {
 
     const { error } = await supabase.from("custom_module_logs").insert({
       restaurant_id: profile.restaurant_id,
+      user_id: user.id,
       custom_module_id: module.id,
       log_data: logData,
     });
@@ -185,7 +186,7 @@ function CustomModuleContent() {
     window.setTimeout(() => {
       router.push("/taken");
     }, 650);
-  }, [module, profile?.restaurant_id, values, remarks, isSaving, router]);
+  }, [module, profile?.restaurant_id, user?.id, values, remarks, isSaving, router]);
 
   if (isLoading || !user || isModuleLoading) {
     return (
