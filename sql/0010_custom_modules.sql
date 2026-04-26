@@ -66,6 +66,12 @@ create table if not exists public.custom_module_logs (
   created_at        timestamptz not null default now()
 );
 
+alter table public.custom_module_logs add column if not exists restaurant_id uuid references public.restaurants(id) on delete cascade;
+alter table public.custom_module_logs add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.custom_module_logs add column if not exists custom_module_id uuid references public.custom_modules(id) on delete set null;
+alter table public.custom_module_logs add column if not exists log_data jsonb not null default '{}'::jsonb;
+alter table public.custom_module_logs add column if not exists created_at timestamptz not null default now();
+
 create index if not exists custom_module_logs_restaurant_created_idx
   on public.custom_module_logs (restaurant_id, created_at desc);
 
