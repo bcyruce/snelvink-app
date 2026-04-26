@@ -60,6 +60,7 @@ function HomeContent() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState<TaskModule | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
     null,
   );
@@ -162,6 +163,30 @@ function HomeContent() {
   const handleCreateModule = useCallback((module: TaskModule) => {
     setModules((items) => [...items, module]);
     setIsAddModalOpen(false);
+    setEditingModule(null);
+  }, []);
+
+  const handleUpdateModule = useCallback((updatedModule: TaskModule) => {
+    setModules((items) =>
+      items.map((item) => (item.id === updatedModule.id ? updatedModule : item)),
+    );
+    setIsAddModalOpen(false);
+    setEditingModule(null);
+  }, []);
+
+  const handleOpenAddModule = useCallback(() => {
+    setEditingModule(null);
+    setIsAddModalOpen(true);
+  }, []);
+
+  const handleEditModule = useCallback((module: TaskModule) => {
+    setEditingModule(module);
+    setIsAddModalOpen(true);
+  }, []);
+
+  const handleCloseModuleModal = useCallback(() => {
+    setIsAddModalOpen(false);
+    setEditingModule(null);
   }, []);
 
   if (isLoading || !user) {
@@ -222,6 +247,7 @@ function HomeContent() {
                         i % 2 === 0 ? "animate-wiggle-a" : "animate-wiggle-b"
                       }
                       onDelete={handleDelete}
+                      onEdit={handleEditModule}
                     />
                   ))}
                 </div>
@@ -232,7 +258,7 @@ function HomeContent() {
           {activeTab === "tasks" && isEditing ? (
             <button
               type="button"
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={handleOpenAddModule}
               className="mt-6 flex min-h-[96px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-200 bg-white py-8 text-xl font-black text-slate-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-[0.98]"
             >
               <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
@@ -258,8 +284,11 @@ function HomeContent() {
 
       <AddModuleModal
         open={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={handleCloseModuleModal}
         onCreate={handleCreateModule}
+        onUpdate={handleUpdateModule}
+        existingModuleIds={modules.map((module) => module.id)}
+        editingModule={editingModule}
       />
 
       <BottomNav active={activeTab} onChange={setActiveTab} />
