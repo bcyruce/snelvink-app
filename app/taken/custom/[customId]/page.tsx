@@ -55,6 +55,9 @@ function CustomModuleContent() {
   const [module, setModule] = useState<CustomModule | null>(null);
   const [values, setValues] = useState<Record<string, number>>({});
   const [remarks, setRemarks] = useState<Record<string, string>>({});
+  const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>(
+    {},
+  );
   const [isModuleLoading, setIsModuleLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -110,6 +113,9 @@ function CustomModuleContent() {
           settings.map((setting) => [setting.id, setting.defaultValue]),
         ),
       );
+      setEnabledFields(
+        Object.fromEntries(settings.map((setting) => [setting.id, true])),
+      );
       setRemarks(
         Object.fromEntries(
           settings
@@ -147,10 +153,47 @@ function CustomModuleContent() {
     [],
   );
 
+  const setManualValue = useCallback(
+    (field: NumberInputConfig, rawValue: string) => {
+      const parsed = Number.parseFloat(rawValue);
+      setValues((current) => ({
+        ...current,
+        [field.id]: Number.isFinite(parsed) ? parsed : field.defaultValue,
+      }));
+    },
+    [],
+  );
+
+  const toggleField = useCallback((fieldId: string) => {
+    setEnabledFields((current) => ({
+      ...current,
+      [fieldId]: !(current[fieldId] ?? true),
+    }));
+  }, []);
+
+  const toggleAllFields = useCallback((checked: boolean) => {
+    setEnabledFields((current) =>
+      Object.fromEntries(
+        (module?.settings.map((setting) => setting.id) ?? Object.keys(current)).map(
+          (fieldId) => [fieldId, checked],
+        ),
+      ),
+    );
+  }, [module?.settings]);
+
   const handleSave = useCallback(async () => {
     if (!module || !user || isSaving) return;
     if (!profile?.restaurant_id) {
       setErrorMessage("Geen restaurant gekoppeld aan je account.");
+      return;
+    }
+
+    const selectedSettings = module.settings.filter(
+      (setting) => enabledFields[setting.id] ?? true,
+    );
+
+    if (selectedSettings.length === 0) {
+      setErrorMessage("Vink minstens één veld aan om op te slaan.");
       return;
     }
 
@@ -159,7 +202,7 @@ function CustomModuleContent() {
 
     const logData = {
       module_name: module.name,
-      values: module.settings.map((setting) => ({
+      values: selectedSettings.map((setting) => ({
         field_id: setting.id,
         name: setting.name,
         value: values[setting.id] ?? setting.defaultValue,
@@ -187,7 +230,16 @@ function CustomModuleContent() {
     window.setTimeout(() => {
       router.push("/taken");
     }, 650);
-  }, [module, profile?.restaurant_id, user?.id, values, remarks, isSaving, router]);
+  }, [
+    module,
+    profile?.restaurant_id,
+    user,
+    values,
+    remarks,
+    enabledFields,
+    isSaving,
+    router,
+  ]);
 
   if (isLoading || !user || isModuleLoading) {
     return (
@@ -203,6 +255,13 @@ function CustomModuleContent() {
     if (tab === "tasks") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
+
+  const hasFields = (module?.settings.length ?? 0) > 0;
+  const selectedCount = module
+    ? module.settings.filter((setting) => enabledFields[setting.id] ?? true)
+        .length
+    : 0;
+  const allFieldsSelected = hasFields && selectedCount === module?.settings.length;
 
   return (
     <>
@@ -244,39 +303,110 @@ function CustomModuleContent() {
             ) : null}
 
             {module.settings.length > 0 ? (
-              module.settings.map((setting) => {
+              <>
+                <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
+                  <div>
+                    <p className="text-base font-black text-slate-900">
+                      Vink aan om te registreren
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                      {selectedCount}/{module.settings.length} velden geselecteerd
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleAllFields(!allFieldsSelected)}
+                    aria-pressed={allFieldsSelected}
+                    aria-label={
+                      allFieldsSelected
+                        ? "Alle velden uitvinken"
+                        : "Alle velden aanvinken"
+                    }
+                    className={[
+                      "flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 transition-all active:scale-95",
+                      allFieldsSelected
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-slate-300 bg-white text-transparent",
+                    ].join(" ")}
+                  >
+                    <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
+                  </button>
+                </div>
+
+                {module.settings.map((setting) => {
                 const value = values[setting.id] ?? setting.defaultValue;
+                const enabled = enabledFields[setting.id] ?? true;
 
                 return (
                   <div
                     key={setting.id}
-                    className="mb-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"
+                    className={[
+                      "mb-6 rounded-3xl border p-6 shadow-sm transition-all duration-300",
+                      enabled
+                        ? "border-slate-100 bg-white"
+                        : "border-slate-200 bg-slate-50 opacity-75",
+                    ].join(" ")}
                   >
-                    <h2 className="text-xl font-bold text-slate-900">
-                      {setting.name}
-                    </h2>
+                    <div className="flex items-start justify-between gap-4">
+                      <h2 className="pt-2 text-xl font-bold text-slate-900">
+                        {setting.name}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => toggleField(setting.id)}
+                        aria-pressed={enabled}
+                        aria-label={
+                          enabled
+                            ? `${setting.name} niet registreren`
+                            : `${setting.name} registreren`
+                        }
+                        className={[
+                          "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 transition-all active:scale-95",
+                          enabled
+                            ? "border-blue-600 bg-blue-600 text-white"
+                            : "border-slate-300 bg-white text-transparent",
+                        ].join(" ")}
+                      >
+                        <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
+                      </button>
+                    </div>
 
                     <div className="mt-5 flex items-center gap-3">
                       <button
                         type="button"
+                        disabled={!enabled}
                         onClick={() => updateValue(setting, "down")}
-                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-4xl font-black text-slate-700 transition-transform active:scale-95"
+                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-4xl font-black text-slate-700 transition-all enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label={`${setting.name} verlagen`}
                       >
                         -
                       </button>
 
                       <div className="min-w-0 flex-1 text-center">
-                        <p className="truncate text-5xl font-black tabular-nums text-slate-900">
-                          {value}
+                        <label className="block">
+                          <span className="sr-only">
+                            Waarde voor {setting.name}
+                          </span>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            disabled={!enabled}
+                            step={setting.step || "any"}
+                            value={value}
+                            onChange={(event) =>
+                              setManualValue(setting, event.target.value)
+                            }
+                            className="w-full appearance-none border-0 bg-transparent text-center text-5xl font-black tabular-nums text-slate-900 outline-none transition-opacity disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
                           <span className="ml-1 text-3xl">{setting.unit}</span>
-                        </p>
+                        </label>
                       </div>
 
                       <button
                         type="button"
+                        disabled={!enabled}
                         onClick={() => updateValue(setting, "up")}
-                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-4xl font-black text-blue-600 transition-transform active:scale-95"
+                        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-4xl font-black text-blue-600 transition-all enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label={`${setting.name} verhogen`}
                       >
                         +
@@ -286,6 +416,7 @@ function CustomModuleContent() {
                     {setting.hasRemark ? (
                       <textarea
                         value={remarks[setting.id] ?? ""}
+                        disabled={!enabled}
                         onChange={(event) =>
                           setRemarks((current) => ({
                             ...current,
@@ -294,12 +425,13 @@ function CustomModuleContent() {
                         }
                         placeholder="Opmerking toevoegen..."
                         rows={3}
-                        className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                        className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
                       />
                     ) : null}
                   </div>
                 );
-              })
+                })}
+              </>
             ) : (
               <div className="rounded-3xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
                 <p className="text-xl font-bold text-slate-900">
@@ -333,7 +465,7 @@ function CustomModuleContent() {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving || module.settings.length === 0}
+            disabled={isSaving || module.settings.length === 0 || selectedCount === 0}
             className="flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-5 text-xl font-bold text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? (
