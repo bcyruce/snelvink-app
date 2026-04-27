@@ -37,6 +37,12 @@ type ListItemConfig = {
 type ListSettings = {
   items: ListItemConfig[];
   hasRemark: boolean;
+  hasPhoto?: boolean;
+};
+
+type FieldSettings<T> = {
+  fields: T[];
+  hasPhoto: boolean;
 };
 
 type AddModuleModalProps = {
@@ -104,6 +110,7 @@ export default function AddModuleModal({
   const [booleanInputs, setBooleanInputs] = useState<BooleanInputConfig[]>([]);
   const [listItems, setListItems] = useState<ListItemConfig[]>([]);
   const [listHasRemark, setListHasRemark] = useState(false);
+  const [hasPhoto, setHasPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -119,6 +126,7 @@ export default function AddModuleModal({
       setBooleanInputs([createBooleanInput(1)]);
       setListItems([createListItem(1)]);
       setListHasRemark(false);
+      setHasPhoto(false);
       setErrorMessage(null);
       setIsSaving(false);
       if (isEditing) {
@@ -144,6 +152,7 @@ export default function AddModuleModal({
     setBooleanInputs([createBooleanInput(1)]);
     setListItems([createListItem(1)]);
     setListHasRemark(false);
+    setHasPhoto(false);
     setErrorMessage(null);
   }, []);
 
@@ -175,29 +184,44 @@ export default function AddModuleModal({
       setIsSaving(true);
       setErrorMessage(null);
 
+      const cleanNumberInputs = numberInputs
+        .map((input) => ({ ...input, name: input.name.trim() }))
+        .filter((input) => input.name.length > 0);
+      const cleanBooleanInputs = booleanInputs
+        .map((input) => ({ ...input, name: input.name.trim() }))
+        .filter((input) => input.name.length > 0);
+      const cleanListItems = listItems
+        .map((item) => ({ ...item, name: item.name.trim() }))
+        .filter((item) => item.name.length > 0);
       const listSettings: ListSettings = {
-        items: listItems
-          .map((item) => ({ ...item, name: item.name.trim() }))
-          .filter((item) => item.name.length > 0),
+        items: cleanListItems,
         hasRemark: listHasRemark,
+        hasPhoto,
       };
       const settings =
         moduleType === "boolean"
-          ? booleanInputs
-              .map((input) => ({ ...input, name: input.name.trim() }))
-              .filter((input) => input.name.length > 0)
+          ? ({
+              fields: cleanBooleanInputs,
+              hasPhoto,
+            } satisfies FieldSettings<BooleanInputConfig>)
           : moduleType === "list"
             ? listSettings
-            : numberInputs
-                .map((input) => ({ ...input, name: input.name.trim() }))
-                .filter((input) => input.name.length > 0);
+            : ({
+                fields: cleanNumberInputs,
+                hasPhoto,
+              } satisfies FieldSettings<NumberInputConfig>);
 
-      if (Array.isArray(settings) && settings.length === 0) {
+      if (moduleType === "number" && cleanNumberInputs.length === 0) {
         setErrorMessage("Voeg minstens één veld toe.");
         setIsSaving(false);
         return;
       }
-      if (moduleType === "list" && listSettings.items.length === 0) {
+      if (moduleType === "boolean" && cleanBooleanInputs.length === 0) {
+        setErrorMessage("Voeg minstens één veld toe.");
+        setIsSaving(false);
+        return;
+      }
+      if (moduleType === "list" && cleanListItems.length === 0) {
         setErrorMessage("Voeg minstens één item toe.");
         setIsSaving(false);
         return;
@@ -254,9 +278,10 @@ export default function AddModuleModal({
       booleanInputs,
       listItems,
       listHasRemark,
+      hasPhoto,
       moduleType,
-      user?.id,
-      profile?.restaurant_id,
+      user,
+      profile,
       onCustomModuleAdded,
       onClose,
       onUpdate,
@@ -507,6 +532,20 @@ export default function AddModuleModal({
                 })}
               </div>
             </section>
+
+            <button
+              type="button"
+              onClick={() => setHasPhoto((current) => !current)}
+              aria-pressed={hasPhoto}
+              className={[
+                "rounded-2xl border px-5 py-4 text-left text-lg font-black transition-transform active:scale-[0.98]",
+                hasPhoto
+                  ? "border-blue-200 bg-blue-50 text-blue-700"
+                  : "border-slate-100 bg-white text-blue-600 shadow-sm",
+              ].join(" ")}
+            >
+              {hasPhoto ? "- Foto verwijderen" : "+ Foto toevoegen"}
+            </button>
 
             {moduleType === "number" ? (
               <NumberInputsBuilder

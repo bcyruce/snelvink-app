@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const MAX_PHOTOS = 5;
-const STORAGE_BUCKET = "haccp_photos";
+const STORAGE_BUCKET = "haccp-photos";
 const DEFAULT_CLEANING_TASKS = ["Vloer & Afvoer", "Werkbanken"];
 
 type Location = { id: string; name: string };

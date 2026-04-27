@@ -4,7 +4,7 @@ import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { ImageIcon, Printer } from "lucide-react";
+import { ImageIcon, Printer, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 type TemperatureLogRow = {
@@ -56,7 +56,7 @@ type ReportRow = {
 type CustomModuleLogValue = {
   field_id: string;
   name: string;
-  value: number;
+  value: number | string;
   unit: string;
   remark: string | null;
 };
@@ -64,6 +64,9 @@ type CustomModuleLogValue = {
 type CustomModuleLogData = {
   module_name?: string;
   values?: CustomModuleLogValue[];
+  photo_url?: unknown;
+  photo_urls?: unknown;
+  photoUrls?: unknown;
 };
 
 type CustomModuleLogRow = {
@@ -189,6 +192,20 @@ function isCustomLogData(value: unknown): value is CustomModuleLogData {
   return Array.isArray(maybe.values);
 }
 
+function compactPhotoUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((url): url is string => typeof url === "string" && url);
+}
+
+function extractCustomPhotoUrls(logData: CustomModuleLogData): string[] {
+  const urls = [
+    ...(typeof logData.photo_url === "string" ? [logData.photo_url] : []),
+    ...compactPhotoUrls(logData.photo_urls),
+    ...compactPhotoUrls(logData.photoUrls),
+  ];
+  return Array.from(new Set(urls));
+}
+
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function HistoryList() {
@@ -199,6 +216,9 @@ export default function HistoryList() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPrintUpgradeModal, setShowPrintUpgradeModal] = useState(false);
+  const [selectedDetailRow, setSelectedDetailRow] = useState<ReportRow | null>(
+    null,
+  );
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -289,7 +309,7 @@ export default function HistoryList() {
           valueOrStatus,
           remarks,
           source: "haccp" as const,
-          photoUrls: row.image_urls ?? [],
+          photoUrls: compactPhotoUrls(row.image_urls),
         };
       }) ?? [];
 
@@ -300,6 +320,7 @@ export default function HistoryList() {
 
         const moduleName =
           logData.module_name ?? "Aangepast onderdeel";
+        const photoUrls = extractCustomPhotoUrls(logData);
 
         return (logData.values ?? []).map((value, index) => ({
           id: `custom-${row.id}-${value.field_id}-${index}`,
@@ -309,7 +330,7 @@ export default function HistoryList() {
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
           remarks: value.remark ?? "",
           source: "custom" as const,
-          photoUrls: [],
+          photoUrls,
         }));
       }) ?? [];
 
@@ -449,45 +470,18 @@ export default function HistoryList() {
                         {translateHaccpText(row.valueOrStatus)}
                       </td>
                       <td className="border-b border-slate-100 px-4 py-5 text-base text-slate-700 print:border-black print:text-black">
-                        <p className="font-medium">
-                          {row.remarks
-                            ? translateHaccpText(row.remarks)
-                            : "—"}
-                        </p>
-
-                        {row.photoUrls.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-2 print:hidden">
-                            {row.photoUrls.map((url, i) => (
-                              <a
-                                key={`${row.id}-link-${i}`}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-blue-700 underline decoration-blue-400 underline-offset-2 transition-colors hover:bg-blue-100 active:scale-95"
-                              >
-                                <ImageIcon
-                                  className="h-4 w-4"
-                                  strokeWidth={2.25}
-                                  aria-hidden
-                                />
-                                foto {i + 1}
-                              </a>
-                            ))}
-                          </div>
-                        ) : null}
-
-                        {row.photoUrls.length > 0 ? (
-                          <div className="mt-2 hidden flex-wrap gap-2 print:flex">
-                            {row.photoUrls.map((url, i) => (
-                              <img
-                                key={`${row.id}-print-${i}`}
-                                src={url}
-                                alt={`Foto ${i + 1} bij registratie`}
-                                className="h-[3cm] w-auto max-w-[6cm] rounded-none border border-black object-cover"
-                              />
-                            ))}
-                          </div>
-                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDetailRow(row)}
+                          className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-transform active:scale-95 print:hidden"
+                        >
+                          <ImageIcon
+                            className="h-4 w-4"
+                            strokeWidth={2.25}
+                            aria-hidden
+                          />
+                          Details bekijken
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -503,6 +497,107 @@ export default function HistoryList() {
           Gratis versie toont maximaal 30 dagen historie.
         </p>
       ) : null}
+
+      <DetailModal
+        row={selectedDetailRow}
+        onClose={() => setSelectedDetailRow(null)}
+        translate={translateHaccpText}
+      />
+    </div>
+  );
+}
+
+type DetailModalProps = {
+  row: ReportRow | null;
+  onClose: () => void;
+  translate: (value: string) => string;
+};
+
+function DetailModal({ row, onClose, translate }: DetailModalProps) {
+  if (!row) return null;
+
+  const remarks = row.remarks.trim();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-4 pb-4 pt-10 backdrop-blur-sm sm:items-center sm:p-6 print:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="history-detail-title"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-sm"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-slate-500">
+              {translate(row.taskName)}
+            </p>
+            <h3
+              id="history-detail-title"
+              className="mt-1 text-2xl font-black tracking-tight text-slate-900"
+            >
+              Details bekijken
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Sluiten"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition-transform active:scale-95"
+          >
+            <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+              Apparaat
+            </p>
+            <p className="mt-1 text-base font-black text-slate-900">
+              {translate(row.apparaat)}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+              Waarde/status
+            </p>
+            <p className="mt-1 text-base font-black text-slate-900">
+              {translate(row.valueOrStatus)}
+            </p>
+          </div>
+        </div>
+
+        <section className="mt-5 rounded-2xl border border-slate-100 bg-white p-4">
+          <h4 className="text-sm font-black uppercase tracking-wide text-slate-500">
+            Volledige opmerking
+          </h4>
+          <p className="mt-3 whitespace-pre-wrap text-base font-semibold leading-relaxed text-slate-800">
+            {remarks ? translate(remarks) : "Geen opmerkingen."}
+          </p>
+        </section>
+
+        {row.photoUrls.length > 0 ? (
+          <section className="mt-5">
+            <h4 className="text-sm font-black uppercase tracking-wide text-slate-500">
+              Foto&apos;s
+            </h4>
+            <div className="mt-3 flex flex-col gap-4">
+              {row.photoUrls.map((url, index) => (
+                <img
+                  key={`${row.id}-detail-${index}`}
+                  src={url}
+                  alt={`Foto ${index + 1} bij registratie`}
+                  className="max-h-[60vh] w-full rounded-3xl border border-slate-100 object-cover shadow-sm"
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }

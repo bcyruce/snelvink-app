@@ -48,7 +48,7 @@ export default function SortableModuleCard({
   const cardClass =
     "relative flex min-h-[176px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-slate-100 bg-white px-5 text-center text-xl font-black text-slate-900 shadow-sm";
   const controlBaseClass =
-    "absolute z-10 flex h-16 w-16 origin-center transform items-center justify-center rounded-full text-white shadow-sm ring-4 ring-[#F7F9FC] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]";
+    "absolute z-10 flex min-h-12 min-w-12 origin-center transform items-center justify-center rounded-full p-1.5 text-white shadow-sm ring-4 ring-[#F7F9FC] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]";
   const controlVisibilityClass = isEditing
     ? "scale-100 opacity-100"
     : "pointer-events-none scale-0 opacity-0";
@@ -74,7 +74,7 @@ export default function SortableModuleCard({
       className={isEditing ? "touch-none" : undefined}
     >
       <div className={animationClass}>
-        <div className="relative">
+        <div className="relative" data-module-card>
           {isEditing ? (
             <div className={cardClass}>{content}</div>
           ) : (
@@ -94,9 +94,9 @@ export default function SortableModuleCard({
             }}
             aria-label={`Verwijder ${module.name}`}
             tabIndex={isEditing ? 0 : -1}
-            className={`${controlBaseClass} -left-3 -top-3 bg-red-500 ${controlVisibilityClass} active:scale-95`}
+            className={`${controlBaseClass} -left-2 -top-2 bg-red-500 ${controlVisibilityClass} active:scale-95`}
           >
-            <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+            <Trash2 className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </button>
 
           {isCustomModule ? (
@@ -108,9 +108,9 @@ export default function SortableModuleCard({
               }}
               aria-label={`Bewerk ${module.name}`}
               tabIndex={isEditing ? 0 : -1}
-              className={`${controlBaseClass} -right-3 -top-3 bg-blue-600 ${controlVisibilityClass} active:scale-95`}
+              className={`${controlBaseClass} ${isCustomModule ? "-right-2 bottom-3" : "-right-2 -top-2"} bg-blue-600 ${controlVisibilityClass} active:scale-95`}
             >
-              <Pencil className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+              <Pencil className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             </button>
           ) : null}
 
@@ -118,12 +118,12 @@ export default function SortableModuleCard({
             ref={setActivatorNodeRef}
             type="button"
             aria-label={`Verplaats ${module.name}`}
-            className={`${controlBaseClass} ${isCustomModule ? "-right-3 bottom-3" : "-right-3 -top-3"} cursor-grab bg-slate-900 ${controlVisibilityClass} active:cursor-grabbing`}
+            className={`${controlBaseClass} -right-2 -top-2 cursor-grab bg-slate-900 ${controlVisibilityClass} active:cursor-grabbing`}
             {...listeners}
             {...attributes}
             tabIndex={isEditing ? 0 : -1}
           >
-            <GripVertical className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+            <GripVertical className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </button>
 
         </div>

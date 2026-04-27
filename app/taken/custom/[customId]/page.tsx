@@ -5,9 +5,16 @@ import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { getModuleIcon } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Check, Wrench } from "lucide-react";
+import { ArrowLeft, Camera, Check, Wrench, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { createElement, useCallback, useEffect, useState } from "react";
+import {
+  createElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 
 type NumberInputConfig = {
   id: string;
@@ -32,6 +39,7 @@ type ListItemConfig = {
 type ListSettings = {
   items: ListItemConfig[];
   hasRemark: boolean;
+  hasPhoto?: boolean;
 };
 
 type CustomModuleType = "temperature" | "boolean" | "list";
@@ -42,8 +50,11 @@ type CustomModule = {
   name: string;
   icon: string;
   moduleType: CustomModuleType;
+  hasPhoto: boolean;
   settings: NumberInputConfig[] | BooleanInputConfig[] | ListSettings;
 };
+
+const STORAGE_BUCKET = "haccp-photos";
 
 function isNumberInputConfig(value: unknown): value is NumberInputConfig {
   if (!value || typeof value !== "object") return false;
@@ -58,8 +69,26 @@ function isNumberInputConfig(value: unknown): value is NumberInputConfig {
   );
 }
 
+function getSettingsFields<T>(
+  settings: unknown,
+  guard: (value: unknown) => value is T,
+): T[] {
+  if (Array.isArray(settings)) return settings.filter(guard);
+  if (!settings || typeof settings !== "object") return [];
+
+  const maybe = settings as { fields?: unknown };
+  return Array.isArray(maybe.fields) ? maybe.fields.filter(guard) : [];
+}
+
+function getSettingsHasPhoto(settings: unknown): boolean {
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return false;
+  }
+  return (settings as { hasPhoto?: unknown }).hasPhoto === true;
+}
+
 function parseSettings(settings: unknown): NumberInputConfig[] {
-  return Array.isArray(settings) ? settings.filter(isNumberInputConfig) : [];
+  return getSettingsFields(settings, isNumberInputConfig);
 }
 
 function isBooleanInputConfig(value: unknown): value is BooleanInputConfig {
@@ -73,7 +102,7 @@ function isBooleanInputConfig(value: unknown): value is BooleanInputConfig {
 }
 
 function parseBooleanSettings(settings: unknown): BooleanInputConfig[] {
-  return Array.isArray(settings) ? settings.filter(isBooleanInputConfig) : [];
+  return getSettingsFields(settings, isBooleanInputConfig);
 }
 
 function parseListSettings(settings: unknown): ListSettings {
@@ -94,6 +123,7 @@ function parseListSettings(settings: unknown): ListSettings {
         )
       : [],
     hasRemark: maybe.hasRemark === true,
+    hasPhoto: maybe.hasPhoto === true,
   };
 }
 
@@ -148,6 +178,9 @@ function CustomModuleContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -199,9 +232,15 @@ function CustomModuleContent() {
         name: data.name ?? "Aangepast onderdeel",
         icon: data.icon ?? "thermometer",
         moduleType,
+        hasPhoto: getSettingsHasPhoto(data.settings),
         settings,
       });
       setRecordedAtLocal(formatLocalDateTime(new Date()));
+      setPhotoFile(null);
+      setPhotoPreview((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return null;
+      });
 
       if (moduleType === "temperature" && Array.isArray(settings)) {
         const numberSettings = settings as NumberInputConfig[];
@@ -260,6 +299,12 @@ function CustomModuleContent() {
     }
   }, [isLoading, user, router]);
 
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
+
   const updateValue = useCallback(
     (field: NumberInputConfig, direction: "up" | "down") => {
       setValues((current) => {
@@ -301,7 +346,28 @@ function CustomModuleContent() {
         ).map((fieldId) => [fieldId, checked]),
       ),
     );
-  }, [module?.settings]);
+  }, [module]);
+
+  const handlePhotoChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
+      if (!file) return;
+
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+      event.target.value = "";
+    },
+    [photoPreview],
+  );
+
+  const handleRemovePhoto = useCallback(() => {
+    setPhotoFile(null);
+    setPhotoPreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return null;
+    });
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!module || !user || isSaving) return;
@@ -389,11 +455,33 @@ function CustomModuleContent() {
     setIsSaving(true);
     setErrorMessage(null);
 
+    let photoUrl: string | null = null;
+    if (module.hasPhoto && photoFile) {
+      const ext = photoFile.name.split(".").pop() ?? "jpg";
+      const path = `custom/${profile.restaurant_id}/${module.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(path, photoFile, { cacheControl: "3600", upsert: false });
+
+      if (uploadError) {
+        console.error("Foto upload mislukt:", uploadError);
+        setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
+        setIsSaving(false);
+        return;
+      }
+
+      const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      photoUrl = data.publicUrl || null;
+    }
+
     const logData = {
       module_name: module.name,
       module_type: module.moduleType,
       recorded_at: recordedAt,
       values: logValues,
+      ...(photoUrl
+        ? { photo_url: photoUrl, photo_urls: [photoUrl], photoUrls: [photoUrl] }
+        : {}),
     };
 
     const { error } = await supabase.from("custom_module_logs").insert({
@@ -419,7 +507,7 @@ function CustomModuleContent() {
     }, 650);
   }, [
     module,
-    profile?.restaurant_id,
+    profile,
     user,
     recordedAtLocal,
     values,
@@ -429,6 +517,7 @@ function CustomModuleContent() {
     remarks,
     enabledFields,
     isSaving,
+    photoFile,
     router,
   ]);
 
@@ -808,6 +897,73 @@ function CustomModuleContent() {
                 </p>
               </div>
             )}
+
+            {module.hasPhoto ? (
+              <section className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900">
+                    Foto toevoegen
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                    Optioneel, maar handig als bewijs bij deze registratie.
+                  </p>
+                </div>
+
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+
+                {photoPreview ? (
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="Geselecteerde foto"
+                      className="h-72 w-full rounded-3xl border border-slate-100 object-cover shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      aria-label="Foto verwijderen"
+                      className="absolute -right-3 -top-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
+                    >
+                      <X className="h-5 w-5" strokeWidth={3} aria-hidden />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isSaving}
+                    className="flex min-h-[220px] w-full flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center text-slate-600 transition-all enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
+                      <Camera className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                    </span>
+                    <span className="text-2xl font-black">
+                      Foto maken of kiezen
+                    </span>
+                    <span className="text-base font-semibold">
+                      Tik hier om een foto toe te voegen
+                    </span>
+                  </button>
+                )}
+
+                {photoPreview ? (
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isSaving}
+                    className="min-h-[56px] rounded-2xl bg-slate-100 px-5 text-base font-black text-slate-800 transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Andere foto kiezen
+                  </button>
+                ) : null}
+              </section>
+            ) : null}
           </div>
         ) : (
           <div className="mt-4 flex flex-col items-center justify-center gap-5 rounded-3xl border border-slate-100 bg-white px-6 py-16 text-center shadow-sm">

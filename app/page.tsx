@@ -32,7 +32,14 @@ import {
 } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 
 const VALID_TABS: readonly BottomNavTab[] = ["tasks", "history", "settings"];
 
@@ -160,6 +167,23 @@ function HomeContent() {
     setIsEditing((v) => !v);
   }, []);
 
+  const handlePageClick = useCallback(
+    (event: MouseEvent<HTMLElement>) => {
+      if (!isEditing || activeTab !== "tasks") return;
+
+      const target = event.target as HTMLElement;
+      const clickedModuleCard = target.closest("[data-module-card]");
+      const clickedInteractiveElement = target.closest(
+        "button,a,input,textarea,select,[role='dialog']",
+      );
+
+      if (!clickedModuleCard && !clickedInteractiveElement) {
+        setIsEditing(false);
+      }
+    },
+    [activeTab, isEditing],
+  );
+
   const handleCreateModule = useCallback((module: TaskModule) => {
     setModules((items) => [...items, module]);
     setIsAddModalOpen(false);
@@ -202,7 +226,10 @@ function HomeContent() {
   return (
     <>
       <VerifyEmailBanner />
-      <section className="relative px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
+      <section
+        className="relative px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28"
+        onClick={handlePageClick}
+      >
         {activeTab === "tasks" ? (
           <button
             type="button"
