@@ -23,6 +23,22 @@ type NumberInputConfig = {
   hasRemark: boolean;
 };
 
+type BooleanInputConfig = {
+  id: string;
+  name: string;
+  hasRemark: boolean;
+};
+
+type ListItemConfig = {
+  id: string;
+  name: string;
+};
+
+type ListSettings = {
+  items: ListItemConfig[];
+  hasRemark: boolean;
+};
+
 type AddModuleModalProps = {
   open: boolean;
   onClose: () => void;
@@ -42,6 +58,27 @@ function createNumberInput(index: number): NumberInputConfig {
     unit: "°C",
     hasRemark: false,
   };
+}
+
+function createBooleanInput(index: number): BooleanInputConfig {
+  return {
+    id: `boolean-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: `Controle ${index}`,
+    hasRemark: false,
+  };
+}
+
+function createListItem(index: number): ListItemConfig {
+  return {
+    id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: `Item ${index}`,
+  };
+}
+
+function moduleTypeToDatabaseValue(type: ModuleType): string {
+  if (type === "boolean") return "boolean";
+  if (type === "list") return "list";
+  return "temperature";
 }
 
 function formatStep(step: number): string {
@@ -64,6 +101,9 @@ export default function AddModuleModal({
   const [iconKey, setIconKey] = useState<string>(AVAILABLE_ICONS[0]);
   const [moduleType, setModuleType] = useState<ModuleType>("number");
   const [numberInputs, setNumberInputs] = useState<NumberInputConfig[]>([]);
+  const [booleanInputs, setBooleanInputs] = useState<BooleanInputConfig[]>([]);
+  const [listItems, setListItems] = useState<ListItemConfig[]>([]);
+  const [listHasRemark, setListHasRemark] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +116,9 @@ export default function AddModuleModal({
       setIconKey(editingModule?.icon ?? AVAILABLE_ICONS[0]);
       setModuleType("number");
       setNumberInputs([createNumberInput(1)]);
+      setBooleanInputs([createBooleanInput(1)]);
+      setListItems([createListItem(1)]);
+      setListHasRemark(false);
       setErrorMessage(null);
       setIsSaving(false);
       if (isEditing) {
@@ -98,6 +141,9 @@ export default function AddModuleModal({
     setIconKey(AVAILABLE_ICONS[0]);
     setModuleType("number");
     setNumberInputs([createNumberInput(1)]);
+    setBooleanInputs([createBooleanInput(1)]);
+    setListItems([createListItem(1)]);
+    setListHasRemark(false);
     setErrorMessage(null);
   }, []);
 
@@ -129,6 +175,34 @@ export default function AddModuleModal({
       setIsSaving(true);
       setErrorMessage(null);
 
+      const listSettings: ListSettings = {
+        items: listItems
+          .map((item) => ({ ...item, name: item.name.trim() }))
+          .filter((item) => item.name.length > 0),
+        hasRemark: listHasRemark,
+      };
+      const settings =
+        moduleType === "boolean"
+          ? booleanInputs
+              .map((input) => ({ ...input, name: input.name.trim() }))
+              .filter((input) => input.name.length > 0)
+          : moduleType === "list"
+            ? listSettings
+            : numberInputs
+                .map((input) => ({ ...input, name: input.name.trim() }))
+                .filter((input) => input.name.length > 0);
+
+      if (Array.isArray(settings) && settings.length === 0) {
+        setErrorMessage("Voeg minstens één veld toe.");
+        setIsSaving(false);
+        return;
+      }
+      if (moduleType === "list" && listSettings.items.length === 0) {
+        setErrorMessage("Voeg minstens één item toe.");
+        setIsSaving(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("custom_modules")
@@ -137,8 +211,8 @@ export default function AddModuleModal({
             user_id: user?.id ?? null,
             name: trimmed,
             icon: iconKey,
-            module_type: "temperature",
-            settings: numberInputs,
+            module_type: moduleTypeToDatabaseValue(moduleType),
+            settings,
             is_active: true,
           })
           .select("id, name, icon")
@@ -177,6 +251,10 @@ export default function AddModuleModal({
       name,
       iconKey,
       numberInputs,
+      booleanInputs,
+      listItems,
+      listHasRemark,
+      moduleType,
       user?.id,
       profile?.restaurant_id,
       onCustomModuleAdded,
@@ -207,6 +285,42 @@ export default function AddModuleModal({
     },
     [],
   );
+
+  const handleAddBooleanInput = useCallback(() => {
+    setBooleanInputs((current) => [
+      ...current,
+      createBooleanInput(current.length + 1),
+    ]);
+  }, []);
+
+  const handleRemoveBooleanInput = useCallback((id: string) => {
+    setBooleanInputs((current) => current.filter((input) => input.id !== id));
+  }, []);
+
+  const handleUpdateBooleanInput = useCallback(
+    (id: string, updates: Partial<BooleanInputConfig>) => {
+      setBooleanInputs((current) =>
+        current.map((input) =>
+          input.id === id ? { ...input, ...updates } : input,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleAddListItem = useCallback(() => {
+    setListItems((current) => [...current, createListItem(current.length + 1)]);
+  }, []);
+
+  const handleRemoveListItem = useCallback((id: string) => {
+    setListItems((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const handleUpdateListItem = useCallback((id: string, name: string) => {
+    setListItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, name } : item)),
+    );
+  }, []);
 
   if (!open) return null;
 
@@ -374,12 +488,10 @@ export default function AddModuleModal({
                   ["list", "Lijst"],
                 ].map(([value, label]) => {
                   const active = moduleType === value;
-                  const disabled = value !== "number";
                   return (
                     <button
                       key={value}
                       type="button"
-                      disabled={disabled}
                       onClick={() => setModuleType(value as ModuleType)}
                       aria-pressed={active}
                       className={[
@@ -387,7 +499,6 @@ export default function AddModuleModal({
                         active
                           ? "border-blue-200 bg-blue-50 text-blue-700"
                           : "border-slate-100 bg-white text-slate-500 shadow-sm",
-                        disabled ? "cursor-not-allowed opacity-55" : "",
                       ].join(" ")}
                     >
                       {label}
@@ -403,6 +514,26 @@ export default function AddModuleModal({
                 onAdd={handleAddNumberInput}
                 onRemove={handleRemoveNumberInput}
                 onUpdate={handleUpdateNumberInput}
+              />
+            ) : null}
+
+            {moduleType === "boolean" ? (
+              <BooleanInputsBuilder
+                booleanInputs={booleanInputs}
+                onAdd={handleAddBooleanInput}
+                onRemove={handleRemoveBooleanInput}
+                onUpdate={handleUpdateBooleanInput}
+              />
+            ) : null}
+
+            {moduleType === "list" ? (
+              <ListBuilder
+                listItems={listItems}
+                hasRemark={listHasRemark}
+                onAdd={handleAddListItem}
+                onRemove={handleRemoveListItem}
+                onUpdate={handleUpdateListItem}
+                onToggleRemark={() => setListHasRemark((current) => !current)}
               />
             ) : null}
 
@@ -587,6 +718,154 @@ function NumberInputsBuilder({
           );
         })}
       </div>
+    </section>
+  );
+}
+
+type BooleanInputsBuilderProps = {
+  booleanInputs: BooleanInputConfig[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<BooleanInputConfig>) => void;
+};
+
+function BooleanInputsBuilder({
+  booleanInputs,
+  onAdd,
+  onRemove,
+  onUpdate,
+}: BooleanInputsBuilderProps) {
+  return (
+    <section className="flex flex-col gap-4">
+      <button
+        type="button"
+        onClick={onAdd}
+        className="self-start text-lg font-black text-blue-600 transition-opacity active:opacity-60"
+      >
+        + Controle toevoegen
+      </button>
+
+      <div className="flex flex-col gap-4">
+        {booleanInputs.map((input) => (
+          <div
+            key={input.id}
+            className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+          >
+            <div className="flex items-start gap-3">
+              <label className="flex flex-1 flex-col gap-2">
+                <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                  Naam controle
+                </span>
+                <input
+                  type="text"
+                  value={input.name}
+                  onChange={(event) =>
+                    onUpdate(input.id, { name: event.target.value })
+                  }
+                  placeholder="Bijv. Frituurolie helder?"
+                  className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => onRemove(input.id)}
+                aria-label={`${input.name} verwijderen`}
+                className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+              >
+                <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+              </button>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="flex min-h-[72px] items-center justify-center rounded-2xl bg-green-600 px-4 text-xl font-black text-white">
+                Goedgekeurd
+              </div>
+              <div className="flex min-h-[72px] items-center justify-center rounded-2xl bg-red-600 px-4 text-xl font-black text-white">
+                Afgekeurd
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                onUpdate(input.id, { hasRemark: !input.hasRemark })
+              }
+              className={[
+                "mt-5 text-left text-lg font-black transition-opacity active:opacity-60",
+                input.hasRemark ? "text-red-600" : "text-blue-600",
+              ].join(" ")}
+            >
+              {input.hasRemark
+                ? "- Opmerking verwijderen"
+                : "+ Opmerking toevoegen"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+type ListBuilderProps = {
+  listItems: ListItemConfig[];
+  hasRemark: boolean;
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, name: string) => void;
+  onToggleRemark: () => void;
+};
+
+function ListBuilder({
+  listItems,
+  hasRemark,
+  onAdd,
+  onRemove,
+  onUpdate,
+  onToggleRemark,
+}: ListBuilderProps) {
+  return (
+    <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <button
+        type="button"
+        onClick={onAdd}
+        className="self-start text-lg font-black text-blue-600 transition-opacity active:opacity-60"
+      >
+        + Item toevoegen
+      </button>
+
+      <div className="flex flex-col gap-3">
+        {listItems.map((item) => (
+          <div key={item.id} className="flex items-center gap-3">
+            <input
+              type="text"
+              value={item.name}
+              onChange={(event) => onUpdate(item.id, event.target.value)}
+              placeholder="Bijv. Afzuigkap reinigen"
+              className="min-h-[64px] min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-lg font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+            />
+            <button
+              type="button"
+              onClick={() => onRemove(item.id)}
+              aria-label={`${item.name} verwijderen`}
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+            >
+              <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onToggleRemark}
+        className={[
+          "text-left text-lg font-black transition-opacity active:opacity-60",
+          hasRemark ? "text-red-600" : "text-blue-600",
+        ].join(" ")}
+      >
+        {hasRemark ? "- Opmerking verwijderen" : "+ Opmerking toevoegen"}
+      </button>
     </section>
   );
 }
