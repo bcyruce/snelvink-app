@@ -36,7 +36,7 @@ type Props = {
 };
 
 const MAX_PHOTOS = 5;
-const STORAGE_BUCKET = "haccp-photos";
+const STORAGE_BUCKET = "haccp_photos";
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");

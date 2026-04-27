@@ -4,7 +4,7 @@ import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { ImageIcon, Printer, X } from "lucide-react";
+import { Eye, Printer, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 type TemperatureLogRow = {
@@ -56,7 +56,7 @@ type ReportRow = {
 type CustomModuleLogValue = {
   field_id: string;
   name: string;
-  value: number | string;
+  value: number;
   unit: string;
   remark: string | null;
 };
@@ -64,9 +64,7 @@ type CustomModuleLogValue = {
 type CustomModuleLogData = {
   module_name?: string;
   values?: CustomModuleLogValue[];
-  photo_url?: unknown;
-  photo_urls?: unknown;
-  photoUrls?: unknown;
+  photo_urls?: string[];
 };
 
 type CustomModuleLogRow = {
@@ -192,20 +190,6 @@ function isCustomLogData(value: unknown): value is CustomModuleLogData {
   return Array.isArray(maybe.values);
 }
 
-function compactPhotoUrls(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((url): url is string => typeof url === "string" && url);
-}
-
-function extractCustomPhotoUrls(logData: CustomModuleLogData): string[] {
-  const urls = [
-    ...(typeof logData.photo_url === "string" ? [logData.photo_url] : []),
-    ...compactPhotoUrls(logData.photo_urls),
-    ...compactPhotoUrls(logData.photoUrls),
-  ];
-  return Array.from(new Set(urls));
-}
-
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function HistoryList() {
@@ -216,9 +200,7 @@ export default function HistoryList() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPrintUpgradeModal, setShowPrintUpgradeModal] = useState(false);
-  const [selectedDetailRow, setSelectedDetailRow] = useState<ReportRow | null>(
-    null,
-  );
+  const [detailRow, setDetailRow] = useState<ReportRow | null>(null);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -309,7 +291,7 @@ export default function HistoryList() {
           valueOrStatus,
           remarks,
           source: "haccp" as const,
-          photoUrls: compactPhotoUrls(row.image_urls),
+          photoUrls: row.image_urls ?? [],
         };
       }) ?? [];
 
@@ -320,7 +302,11 @@ export default function HistoryList() {
 
         const moduleName =
           logData.module_name ?? "Aangepast onderdeel";
-        const photoUrls = extractCustomPhotoUrls(logData);
+        const photoUrls = Array.isArray(logData.photo_urls)
+          ? logData.photo_urls.filter(
+              (value): value is string => typeof value === "string",
+            )
+          : [];
 
         return (logData.values ?? []).map((value, index) => ({
           id: `custom-${row.id}-${value.field_id}-${index}`,
@@ -472,16 +458,41 @@ export default function HistoryList() {
                       <td className="border-b border-slate-100 px-4 py-5 text-base text-slate-700 print:border-black print:text-black">
                         <button
                           type="button"
-                          onClick={() => setSelectedDetailRow(row)}
-                          className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-transform active:scale-95 print:hidden"
+                          onClick={() => setDetailRow(row)}
+                          className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-transform hover:bg-slate-800 active:scale-95 print:hidden"
                         >
-                          <ImageIcon
+                          <Eye
                             className="h-4 w-4"
                             strokeWidth={2.25}
                             aria-hidden
                           />
                           Details bekijken
+                          {row.photoUrls.length > 0 ? (
+                            <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs font-black tabular-nums">
+                              {row.photoUrls.length}
+                            </span>
+                          ) : null}
                         </button>
+
+                        <div className="hidden print:block">
+                          <p className="font-medium text-black">
+                            {row.remarks
+                              ? translateHaccpText(row.remarks)
+                              : "—"}
+                          </p>
+                          {row.photoUrls.length > 0 ? (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {row.photoUrls.map((url, i) => (
+                                <img
+                                  key={`${row.id}-print-${i}`}
+                                  src={url}
+                                  alt={`Foto ${i + 1} bij registratie`}
+                                  className="h-[3cm] w-auto max-w-[6cm] rounded-none border border-black object-cover"
+                                />
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -499,8 +510,8 @@ export default function HistoryList() {
       ) : null}
 
       <DetailModal
-        row={selectedDetailRow}
-        onClose={() => setSelectedDetailRow(null)}
+        row={detailRow}
+        onClose={() => setDetailRow(null)}
         translate={translateHaccpText}
       />
     </div>
@@ -510,37 +521,56 @@ export default function HistoryList() {
 type DetailModalProps = {
   row: ReportRow | null;
   onClose: () => void;
-  translate: (value: string) => string;
+  translate: (text: string) => string;
 };
 
 function DetailModal({ row, onClose, translate }: DetailModalProps) {
+  useEffect(() => {
+    if (!row) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [row, onClose]);
+
   if (!row) return null;
 
-  const remarks = row.remarks.trim();
+  const dateLabel = new Intl.DateTimeFormat("nl-NL", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(row.created_at));
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-4 pb-4 pt-10 backdrop-blur-sm sm:items-center sm:p-6 print:hidden"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 backdrop-blur-[2px] print:hidden sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="history-detail-title"
+      aria-labelledby="detail-modal-title"
       onClick={onClose}
     >
       <div
-        className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-sm"
-        onClick={(event) => event.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        className="toast-slide-up flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-black uppercase tracking-wide text-slate-500">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-6 py-5">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
               {translate(row.taskName)}
             </p>
-            <h3
-              id="history-detail-title"
-              className="mt-1 text-2xl font-black tracking-tight text-slate-900"
+            <h2
+              id="detail-modal-title"
+              className="mt-1 truncate text-2xl font-black tracking-tight text-slate-900"
             >
-              Details bekijken
-            </h3>
+              {translate(row.apparaat)}
+            </h2>
+            <p className="mt-1 text-sm font-semibold capitalize text-slate-500">
+              {dateLabel}
+            </p>
           </div>
           <button
             type="button"
@@ -552,51 +582,61 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-              Apparaat
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="rounded-2xl bg-slate-50 px-5 py-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              Waarde / status
             </p>
-            <p className="mt-1 text-base font-black text-slate-900">
-              {translate(row.apparaat)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-              Waarde/status
-            </p>
-            <p className="mt-1 text-base font-black text-slate-900">
+            <p className="mt-1 text-2xl font-black text-slate-900">
               {translate(row.valueOrStatus)}
             </p>
           </div>
+
+          <section className="mt-5">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              Opmerkingen
+            </h3>
+            <p className="mt-2 whitespace-pre-wrap rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-semibold leading-relaxed text-slate-800 shadow-sm">
+              {row.remarks ? translate(row.remarks) : "Geen opmerkingen."}
+            </p>
+          </section>
+
+          {row.photoUrls.length > 0 ? (
+            <section className="mt-6">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Foto&apos;s ({row.photoUrls.length})
+              </h3>
+              <div className="mt-3 flex flex-col gap-4">
+                {row.photoUrls.map((url, i) => (
+                  <a
+                    key={`${row.id}-detail-${i}`}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block overflow-hidden rounded-3xl border border-slate-100 bg-slate-50 shadow-sm transition-transform active:scale-[0.99]"
+                  >
+                    <img
+                      src={url}
+                      alt={`Foto ${i + 1} bij registratie`}
+                      className="h-72 w-full object-cover sm:h-80"
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
 
-        <section className="mt-5 rounded-2xl border border-slate-100 bg-white p-4">
-          <h4 className="text-sm font-black uppercase tracking-wide text-slate-500">
-            Volledige opmerking
-          </h4>
-          <p className="mt-3 whitespace-pre-wrap text-base font-semibold leading-relaxed text-slate-800">
-            {remarks ? translate(remarks) : "Geen opmerkingen."}
-          </p>
-        </section>
-
-        {row.photoUrls.length > 0 ? (
-          <section className="mt-5">
-            <h4 className="text-sm font-black uppercase tracking-wide text-slate-500">
-              Foto&apos;s
-            </h4>
-            <div className="mt-3 flex flex-col gap-4">
-              {row.photoUrls.map((url, index) => (
-                <img
-                  key={`${row.id}-detail-${index}`}
-                  src={url}
-                  alt={`Foto ${index + 1} bij registratie`}
-                  className="max-h-[60vh] w-full rounded-3xl border border-slate-100 object-cover shadow-sm"
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <div className="border-t border-slate-100 px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[56px] w-full rounded-2xl bg-slate-900 text-lg font-black text-white shadow-sm transition-transform active:scale-[0.99]"
+          >
+            Sluiten
+          </button>
+        </div>
       </div>
     </div>
   );

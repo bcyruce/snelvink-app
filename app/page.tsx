@@ -32,14 +32,7 @@ import {
 } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 const VALID_TABS: readonly BottomNavTab[] = ["tasks", "history", "settings"];
 
@@ -167,22 +160,13 @@ function HomeContent() {
     setIsEditing((v) => !v);
   }, []);
 
-  const handlePageClick = useCallback(
-    (event: MouseEvent<HTMLElement>) => {
-      if (!isEditing || activeTab !== "tasks") return;
+  const handleBackgroundClick = useCallback(() => {
+    setIsEditing((current) => (current ? false : current));
+  }, []);
 
-      const target = event.target as HTMLElement;
-      const clickedModuleCard = target.closest("[data-module-card]");
-      const clickedInteractiveElement = target.closest(
-        "button,a,input,textarea,select,[role='dialog']",
-      );
-
-      if (!clickedModuleCard && !clickedInteractiveElement) {
-        setIsEditing(false);
-      }
-    },
-    [activeTab, isEditing],
-  );
+  const stopEditingExit = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+  }, []);
 
   const handleCreateModule = useCallback((module: TaskModule) => {
     setModules((items) => [...items, module]);
@@ -228,12 +212,15 @@ function HomeContent() {
       <VerifyEmailBanner />
       <section
         className="relative px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28"
-        onClick={handlePageClick}
+        onClick={handleBackgroundClick}
       >
         {activeTab === "tasks" ? (
           <button
             type="button"
-            onClick={toggleEditing}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleEditing();
+            }}
             aria-pressed={isEditing}
             className={[
               "absolute right-6 top-6 z-20 min-h-[64px] rounded-2xl px-6 text-xl font-black shadow-sm transition-transform active:scale-95 sm:right-10 sm:top-10",
@@ -285,7 +272,10 @@ function HomeContent() {
           {activeTab === "tasks" && isEditing ? (
             <button
               type="button"
-              onClick={handleOpenAddModule}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleOpenAddModule();
+              }}
               className="mt-6 flex min-h-[96px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-200 bg-white py-8 text-xl font-black text-slate-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-[0.98]"
             >
               <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
@@ -293,9 +283,17 @@ function HomeContent() {
             </button>
           ) : null}
 
-          {activeTab === "history" ? <HistoryList /> : null}
+          {activeTab === "history" ? (
+            <div onClick={stopEditingExit}>
+              <HistoryList />
+            </div>
+          ) : null}
 
-          {activeTab === "settings" ? <SettingsTab /> : null}
+          {activeTab === "settings" ? (
+            <div onClick={stopEditingExit}>
+              <SettingsTab />
+            </div>
+          ) : null}
         </div>
       </section>
 

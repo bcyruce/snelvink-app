@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const MAX_PHOTOS = 5;
-const STORAGE_BUCKET = "haccp-photos";
+const STORAGE_BUCKET = "haccp_photos";
 
 const DEFAULT_REJECT_REASONS: readonly string[] = [
   "Temperatuur te hoog",

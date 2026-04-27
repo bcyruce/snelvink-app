@@ -7,14 +7,10 @@ import { getModuleIcon } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Camera, Check, Wrench, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  createElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-} from "react";
+import { createElement, useCallback, useEffect, useRef, useState } from "react";
+
+const STORAGE_BUCKET = "haccp_photos";
+const MAX_PHOTOS = 5;
 
 type NumberInputConfig = {
   id: string;
@@ -39,7 +35,7 @@ type ListItemConfig = {
 type ListSettings = {
   items: ListItemConfig[];
   hasRemark: boolean;
-  hasPhoto?: boolean;
+  hasPhoto: boolean;
 };
 
 type CustomModuleType = "temperature" | "boolean" | "list";
@@ -54,8 +50,6 @@ type CustomModule = {
   settings: NumberInputConfig[] | BooleanInputConfig[] | ListSettings;
 };
 
-const STORAGE_BUCKET = "haccp-photos";
-
 function isNumberInputConfig(value: unknown): value is NumberInputConfig {
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<NumberInputConfig>;
@@ -69,26 +63,18 @@ function isNumberInputConfig(value: unknown): value is NumberInputConfig {
   );
 }
 
-function getSettingsFields<T>(
-  settings: unknown,
-  guard: (value: unknown) => value is T,
-): T[] {
-  if (Array.isArray(settings)) return settings.filter(guard);
-  if (!settings || typeof settings !== "object") return [];
-
-  const maybe = settings as { fields?: unknown };
-  return Array.isArray(maybe.fields) ? maybe.fields.filter(guard) : [];
-}
-
-function getSettingsHasPhoto(settings: unknown): boolean {
-  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
-    return false;
-  }
-  return (settings as { hasPhoto?: unknown }).hasPhoto === true;
-}
-
+/**
+ * Lees getalvelden uit settings. Backwards-compatible:
+ *   - Oude vorm: settings is een array (NumberInputConfig[]).
+ *   - Nieuwe vorm: settings is een object `{ inputs: [...], hasPhoto }`.
+ */
 function parseSettings(settings: unknown): NumberInputConfig[] {
-  return getSettingsFields(settings, isNumberInputConfig);
+  if (Array.isArray(settings)) return settings.filter(isNumberInputConfig);
+  if (settings && typeof settings === "object") {
+    const inputs = (settings as { inputs?: unknown }).inputs;
+    if (Array.isArray(inputs)) return inputs.filter(isNumberInputConfig);
+  }
+  return [];
 }
 
 function isBooleanInputConfig(value: unknown): value is BooleanInputConfig {
@@ -102,11 +88,20 @@ function isBooleanInputConfig(value: unknown): value is BooleanInputConfig {
 }
 
 function parseBooleanSettings(settings: unknown): BooleanInputConfig[] {
-  return getSettingsFields(settings, isBooleanInputConfig);
+  if (Array.isArray(settings)) return settings.filter(isBooleanInputConfig);
+  if (settings && typeof settings === "object") {
+    const inputs = (settings as { inputs?: unknown }).inputs;
+    if (Array.isArray(inputs)) return inputs.filter(isBooleanInputConfig);
+  }
+  return [];
 }
 
 function parseListSettings(settings: unknown): ListSettings {
-  const fallback: ListSettings = { items: [], hasRemark: false };
+  const fallback: ListSettings = {
+    items: [],
+    hasRemark: false,
+    hasPhoto: false,
+  };
   if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
     return fallback;
   }
@@ -125,6 +120,17 @@ function parseListSettings(settings: unknown): ListSettings {
     hasRemark: maybe.hasRemark === true,
     hasPhoto: maybe.hasPhoto === true,
   };
+}
+
+/**
+ * Haal de `hasPhoto`-vlag uit settings. Geldt voor zowel het oude (array)
+ * als nieuwe (object) formaat. Voor de oude vorm is fotodelen altijd uit.
+ */
+function parseHasPhoto(settings: unknown): boolean {
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return false;
+  }
+  return (settings as { hasPhoto?: unknown }).hasPhoto === true;
 }
 
 function normalizeModuleType(value: unknown): CustomModuleType {
@@ -158,7 +164,7 @@ function CustomModuleContent() {
   const router = useRouter();
   const params = useParams<{ customId: string }>();
   const customId = params?.customId ?? "";
-  const { user, profile, isLoading } = useUser();
+  const { user, profile, isLoading, isFreePlan } = useUser();
 
   const [module, setModule] = useState<CustomModule | null>(null);
   const [recordedAtLocal, setRecordedAtLocal] = useState(() =>
@@ -178,8 +184,8 @@ function CustomModuleContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -232,14 +238,14 @@ function CustomModuleContent() {
         name: data.name ?? "Aangepast onderdeel",
         icon: data.icon ?? "thermometer",
         moduleType,
-        hasPhoto: getSettingsHasPhoto(data.settings),
+        hasPhoto: parseHasPhoto(data.settings),
         settings,
       });
       setRecordedAtLocal(formatLocalDateTime(new Date()));
-      setPhotoFile(null);
-      setPhotoPreview((current) => {
-        if (current) URL.revokeObjectURL(current);
-        return null;
+      setPhotoFiles([]);
+      setPhotoPreviews((prev) => {
+        prev.forEach((url) => URL.revokeObjectURL(url));
+        return [];
       });
 
       if (moduleType === "temperature" && Array.isArray(settings)) {
@@ -301,9 +307,39 @@ function CustomModuleContent() {
 
   useEffect(() => {
     return () => {
-      if (photoPreview) URL.revokeObjectURL(photoPreview);
+      photoPreviews.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [photoPreview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePickPhotos = useCallback(() => {
+    if (photoFiles.length >= MAX_PHOTOS) return;
+    photoInputRef.current?.click();
+  }, [photoFiles.length]);
+
+  const handlePhotoChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files ?? []);
+      if (files.length === 0) return;
+      const room = MAX_PHOTOS - photoFiles.length;
+      const accepted = files.slice(0, room);
+      const newPreviews = accepted.map((file) => URL.createObjectURL(file));
+      setPhotoFiles((prev) => [...prev, ...accepted]);
+      setPhotoPreviews((prev) => [...prev, ...newPreviews]);
+      event.target.value = "";
+    },
+    [photoFiles.length],
+  );
+
+  const handleRemovePhoto = useCallback((index: number) => {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed);
+      return next;
+    });
+  }, []);
 
   const updateValue = useCallback(
     (field: NumberInputConfig, direction: "up" | "down") => {
@@ -346,28 +382,7 @@ function CustomModuleContent() {
         ).map((fieldId) => [fieldId, checked]),
       ),
     );
-  }, [module]);
-
-  const handlePhotoChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0] ?? null;
-      if (!file) return;
-
-      if (photoPreview) URL.revokeObjectURL(photoPreview);
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
-      event.target.value = "";
-    },
-    [photoPreview],
-  );
-
-  const handleRemovePhoto = useCallback(() => {
-    setPhotoFile(null);
-    setPhotoPreview((current) => {
-      if (current) URL.revokeObjectURL(current);
-      return null;
-    });
-  }, []);
+  }, [module?.settings]);
 
   const handleSave = useCallback(async () => {
     if (!module || !user || isSaving) return;
@@ -455,23 +470,32 @@ function CustomModuleContent() {
     setIsSaving(true);
     setErrorMessage(null);
 
-    let photoUrl: string | null = null;
-    if (module.hasPhoto && photoFile) {
-      const ext = photoFile.name.split(".").pop() ?? "jpg";
-      const path = `custom/${profile.restaurant_id}/${module.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(path, photoFile, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) {
-        console.error("Foto upload mislukt:", uploadError);
+    const uploadedPhotoUrls: string[] = [];
+    if (module.hasPhoto && !isFreePlan && photoFiles.length > 0) {
+      try {
+        for (const file of photoFiles) {
+          const ext = file.name.split(".").pop() ?? "jpg";
+          const path = `custom/${profile.restaurant_id}/${module.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(path, file, { cacheControl: "3600", upsert: false });
+          if (uploadError) {
+            console.error("Foto upload mislukt:", uploadError);
+            setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
+            setIsSaving(false);
+            return;
+          }
+          const { data: publicData } = supabase.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(path);
+          if (publicData.publicUrl) uploadedPhotoUrls.push(publicData.publicUrl);
+        }
+      } catch (uploadErr) {
+        console.error("Onverwachte fout bij foto upload:", uploadErr);
         setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
         setIsSaving(false);
         return;
       }
-
-      const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-      photoUrl = data.publicUrl || null;
     }
 
     const logData = {
@@ -479,9 +503,7 @@ function CustomModuleContent() {
       module_type: module.moduleType,
       recorded_at: recordedAt,
       values: logValues,
-      ...(photoUrl
-        ? { photo_url: photoUrl, photo_urls: [photoUrl], photoUrls: [photoUrl] }
-        : {}),
+      photo_urls: uploadedPhotoUrls,
     };
 
     const { error } = await supabase.from("custom_module_logs").insert({
@@ -507,7 +529,7 @@ function CustomModuleContent() {
     }, 650);
   }, [
     module,
-    profile,
+    profile?.restaurant_id,
     user,
     recordedAtLocal,
     values,
@@ -517,7 +539,8 @@ function CustomModuleContent() {
     remarks,
     enabledFields,
     isSaving,
-    photoFile,
+    isFreePlan,
+    photoFiles,
     router,
   ]);
 
@@ -899,68 +922,76 @@ function CustomModuleContent() {
             )}
 
             {module.hasPhoto ? (
-              <section className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900">
-                    Foto toevoegen
-                  </h2>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
-                    Optioneel, maar handig als bewijs bij deze registratie.
-                  </p>
+              <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900">
+                      Foto&apos;s
+                    </h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                      {isFreePlan
+                        ? "Upgrade naar Basic om foto's toe te voegen."
+                        : `Optioneel · max ${MAX_PHOTOS} foto's`}
+                    </p>
+                  </div>
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <Camera className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+                  </span>
                 </div>
 
                 <input
                   ref={photoInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handlePhotoChange}
                 />
 
-                {photoPreview ? (
-                  <div className="relative">
-                    <img
-                      src={photoPreview}
-                      alt="Geselecteerde foto"
-                      className="h-72 w-full rounded-3xl border border-slate-100 object-cover shadow-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      aria-label="Foto verwijderen"
-                      className="absolute -right-3 -top-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
-                    >
-                      <X className="h-5 w-5" strokeWidth={3} aria-hidden />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={isSaving}
-                    className="flex min-h-[220px] w-full flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 px-6 text-center text-slate-600 transition-all enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
-                      <Camera className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                    </span>
-                    <span className="text-2xl font-black">
-                      Foto maken of kiezen
-                    </span>
-                    <span className="text-base font-semibold">
-                      Tik hier om een foto toe te voegen
-                    </span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handlePickPhotos}
+                  disabled={
+                    isSaving ||
+                    isFreePlan ||
+                    photoFiles.length >= MAX_PHOTOS
+                  }
+                  className="flex min-h-[180px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-blue-200 bg-blue-50/60 px-6 py-8 text-center text-lg font-black text-blue-700 transition-transform enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Camera
+                    className="h-12 w-12"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  {isFreePlan
+                    ? "Foto's beschikbaar in Basic"
+                    : photoFiles.length === 0
+                      ? "Tik om een foto te maken of te kiezen"
+                      : photoFiles.length >= MAX_PHOTOS
+                        ? `Maximaal ${MAX_PHOTOS} foto's`
+                        : `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`}
+                </button>
 
-                {photoPreview ? (
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={isSaving}
-                    className="min-h-[56px] rounded-2xl bg-slate-100 px-5 text-base font-black text-slate-800 transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Andere foto kiezen
-                  </button>
+                {photoPreviews.length > 0 ? (
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    {photoPreviews.map((url, index) => (
+                      <div key={url} className="relative">
+                        <img
+                          src={url}
+                          alt={`Foto ${index + 1}`}
+                          className="h-32 w-full rounded-2xl border border-slate-100 object-cover shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(index)}
+                          aria-label={`Foto ${index + 1} verwijderen`}
+                          className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
+                        >
+                          <X className="h-4 w-4" strokeWidth={3} aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 ) : null}
               </section>
             ) : null}

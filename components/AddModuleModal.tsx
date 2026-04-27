@@ -8,7 +8,7 @@ import {
 } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Trash2, X } from "lucide-react";
+import { Camera, Trash2, X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
 type AddModuleTab = "standard" | "custom";
@@ -37,12 +37,6 @@ type ListItemConfig = {
 type ListSettings = {
   items: ListItemConfig[];
   hasRemark: boolean;
-  hasPhoto?: boolean;
-};
-
-type FieldSettings<T> = {
-  fields: T[];
-  hasPhoto: boolean;
 };
 
 type AddModuleModalProps = {
@@ -184,48 +178,45 @@ export default function AddModuleModal({
       setIsSaving(true);
       setErrorMessage(null);
 
-      const cleanNumberInputs = numberInputs
+      const trimmedNumberInputs = numberInputs
         .map((input) => ({ ...input, name: input.name.trim() }))
         .filter((input) => input.name.length > 0);
-      const cleanBooleanInputs = booleanInputs
+      const trimmedBooleanInputs = booleanInputs
         .map((input) => ({ ...input, name: input.name.trim() }))
         .filter((input) => input.name.length > 0);
-      const cleanListItems = listItems
+      const trimmedListItems = listItems
         .map((item) => ({ ...item, name: item.name.trim() }))
         .filter((item) => item.name.length > 0);
-      const listSettings: ListSettings = {
-        items: cleanListItems,
-        hasRemark: listHasRemark,
-        hasPhoto,
-      };
-      const settings =
-        moduleType === "boolean"
-          ? ({
-              fields: cleanBooleanInputs,
-              hasPhoto,
-            } satisfies FieldSettings<BooleanInputConfig>)
-          : moduleType === "list"
-            ? listSettings
-            : ({
-                fields: cleanNumberInputs,
-                hasPhoto,
-              } satisfies FieldSettings<NumberInputConfig>);
 
-      if (moduleType === "number" && cleanNumberInputs.length === 0) {
+      if (moduleType === "number" && trimmedNumberInputs.length === 0) {
         setErrorMessage("Voeg minstens één veld toe.");
         setIsSaving(false);
         return;
       }
-      if (moduleType === "boolean" && cleanBooleanInputs.length === 0) {
+      if (moduleType === "boolean" && trimmedBooleanInputs.length === 0) {
         setErrorMessage("Voeg minstens één veld toe.");
         setIsSaving(false);
         return;
       }
-      if (moduleType === "list" && cleanListItems.length === 0) {
+      if (moduleType === "list" && trimmedListItems.length === 0) {
         setErrorMessage("Voeg minstens één item toe.");
         setIsSaving(false);
         return;
       }
+
+      // Settings worden opgeslagen als object zodat we naast de configuratie
+      // ook flags zoals `hasPhoto` kwijt kunnen. Het lezen kan nog steeds
+      // overweg met de oude (array-)vorm.
+      const settings =
+        moduleType === "boolean"
+          ? { inputs: trimmedBooleanInputs, hasPhoto }
+          : moduleType === "list"
+            ? {
+                items: trimmedListItems,
+                hasRemark: listHasRemark,
+                hasPhoto,
+              }
+            : { inputs: trimmedNumberInputs, hasPhoto };
 
       try {
         const { data, error } = await supabase
@@ -280,8 +271,8 @@ export default function AddModuleModal({
       listHasRemark,
       hasPhoto,
       moduleType,
-      user,
-      profile,
+      user?.id,
+      profile?.restaurant_id,
       onCustomModuleAdded,
       onClose,
       onUpdate,
@@ -533,20 +524,6 @@ export default function AddModuleModal({
               </div>
             </section>
 
-            <button
-              type="button"
-              onClick={() => setHasPhoto((current) => !current)}
-              aria-pressed={hasPhoto}
-              className={[
-                "rounded-2xl border px-5 py-4 text-left text-lg font-black transition-transform active:scale-[0.98]",
-                hasPhoto
-                  ? "border-blue-200 bg-blue-50 text-blue-700"
-                  : "border-slate-100 bg-white text-blue-600 shadow-sm",
-              ].join(" ")}
-            >
-              {hasPhoto ? "- Foto verwijderen" : "+ Foto toevoegen"}
-            </button>
-
             {moduleType === "number" ? (
               <NumberInputsBuilder
                 numberInputs={numberInputs}
@@ -576,6 +553,11 @@ export default function AddModuleModal({
               />
             ) : null}
 
+            <PhotoToggle
+              hasPhoto={hasPhoto}
+              onToggle={() => setHasPhoto((current) => !current)}
+            />
+
             <div className="flex flex-col gap-3 pt-2">
               <button
                 type="submit"
@@ -600,6 +582,59 @@ export default function AddModuleModal({
         )}
       </div>
     </div>
+  );
+}
+
+type PhotoToggleProps = {
+  hasPhoto: boolean;
+  onToggle: () => void;
+};
+
+function PhotoToggle({ hasPhoto, onToggle }: PhotoToggleProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={hasPhoto}
+      className={[
+        "flex min-h-[72px] w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all active:scale-[0.99]",
+        hasPhoto
+          ? "border-blue-200 bg-blue-50"
+          : "border-slate-200 bg-white shadow-sm",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-colors",
+          hasPhoto ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500",
+        ].join(" ")}
+        aria-hidden
+      >
+        <Camera className="h-6 w-6" strokeWidth={2.25} />
+      </span>
+      <span className="flex flex-1 flex-col">
+        <span className="text-lg font-black text-slate-900">
+          + Foto toevoegen
+        </span>
+        <span className="text-sm font-semibold text-slate-500">
+          Medewerkers kunnen bij elke registratie een foto uploaden.
+        </span>
+      </span>
+      <span
+        className={[
+          "relative flex h-8 w-14 shrink-0 items-center rounded-full transition-colors",
+          hasPhoto ? "bg-blue-600" : "bg-slate-200",
+        ].join(" ")}
+        aria-hidden
+      >
+        <span
+          className={[
+            "absolute top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+            hasPhoto ? "translate-x-7" : "translate-x-1",
+          ].join(" ")}
+        />
+      </span>
+    </button>
   );
 }
 
