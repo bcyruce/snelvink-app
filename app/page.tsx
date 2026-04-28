@@ -5,6 +5,7 @@ import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
 import HistoryList from "@/components/HistoryList";
 import SettingsTab from "@/components/SettingsTab";
 import SortableModuleCard from "@/components/SortableModuleCard";
+import SupercellButton from "@/components/SupercellButton";
 import UndoToast from "@/components/UndoToast";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
@@ -215,22 +216,21 @@ function HomeContent() {
         onClick={handleBackgroundClick}
       >
         {activeTab === "tasks" ? (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleEditing();
-            }}
-            aria-pressed={isEditing}
-            className={[
-              "absolute right-6 top-6 z-20 min-h-[64px] rounded-2xl px-6 text-xl font-black shadow-sm transition-transform active:scale-95 sm:right-10 sm:top-10",
-              isEditing
-                ? "bg-green-600 text-white"
-                : "bg-slate-900 text-white",
-            ].join(" ")}
+          <div
+            className="absolute right-6 top-6 z-20 sm:right-10 sm:top-10"
+            onClick={(event) => event.stopPropagation()}
           >
-            {isEditing ? "Klaar" : "Wijzigen"}
-          </button>
+            <SupercellButton
+              type="button"
+              size="lg"
+              variant={isEditing ? "success" : "neutral"}
+              onClick={toggleEditing}
+              aria-pressed={isEditing}
+              className="min-h-[64px] text-xl"
+            >
+              {isEditing ? "Klaar" : "Wijzigen"}
+            </SupercellButton>
+          </div>
         ) : null}
 
         <h1 className="text-6xl font-extrabold tracking-tight text-slate-900 sm:text-7xl">
@@ -270,17 +270,18 @@ function HomeContent() {
           ) : null}
 
           {activeTab === "tasks" && isEditing ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleOpenAddModule();
-              }}
-              className="mt-6 flex min-h-[96px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-200 bg-white py-8 text-xl font-black text-slate-600 shadow-sm transition-transform hover:bg-slate-50 active:scale-[0.98]"
-            >
-              <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
-              Toevoegen
-            </button>
+            <div onClick={(event) => event.stopPropagation()}>
+              <SupercellButton
+                type="button"
+                size="lg"
+                variant="neutral"
+                onClick={handleOpenAddModule}
+                className="mt-6 flex min-h-[96px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-200 py-8 text-xl"
+              >
+                <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
+                Toevoegen
+              </SupercellButton>
+            </div>
           ) : null}
 
           {activeTab === "history" ? (

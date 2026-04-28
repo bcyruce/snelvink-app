@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { supabase } from "@/lib/supabase";
 import { ChefHat } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -336,19 +337,21 @@ export default function LoginPage() {
                   je spam-/reclamemap voor de bevestigingsmail naar{" "}
                   <span className="break-all">{unconfirmedEmail}</span>.
                 </p>
-                <button
+                <SupercellButton
                   type="button"
+                  size="lg"
+                  variant="neutral"
                   onClick={() => void handleResendVerification()}
                   disabled={resendState === "sending" || resendState === "sent"}
                   aria-busy={resendState === "sending"}
-                  className="h-14 w-full rounded-xl border-2 border-amber-900/30 bg-white text-base font-black text-amber-950 shadow-sm transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-14 w-full rounded-xl border-2 border-amber-900/30 text-base normal-case text-amber-950"
                 >
                   {resendState === "sending"
                     ? "Versturen…"
                     : resendState === "sent"
                       ? "Verzonden ✓"
                       : "Bevestigingsmail opnieuw versturen"}
-                </button>
+                </SupercellButton>
                 {resendState === "sent" ? (
                   <p className="text-center text-sm font-semibold text-green-900">
                     Nieuwe bevestigingsmail verstuurd. Vergeet je spam-map niet.
@@ -371,14 +374,16 @@ export default function LoginPage() {
               </p>
             ) : null}
 
-            <button
+            <SupercellButton
               type="submit"
+              size="lg"
+              variant="neutral"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 h-16 w-full rounded-2xl bg-gray-900 text-xl font-bold text-white shadow-md transition-transform hover:bg-gray-800 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 h-16 w-full text-xl normal-case"
             >
               {loading ? "Bezig…" : "Aanmelden"}
-            </button>
+            </SupercellButton>
           </form>
         ) : (
           <form
@@ -532,14 +537,16 @@ export default function LoginPage() {
               </p>
             ) : null}
 
-            <button
+            <SupercellButton
               type="submit"
+              size="lg"
+              variant="neutral"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 h-16 w-full rounded-2xl bg-gray-900 text-xl font-bold text-white shadow-md transition-transform hover:bg-gray-800 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 h-16 w-full text-xl normal-case"
             >
               {loading ? "Bezig…" : "Account aanmaken"}
-            </button>
+            </SupercellButton>
           </form>
         )}
 
@@ -547,8 +554,10 @@ export default function LoginPage() {
           {authView === "login" ? (
             <>
               Nog geen account?{" "}
-              <button
+              <SupercellButton
                 type="button"
+                size="sm"
+                variant="neutral"
                 onClick={() => {
                   setAuthView("register");
                   setError(null);
@@ -559,16 +568,18 @@ export default function LoginPage() {
                   setInviteCode("");
                   setFullName("");
                 }}
-                className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
+                className="px-2 py-1 text-base normal-case"
               >
                 Registreren
-              </button>
+              </SupercellButton>
             </>
           ) : (
             <>
               Al een account?{" "}
-              <button
+              <SupercellButton
                 type="button"
+                size="sm"
+                variant="neutral"
                 onClick={() => {
                   setAuthView("login");
                   setError(null);
@@ -579,10 +590,10 @@ export default function LoginPage() {
                   setInviteCode("");
                   setFullName("");
                 }}
-                className="font-bold text-gray-900 underline decoration-gray-400 underline-offset-4"
+                className="px-2 py-1 text-base normal-case"
               >
                 Aanmelden
-              </button>
+              </SupercellButton>
             </>
           )}
         </p>

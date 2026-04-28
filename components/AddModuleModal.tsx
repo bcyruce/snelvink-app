@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import {
   AVAILABLE_ICONS,
   DEFAULT_MODULES,
@@ -362,14 +363,15 @@ export default function AddModuleModal({
           >
             {isEditing ? "Module bewerken" : "Nieuwe module"}
           </h2>
-          <button
-            type="button"
+          <SupercellButton
+            size="icon"
+            variant="neutral"
             onClick={onClose}
             aria-label="Sluiten"
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition-transform active:scale-95"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-b-[4px]"
           >
             <X className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-          </button>
+          </SupercellButton>
         </div>
 
         {!isEditing ? (
@@ -377,19 +379,15 @@ export default function AddModuleModal({
             {(["standard", "custom"] as const).map((tab) => {
               const active = activeTab === tab;
               return (
-                <button
+                <SupercellButton
                   key={tab}
-                  type="button"
+                  size="lg"
+                  variant={active ? "primary" : "neutral"}
                   onClick={() => setActiveTab(tab)}
-                  className={[
-                    "min-h-[64px] rounded-xl py-3 text-lg font-bold transition-all",
-                    active
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500",
-                  ].join(" ")}
+                  className="min-h-[64px] rounded-xl py-3 text-lg normal-case"
                 >
                   {tab === "standard" ? "Standaard" : "Aangepast"}
-                </button>
+                </SupercellButton>
               );
             })}
           </div>
@@ -400,10 +398,12 @@ export default function AddModuleModal({
             {DEFAULT_MODULES.map((preset) => {
               const alreadyAdded = existingIds.has(preset.id);
               return (
-                <button
+                <SupercellButton
                   key={preset.id}
-                  type="button"
+                  size="lg"
+                  variant={alreadyAdded ? "neutral" : "primary"}
                   aria-disabled={alreadyAdded}
+                  disabled={alreadyAdded}
                   onClick={() => {
                     if (alreadyAdded) {
                       window.alert("Dit onderdeel is al toegevoegd");
@@ -411,12 +411,7 @@ export default function AddModuleModal({
                     }
                     onCreate({ ...preset });
                   }}
-                  className={[
-                    "flex min-h-[80px] w-full items-center gap-4 rounded-2xl border px-5 text-left text-xl font-black shadow-sm transition-transform active:scale-[0.98]",
-                    alreadyAdded
-                      ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
-                      : "border-slate-100 bg-white text-slate-900",
-                  ].join(" ")}
+                  className="flex min-h-[80px] w-full items-center gap-4 px-5 text-left text-xl normal-case"
                 >
                   {createElement(getModuleIcon(preset.icon), {
                     className: "h-8 w-8 shrink-0",
@@ -429,7 +424,7 @@ export default function AddModuleModal({
                       Toegevoegd
                     </span>
                   ) : null}
-                </button>
+                </SupercellButton>
               );
             })}
           </div>
@@ -469,24 +464,21 @@ export default function AddModuleModal({
                   {AVAILABLE_ICONS.map((key) => {
                     const selected = key === iconKey;
                     return (
-                      <button
+                      <SupercellButton
                         type="button"
+                        size="icon"
+                        variant={selected ? "primary" : "neutral"}
                         key={key}
                         onClick={() => setIconKey(key)}
                         aria-pressed={selected}
-                        className={[
-                          "flex min-h-[64px] items-center justify-center rounded-2xl border transition-transform active:scale-95",
-                          selected
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-100 bg-white text-slate-700 shadow-sm",
-                        ].join(" ")}
+                        className="flex min-h-[64px] items-center justify-center"
                       >
                         {createElement(getModuleIcon(key), {
                           className: "h-7 w-7",
                           strokeWidth: 2.25,
                           "aria-hidden": true,
                         })}
-                      </button>
+                      </SupercellButton>
                     );
                   })}
                 </div>
@@ -505,20 +497,17 @@ export default function AddModuleModal({
                 ].map(([value, label]) => {
                   const active = moduleType === value;
                   return (
-                    <button
+                    <SupercellButton
                       key={value}
                       type="button"
+                      size="lg"
+                      variant={active ? "primary" : "neutral"}
                       onClick={() => setModuleType(value as ModuleType)}
                       aria-pressed={active}
-                      className={[
-                        "min-h-[64px] rounded-2xl border px-5 text-left text-lg font-black transition-transform active:scale-[0.98]",
-                        active
-                          ? "border-blue-200 bg-blue-50 text-blue-700"
-                          : "border-slate-100 bg-white text-slate-500 shadow-sm",
-                      ].join(" ")}
+                      className="min-h-[64px] px-5 text-left text-lg normal-case"
                     >
                       {label}
-                    </button>
+                    </SupercellButton>
                   );
                 })}
               </div>
@@ -559,24 +548,28 @@ export default function AddModuleModal({
             />
 
             <div className="flex flex-col gap-3 pt-2">
-              <button
+              <SupercellButton
                 type="submit"
+                size="lg"
+                variant="success"
                 disabled={!isValid || isSaving}
-                className="min-h-[64px] w-full rounded-2xl bg-green-600 px-6 py-5 text-xl font-black text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="min-h-[64px] w-full text-xl normal-case"
               >
                 {isSaving
                   ? "Bezig met opslaan..."
                   : isEditing
                     ? "Wijzigingen opslaan"
                     : "Opslaan"}
-              </button>
-              <button
+              </SupercellButton>
+              <SupercellButton
                 type="button"
+                size="lg"
+                variant="neutral"
                 onClick={onClose}
-                className="min-h-[64px] w-full rounded-2xl bg-slate-100 text-lg font-bold text-slate-800 transition-transform active:scale-95"
+                className="min-h-[64px] w-full text-lg normal-case"
               >
                 Annuleren
-              </button>
+              </SupercellButton>
             </div>
           </form>
         )}
@@ -592,16 +585,13 @@ type PhotoToggleProps = {
 
 function PhotoToggle({ hasPhoto, onToggle }: PhotoToggleProps) {
   return (
-    <button
+    <SupercellButton
       type="button"
+      size="lg"
+      variant={hasPhoto ? "primary" : "neutral"}
       onClick={onToggle}
       aria-pressed={hasPhoto}
-      className={[
-        "flex min-h-[72px] w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all active:scale-[0.99]",
-        hasPhoto
-          ? "border-blue-200 bg-blue-50"
-          : "border-slate-200 bg-white shadow-sm",
-      ].join(" ")}
+      className="flex min-h-[72px] w-full items-center gap-4 px-5 py-4 text-left normal-case"
     >
       <span
         className={[
@@ -634,7 +624,7 @@ function PhotoToggle({ hasPhoto, onToggle }: PhotoToggleProps) {
           ].join(" ")}
         />
       </span>
-    </button>
+    </SupercellButton>
   );
 }
 
@@ -653,13 +643,15 @@ function NumberInputsBuilder({
 }: NumberInputsBuilderProps) {
   return (
     <section className="flex flex-col gap-4">
-      <button
+      <SupercellButton
         type="button"
+        size="sm"
+        variant="primary"
         onClick={onAdd}
-        className="self-start text-lg font-black text-blue-600 transition-opacity active:opacity-60"
+        className="self-start text-lg normal-case"
       >
         + Getalveld toevoegen
-      </button>
+      </SupercellButton>
 
       <div className="flex flex-col gap-4">
         {numberInputs.map((input) => {
@@ -685,14 +677,16 @@ function NumberInputsBuilder({
                   />
                 </label>
 
-                <button
+                <SupercellButton
                   type="button"
+                  size="icon"
+                  variant="danger"
                   onClick={() => onRemove(input.id)}
                   aria-label={`${input.name} verwijderen`}
-                  className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+                  className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center"
                 >
                   <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-                </button>
+                </SupercellButton>
               </div>
 
               <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -765,20 +759,19 @@ function NumberInputsBuilder({
                 </label>
               </div>
 
-              <button
+              <SupercellButton
                 type="button"
+                size="sm"
+                variant={input.hasRemark ? "danger" : "primary"}
                 onClick={() =>
                   onUpdate(input.id, { hasRemark: !input.hasRemark })
                 }
-                className={[
-                  "mt-5 text-left text-lg font-black transition-opacity active:opacity-60",
-                  input.hasRemark ? "text-red-600" : "text-blue-600",
-                ].join(" ")}
+                className="mt-5 text-left text-lg normal-case"
               >
                 {input.hasRemark
                   ? "- Opmerking verwijderen"
                   : "+ Opmerking toevoegen"}
-              </button>
+              </SupercellButton>
 
               {input.hasRemark ? (
                 <textarea
@@ -811,13 +804,15 @@ function BooleanInputsBuilder({
 }: BooleanInputsBuilderProps) {
   return (
     <section className="flex flex-col gap-4">
-      <button
+      <SupercellButton
         type="button"
+        size="sm"
+        variant="primary"
         onClick={onAdd}
-        className="self-start text-lg font-black text-blue-600 transition-opacity active:opacity-60"
+        className="self-start text-lg normal-case"
       >
         + Controle toevoegen
-      </button>
+      </SupercellButton>
 
       <div className="flex flex-col gap-4">
         {booleanInputs.map((input) => (
@@ -841,14 +836,16 @@ function BooleanInputsBuilder({
                 />
               </label>
 
-              <button
+              <SupercellButton
                 type="button"
+                size="icon"
+                variant="danger"
                 onClick={() => onRemove(input.id)}
                 aria-label={`${input.name} verwijderen`}
-                className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+                className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center"
               >
                 <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-              </button>
+              </SupercellButton>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
@@ -860,20 +857,19 @@ function BooleanInputsBuilder({
               </div>
             </div>
 
-            <button
+            <SupercellButton
               type="button"
+              size="sm"
+              variant={input.hasRemark ? "danger" : "primary"}
               onClick={() =>
                 onUpdate(input.id, { hasRemark: !input.hasRemark })
               }
-              className={[
-                "mt-5 text-left text-lg font-black transition-opacity active:opacity-60",
-                input.hasRemark ? "text-red-600" : "text-blue-600",
-              ].join(" ")}
+              className="mt-5 text-left text-lg normal-case"
             >
               {input.hasRemark
                 ? "- Opmerking verwijderen"
                 : "+ Opmerking toevoegen"}
-            </button>
+            </SupercellButton>
           </div>
         ))}
       </div>
@@ -900,13 +896,15 @@ function ListBuilder({
 }: ListBuilderProps) {
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-      <button
+      <SupercellButton
         type="button"
+        size="sm"
+        variant="primary"
         onClick={onAdd}
-        className="self-start text-lg font-black text-blue-600 transition-opacity active:opacity-60"
+        className="self-start text-lg normal-case"
       >
         + Item toevoegen
-      </button>
+      </SupercellButton>
 
       <div className="flex flex-col gap-3">
         {listItems.map((item) => (
@@ -918,28 +916,29 @@ function ListBuilder({
               placeholder="Bijv. Afzuigkap reinigen"
               className="min-h-[64px] min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-lg font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
             />
-            <button
+            <SupercellButton
               type="button"
+              size="icon"
+              variant="danger"
               onClick={() => onRemove(item.id)}
               aria-label={`${item.name} verwijderen`}
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition-transform active:scale-95"
+              className="flex h-16 w-16 shrink-0 items-center justify-center"
             >
               <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-            </button>
+            </SupercellButton>
           </div>
         ))}
       </div>
 
-      <button
+      <SupercellButton
         type="button"
+        size="sm"
+        variant={hasRemark ? "danger" : "primary"}
         onClick={onToggleRemark}
-        className={[
-          "text-left text-lg font-black transition-opacity active:opacity-60",
-          hasRemark ? "text-red-600" : "text-blue-600",
-        ].join(" ")}
+        className="text-left text-lg normal-case"
       >
         {hasRemark ? "- Opmerking verwijderen" : "+ Opmerking toevoegen"}
-      </button>
+      </SupercellButton>
     </section>
   );
 }

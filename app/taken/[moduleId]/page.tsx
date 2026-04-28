@@ -1,6 +1,7 @@
 "use client";
 
 import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
+import SupercellButton from "@/components/SupercellButton";
 import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
 import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
@@ -54,14 +55,16 @@ function ModuleContent() {
     <>
       <VerifyEmailBanner />
       <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
-        <button
+        <SupercellButton
           type="button"
+          size="lg"
+          variant="neutral"
           onClick={() => router.push("/")}
-          className="mb-8 flex h-20 w-full items-center justify-center gap-3 rounded-2xl bg-gray-900 text-2xl font-black text-white shadow-md transition-transform active:scale-95"
+          className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
           Terug
-        </button>
+        </SupercellButton>
 
         <ModuleComponent />
       </section>

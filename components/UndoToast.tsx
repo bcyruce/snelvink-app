@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -69,14 +70,16 @@ export default function UndoToast({
           <p className="flex-1 text-base font-semibold text-white sm:text-lg">
             {message}
           </p>
-          <button
+          <SupercellButton
             type="button"
+            size="sm"
+            variant="neutral"
             onClick={handleUndo}
-            className="flex h-12 items-center gap-2 rounded-xl bg-white px-4 text-base font-black text-gray-900 shadow-md transition-transform active:scale-95 sm:text-lg"
+            className="flex h-12 items-center gap-2 rounded-xl px-4 text-base normal-case text-gray-900 sm:text-lg"
           >
             <Undo2 className="h-5 w-5" strokeWidth={2.5} aria-hidden />
             {actionLabel}
-          </button>
+          </SupercellButton>
         </div>
         <div className="h-1 w-full bg-gray-700">
           <div

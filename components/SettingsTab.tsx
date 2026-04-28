@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -227,30 +228,26 @@ export default function SettingsTab() {
         <h3 className="text-base font-bold text-gray-900">{t("languageSectionTitle")}</h3>
         <p className="mt-1 text-sm text-gray-600">{t("languageSectionSubtitle")}</p>
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <button
+          <SupercellButton
             type="button"
+            size="sm"
+            variant={language === "nl" ? "primary" : "neutral"}
             onClick={() => setLanguage("nl")}
             aria-pressed={language === "nl"}
-            className={`min-h-12 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors ${
-              language === "nl"
-                ? "border-blue-600 bg-blue-50 text-blue-800"
-                : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
-            }`}
+            className="min-h-12 rounded-xl px-3 py-3 text-sm normal-case"
           >
             🇳🇱 Nederlands
-          </button>
-          <button
+          </SupercellButton>
+          <SupercellButton
             type="button"
+            size="sm"
+            variant={language === "en" ? "primary" : "neutral"}
             onClick={() => setLanguage("en")}
             aria-pressed={language === "en"}
-            className={`min-h-12 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors ${
-              language === "en"
-                ? "border-blue-600 bg-blue-50 text-blue-800"
-                : "border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
-            }`}
+            className="min-h-12 rounded-xl px-3 py-3 text-sm normal-case"
           >
             EN English
-          </button>
+          </SupercellButton>
         </div>
       </section>
 
@@ -264,28 +261,32 @@ export default function SettingsTab() {
               {restaurant?.name ?? "—"}
             </p>
           </div>
-          <button
+          <SupercellButton
             type="button"
+            size="icon"
+            variant="neutral"
             onClick={() => void handleRefresh()}
             disabled={isRefreshing}
             aria-busy={isRefreshing}
             title="Vernieuwen"
-            className="shrink-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-700 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="shrink-0 rounded-lg p-2"
           >
             <RefreshCw
               className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
               strokeWidth={2}
             />
-          </button>
+          </SupercellButton>
         </div>
 
         <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
           Abonnement
         </p>
-        <button
+        <SupercellButton
           type="button"
+          size="lg"
+          variant="neutral"
           onClick={() => router.push("/dashboard/subscription")}
-          className="mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border-2 border-gray-200 bg-white px-4 py-4 text-left shadow-sm transition-transform active:scale-[0.99] hover:border-gray-300"
+          className="mt-2 flex w-full items-center justify-between gap-3 border-2 border-gray-200 px-4 py-4 text-left normal-case"
         >
           <div className="min-w-0">
             <p className="truncate text-xl font-black text-gray-900">
@@ -308,7 +309,7 @@ export default function SettingsTab() {
             strokeWidth={2.5}
             aria-hidden
           />
-        </button>
+        </SupercellButton>
 
         {isOwner ? (
           <div className="mt-6 border-t border-gray-200 pt-6">
@@ -372,14 +373,16 @@ export default function SettingsTab() {
                       {member.email ?? "Onbekend e-mailadres"}
                     </p>
                   </div>
-                  <button
+                  <SupercellButton
                     type="button"
+                    size="sm"
+                    variant="danger"
                     onClick={() => void handleDeleteStaff(member.id)}
                     disabled={deletingStaffId === member.id}
-                    className="shrink-0 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="shrink-0 rounded-lg px-3 py-2 text-sm normal-case"
                   >
                     {deletingStaffId === member.id ? "Bezig..." : "Verwijderen"}
-                  </button>
+                  </SupercellButton>
                 </li>
               ))}
             </ul>
@@ -391,26 +394,30 @@ export default function SettingsTab() {
         Download een overzicht van alle temperatuur- en schoonmaakregistraties.
       </p>
 
-      <button
+      <SupercellButton
         type="button"
+        size="lg"
+        variant="neutral"
         onClick={() => void handleSignOut()}
         disabled={isSigningOut}
-        className="mb-8 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-base font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mb-8 flex min-h-14 w-full items-center justify-center gap-2 border border-gray-200 px-4 py-3 text-base normal-case"
       >
         <LogOut className="h-5 w-5 shrink-0 text-gray-700" strokeWidth={2} />
         {isSigningOut ? "Uitloggen..." : "Uitloggen"}
-      </button>
+      </SupercellButton>
 
-      <button
+      <SupercellButton
         type="button"
+        size="lg"
+        variant="primary"
         onClick={() => void generatePDF()}
         disabled={isExporting || !restaurantId}
         aria-busy={isExporting}
-        className="flex w-full items-center justify-center gap-3 rounded-2xl bg-indigo-600 py-6 text-xl font-bold text-white shadow-md transition-transform hover:bg-indigo-700 enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-3 py-6 text-xl normal-case"
       >
         <Download className="h-7 w-7 shrink-0 text-white" strokeWidth={2.25} />
         {isExporting ? "Genereren..." : "Download HACCP Rapport (PDF)"}
-      </button>
+      </SupercellButton>
     </div>
   );
 }

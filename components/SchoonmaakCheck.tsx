@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
@@ -392,14 +393,15 @@ export default function SchoonmaakCheck() {
             Kies een locatie
           </h3>
           {selectedLocation ? (
-            <button
-              type="button"
+            <SupercellButton
+              size="sm"
+              variant="neutral"
               onClick={resetLocation}
-              className="flex h-10 items-center gap-1.5 rounded-full bg-gray-100 px-3 text-sm font-bold text-gray-700 transition-transform active:scale-95"
+              className="flex h-10 items-center gap-1.5 rounded-full border-b-[4px] px-3 text-sm normal-case"
             >
               <Pencil className="h-4 w-4" aria-hidden />
               Wijzigen
-            </button>
+            </SupercellButton>
           ) : null}
         </div>
 
@@ -412,23 +414,25 @@ export default function SchoonmaakCheck() {
         ) : (
           <div className="flex flex-col gap-3">
             {locations.map((loc) => (
-              <button
+              <SupercellButton
                 key={loc.id}
-                type="button"
+                size="lg"
+                variant="neutral"
                 onClick={() => setSelectedLocation(loc)}
-                className="flex h-20 w-full items-center justify-between rounded-2xl bg-gray-100 px-5 text-left text-2xl font-black text-gray-900 shadow-sm transition-transform active:scale-[0.98]"
+                className="flex h-20 w-full items-center justify-between text-left text-2xl normal-case"
               >
                 <span className="flex-1 truncate">{loc.name}</span>
-              </button>
+              </SupercellButton>
             ))}
-            <button
-              type="button"
+            <SupercellButton
+              size="lg"
+              variant="neutral"
               onClick={handleAddLocation}
-              className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform active:scale-95"
+              className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-gray-300 text-xl normal-case"
             >
               <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
               Locatie toevoegen
-            </button>
+            </SupercellButton>
           </div>
         )}
       </section>
@@ -453,16 +457,12 @@ export default function SchoonmaakCheck() {
                 const checked = checkedTaskIds.has(task.id);
                 return (
                   <li key={task.id} className="flex items-stretch gap-2">
-                    <button
-                      type="button"
+                    <SupercellButton
+                      size="lg"
+                      variant={checked ? "success" : "neutral"}
                       onClick={() => toggleTask(task.id)}
                       aria-pressed={checked}
-                      className={[
-                        "flex h-20 flex-1 items-center justify-between gap-3 rounded-2xl px-5 text-left text-xl font-black shadow-sm transition-transform active:scale-[0.98]",
-                        checked
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-100 text-gray-900",
-                      ].join(" ")}
+                      className="flex h-20 flex-1 items-center justify-between gap-3 px-5 text-left text-xl normal-case"
                     >
                       <span className="flex-1 truncate">{task.name}</span>
                       <span
@@ -478,30 +478,32 @@ export default function SchoonmaakCheck() {
                           <Check className="h-6 w-6" strokeWidth={3} />
                         ) : null}
                       </span>
-                    </button>
-                    <button
-                      type="button"
+                    </SupercellButton>
+                    <SupercellButton
+                      size="icon"
+                      variant="danger"
                       onClick={() => handleDeleteTask(task)}
                       aria-label={`Taak "${task.name}" verwijderen`}
-                      className="flex h-20 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-500 text-white shadow-sm transition-transform active:scale-95"
+                      className="flex h-20 w-16 shrink-0 items-center justify-center"
                     >
                       <Trash2 className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-                    </button>
+                    </SupercellButton>
                   </li>
                 );
               })}
             </ul>
           )}
 
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             onClick={handleAddTask}
             disabled={loadingTasks}
-            className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 bg-white text-xl font-black text-gray-700 shadow-sm transition-transform enabled:active:scale-95 disabled:opacity-60"
+            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-gray-300 text-xl normal-case"
           >
             <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
             Taak toevoegen
-          </button>
+          </SupercellButton>
         </section>
       ) : null}
 
@@ -521,11 +523,12 @@ export default function SchoonmaakCheck() {
             onChange={handlePhotoChange}
           />
 
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             onClick={handlePickPhotos}
             disabled={isSaving || photoSlotsLeft <= 0}
-            className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-gray-300 bg-white text-xl font-bold text-gray-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-gray-300 text-xl normal-case"
           >
             <Camera className="h-7 w-7" aria-hidden />
             {photoSlotsLeft <= 0
@@ -533,7 +536,7 @@ export default function SchoonmaakCheck() {
               : photoFiles.length > 0
                 ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
                 : "Foto maken of kiezen (max 5)"}
-          </button>
+          </SupercellButton>
 
           {photoPreviews.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
@@ -544,25 +547,27 @@ export default function SchoonmaakCheck() {
                     alt={`Foto ${i + 1}`}
                     className="h-28 w-full rounded-xl border border-gray-200 object-cover shadow-sm"
                   />
-                  <button
-                    type="button"
+                  <SupercellButton
+                    size="icon"
+                    variant="danger"
                     onClick={() => removePhoto(i)}
                     aria-label={`Foto ${i + 1} verwijderen`}
-                    className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-4 ring-white transition-transform active:scale-90"
+                    className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
                   >
                     <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-                  </button>
+                  </SupercellButton>
                 </div>
               ))}
             </div>
           ) : null}
 
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="success"
             onClick={handleSave}
             disabled={!canSave}
             aria-busy={isSaving}
-            className="flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-green-600 text-2xl font-black text-white shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex h-24 w-full items-center justify-center gap-3 text-2xl normal-case"
           >
             {isSaving ? (
               "Opslaan…"
@@ -572,7 +577,7 @@ export default function SchoonmaakCheck() {
                 Opslaan ({completedCount})
               </>
             )}
-          </button>
+          </SupercellButton>
 
           {completedCount === 0 ? (
             <p className="text-center text-sm text-gray-500">

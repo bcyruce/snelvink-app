@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import {
   DEFAULT_MODULES,
   getModuleIcon,
@@ -90,45 +91,44 @@ export default function SortableModuleCard({
             </Link>
           )}
 
-          <button
+          <SupercellButton
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(module.id);
-            }}
+            size="icon"
+            variant="danger"
+            onClick={() => onDelete(module.id)}
             aria-label={`Verwijder ${module.name}`}
             tabIndex={isEditing ? 0 : -1}
-            className={`${controlBaseClass} -left-2 -top-2 bg-red-500 ${controlVisibilityClass} active:scale-95`}
+            className={`${controlBaseClass} -left-2 -top-2 h-10 w-10 rounded-full border-b-[4px] ${controlVisibilityClass}`}
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-          </button>
+          </SupercellButton>
 
-          <button
+          <SupercellButton
             ref={setActivatorNodeRef}
             type="button"
+            size="icon"
+            variant="neutral"
             aria-label={`Verplaats ${module.name}`}
-            className={`${controlBaseClass} -right-2 -top-2 cursor-grab bg-slate-900 ${controlVisibilityClass} active:cursor-grabbing`}
+            className={`${controlBaseClass} -right-2 -top-2 h-10 w-10 cursor-grab rounded-full border-b-[4px] ${controlVisibilityClass} active:cursor-grabbing`}
             {...listeners}
             {...attributes}
             tabIndex={isEditing ? 0 : -1}
-            onClick={(e) => e.stopPropagation()}
           >
             <GripVertical className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-          </button>
+          </SupercellButton>
 
           {isCustomModule ? (
-            <button
+            <SupercellButton
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(module);
-              }}
+              size="icon"
+              variant="primary"
+              onClick={() => onEdit(module)}
               aria-label={`Bewerk ${module.name}`}
               tabIndex={isEditing ? 0 : -1}
-              className={`${controlBaseClass} -right-2 -bottom-2 bg-blue-600 ${controlVisibilityClass} active:scale-95`}
+              className={`${controlBaseClass} -right-2 -bottom-2 h-10 w-10 rounded-full border-b-[4px] ${controlVisibilityClass}`}
             >
               <Pencil className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-            </button>
+            </SupercellButton>
           ) : null}
         </div>
       </div>

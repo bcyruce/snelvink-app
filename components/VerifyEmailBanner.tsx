@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { Mail } from "lucide-react";
@@ -73,16 +74,18 @@ export default function VerifyEmailBanner() {
           E-mailadres nog niet geverifieerd. Bevestig je account om je gegevens
           veilig te stellen.
         </p>
-        <button
+        <SupercellButton
           type="button"
+          size="lg"
+          variant="neutral"
           onClick={() => void handleVerifyNow()}
           disabled={isSending}
           aria-busy={isSending}
-          className="flex h-20 w-full items-center justify-center gap-3 rounded-2xl border-2 border-amber-900/30 bg-amber-100 text-lg font-black text-amber-950 shadow-sm transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-20 w-full items-center justify-center gap-3 border-2 border-amber-900/30 text-lg normal-case text-amber-950"
         >
           <Mail className="h-7 w-7 shrink-0" strokeWidth={2.25} aria-hidden />
           {isSending ? "Versturen…" : "Nu verifiëren"}
-        </button>
+        </SupercellButton>
         {feedback ? (
           <p
             className="text-center text-sm font-semibold text-green-900"

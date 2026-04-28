@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLongPress } from "@/hooks/useLongPress";
@@ -479,16 +480,15 @@ function ListView({
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {title}
         </h2>
-        <button
-          type="button"
+        <SupercellButton
+          size="lg"
+          variant={isManaging ? "success" : "neutral"}
           onClick={onToggleManaging}
           aria-pressed={isManaging}
-          className={`min-h-[64px] rounded-2xl px-6 text-xl font-black shadow-sm transition-transform active:scale-95 ${
-            isManaging ? "bg-green-600 text-white" : "bg-slate-900 text-white"
-          }`}
+          className="min-h-[64px] text-xl"
         >
           {isManaging ? "Klaar" : "Wijzigen"}
-        </button>
+        </SupercellButton>
       </div>
 
       {!restaurantReady ? (
@@ -514,28 +514,31 @@ function ListView({
                   <span className="flex-1 truncate text-xl font-bold text-slate-900">
                     {eq.name}
                   </span>
-                  <button
-                    type="button"
+                  <SupercellButton
+                    size="icon"
+                    variant="neutral"
                     onClick={() => onRename(eq)}
                     aria-label={`Hernoem ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition-transform active:scale-95"
+                    className="flex h-16 w-16 items-center justify-center"
                   >
                     <Pencil className="h-5 w-5" aria-hidden />
-                  </button>
-                  <button
-                    type="button"
+                  </SupercellButton>
+                  <SupercellButton
+                    size="icon"
+                    variant="danger"
                     onClick={() => onDelete(eq)}
                     aria-label={`Verwijder ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500 text-white transition-transform active:scale-95"
+                    className="flex h-16 w-16 items-center justify-center"
                   >
                     <Trash2 className="h-5 w-5" aria-hidden />
-                  </button>
+                  </SupercellButton>
                 </div>
               ) : (
-                <button
-                  type="button"
+                <SupercellButton
+                  size="lg"
+                  variant="neutral"
                   onClick={() => onPick(eq)}
-                  className="flex min-h-[88px] w-full items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-5 py-6 text-left text-2xl font-black text-slate-900 shadow-sm transition-transform active:scale-[0.98]"
+                  className="flex min-h-[88px] w-full items-center justify-between gap-3 py-6 text-left text-2xl normal-case"
                 >
                   <span className="flex-1 truncate">{eq.name}</span>
                   <span className="text-base font-bold text-slate-500">
@@ -548,22 +551,23 @@ function ListView({
                     strokeWidth={2.5}
                     aria-hidden
                   />
-                </button>
+                </SupercellButton>
               )}
             </li>
           ))}
         </ul>
       )}
 
-      <button
-        type="button"
+      <SupercellButton
+        size="lg"
+        variant="neutral"
         onClick={onAdd}
         disabled={!restaurantReady}
-        className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-5 text-xl font-black text-slate-600 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
       >
         <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
         Apparaat toevoegen
-      </button>
+      </SupercellButton>
     </div>
   );
 }
@@ -662,13 +666,14 @@ function RecordView({
       </label>
 
       <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
+        <SupercellButton
+          size="sm"
+          variant="neutral"
           onClick={onCancel}
-          className="min-h-[64px] rounded-2xl bg-white px-5 text-base font-black text-slate-800 shadow-sm transition-transform active:scale-95"
+          className="min-h-[64px] text-base normal-case"
         >
           ← Terug naar lijst
-        </button>
+        </SupercellButton>
         <h3 className="flex-1 truncate text-right text-2xl font-extrabold text-slate-900">
           {equipment?.name ?? title}
         </h3>
@@ -688,22 +693,24 @@ function RecordView({
       */}
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3">
         <div className="flex w-full items-stretch gap-3">
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             {...incOnePress}
             aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl bg-slate-900 text-4xl font-black text-white shadow-sm transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
           >
             + 1°
-          </button>
-          <button
-            type="button"
+          </SupercellButton>
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             {...incTenthPress}
             aria-label="0,1 graad hoger (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 bg-white text-2xl font-black text-slate-800 shadow-sm transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
           >
             + 0,1°
-          </button>
+          </SupercellButton>
         </div>
 
         <div className="flex w-full min-h-[6rem] items-center justify-center py-2">
@@ -727,34 +734,37 @@ function RecordView({
               aria-label="Temperatuur handmatig invoeren"
             />
           ) : (
-            <button
-              type="button"
+            <SupercellButton
+              size="lg"
+              variant="neutral"
               onClick={startManual}
               aria-label={`Huidige temperatuur ${tempLabel}, tik om handmatig in te voeren`}
-            className={`min-h-[112px] w-full rounded-3xl border border-slate-100 bg-white px-2 py-4 text-center text-8xl font-black tabular-nums leading-none shadow-sm ${tempColorClass}`}
+              className={`min-h-[112px] w-full rounded-3xl border border-slate-100 px-2 py-4 text-center text-8xl tabular-nums leading-none normal-case ${tempColorClass}`}
             >
               {tempLabel}
-            </button>
+            </SupercellButton>
           )}
         </div>
 
         <div className="flex w-full items-stretch gap-3">
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             {...decOnePress}
             aria-label="Eén graad lager (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl bg-slate-900 text-4xl font-black text-white shadow-sm transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
           >
             − 1°
-          </button>
-          <button
-            type="button"
+          </SupercellButton>
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             {...decTenthPress}
             aria-label="0,1 graad lager (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 bg-white text-2xl font-black text-slate-800 shadow-sm transition-transform active:scale-95"
+            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
           >
             − 0,1°
-          </button>
+          </SupercellButton>
         </div>
       </div>
 
@@ -772,11 +782,12 @@ function RecordView({
         className="hidden"
         onChange={onPhotoChange}
       />
-      <button
-        type="button"
+      <SupercellButton
+        size="lg"
+        variant="neutral"
         onClick={onPickPhotos}
         disabled={isSaving || photoSlotsLeft <= 0}
-        className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-xl font-bold text-slate-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-[80px] w-full items-center justify-center gap-3 border border-slate-200 text-xl normal-case"
       >
         <Camera className="h-7 w-7" aria-hidden />
         {photoSlotsLeft <= 0
@@ -784,7 +795,7 @@ function RecordView({
           : photoFiles.length > 0
             ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
             : "Foto maken of kiezen (max 5)"}
-      </button>
+      </SupercellButton>
 
       {photoPreviews.length > 0 ? (
         <div className="grid grid-cols-3 gap-3">
@@ -795,26 +806,28 @@ function RecordView({
                 alt={`Foto ${i + 1}`}
                 className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
               />
-              <button
-                type="button"
+              <SupercellButton
+                size="icon"
+                variant="danger"
                 onClick={() => onRemovePhoto(i)}
                 aria-label={`Foto ${i + 1} verwijderen`}
-                className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
+                className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
               >
                 <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-              </button>
+              </SupercellButton>
             </div>
           ))}
         </div>
       ) : null}
 
       {/* Save */}
-      <button
-        type="button"
+      <SupercellButton
+        size="lg"
+        variant="success"
         onClick={onSave}
         disabled={!canSave}
         aria-busy={isSaving}
-        className="flex min-h-[96px] w-full items-center justify-center gap-3 rounded-2xl bg-green-600 px-6 py-5 text-2xl font-black text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-[96px] w-full items-center justify-center gap-3 text-2xl normal-case"
       >
         {isSaving ? (
           "Opslaan…"
@@ -824,7 +837,7 @@ function RecordView({
             Opslaan
           </>
         )}
-      </button>
+      </SupercellButton>
     </div>
   );
 }

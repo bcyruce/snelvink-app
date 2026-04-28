@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { useUser } from "@/hooks/useUser";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -76,13 +77,15 @@ export default function UpgradePromptModal({
             <p className="text-center text-lg font-semibold leading-relaxed text-gray-900">
               {children}
             </p>
-            <button
+            <SupercellButton
               type="button"
+              size="lg"
+              variant="neutral"
               onClick={onClose}
-              className="mt-6 h-20 w-full rounded-2xl bg-gray-900 text-xl font-bold text-white shadow-md transition-transform active:scale-[0.99]"
+              className="mt-6 h-20 w-full text-xl normal-case"
             >
               Begrepen
-            </button>
+            </SupercellButton>
           </>
         ) : (
           <>
@@ -117,15 +120,17 @@ export default function UpgradePromptModal({
               </p>
             ) : null}
 
-            <button
+            <SupercellButton
               type="button"
+              size="lg"
+              variant="neutral"
               onClick={handleVerifyOTP}
               disabled={verifying}
               aria-busy={verifying}
-              className="mt-6 h-20 w-full rounded-2xl bg-gray-900 text-xl font-bold text-white shadow-md transition-transform active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-6 h-20 w-full text-xl normal-case"
             >
               {verifying ? "Controleren…" : "Code controleren"}
-            </button>
+            </SupercellButton>
           </>
         )}
       </div>

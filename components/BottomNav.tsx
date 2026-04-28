@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { ClipboardCheck, History, Settings } from "lucide-react";
 
 export type BottomNavTab = "tasks" | "history" | "settings";
@@ -29,16 +30,16 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         {tabs.map(({ id, label, Icon }) => {
           const isActive = active === id;
           return (
-            <button
+            <SupercellButton
               key={id}
               type="button"
+              size="sm"
+              variant={isActive ? "primary" : "neutral"}
               onClick={() => onChange(id)}
               aria-current={isActive ? "page" : undefined}
               className={[
-                "flex min-h-[64px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 transition-colors duration-150 active:scale-[0.98]",
-                isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-slate-500 hover:text-slate-800",
+                "flex min-h-[64px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-2 py-3 normal-case",
+                isActive ? "" : "opacity-80",
               ].join(" ")}
             >
               <Icon
@@ -46,10 +47,10 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 strokeWidth={isActive ? 2.25 : 2}
                 aria-hidden
               />
-              <span className="max-w-full truncate text-sm font-semibold">
+              <span className="max-w-full truncate text-sm font-semibold text-white">
                 {label}
               </span>
-            </button>
+            </SupercellButton>
           );
         })}
       </div>

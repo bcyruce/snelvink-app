@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import { useUser } from "@/hooks/useUser";
 import {
   PLAN_DEFINITIONS,
@@ -133,14 +134,16 @@ export default function SubscriptionPage() {
 
   return (
     <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
-      <button
+      <SupercellButton
         type="button"
+        size="lg"
+        variant="neutral"
         onClick={() => router.push("/?tab=settings")}
-        className="mb-8 flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-gray-900 text-xl font-black text-white shadow-md transition-transform active:scale-95"
+        className="mb-8 flex h-16 w-full items-center justify-center gap-3 text-xl"
       >
         <ArrowLeft className="h-6 w-6" strokeWidth={2.5} aria-hidden />
         Terug
-      </button>
+      </SupercellButton>
 
       <header className="mb-8">
         <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
@@ -185,15 +188,17 @@ export default function SubscriptionPage() {
         ) : null}
 
         {isOwner && hasActiveSubscription ? (
-          <button
+          <SupercellButton
             type="button"
+            size="sm"
+            variant="neutral"
             onClick={handleManage}
             disabled={busy !== null}
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm font-black text-gray-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-5 inline-flex items-center gap-2 border-2 border-gray-200 px-4 py-3 text-sm normal-case"
           >
             <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             {busy === "portal" ? "Openen…" : "Abonnement beheren"}
-          </button>
+          </SupercellButton>
         ) : null}
       </div>
 
@@ -328,15 +333,15 @@ function PlanCard({
       </ul>
 
       {plan.id === "free" ? null : (
-        <button
+        <SupercellButton
           type="button"
+          size="lg"
+          variant={plan.id === "pro" ? "neutral" : "success"}
           onClick={onUpgrade}
           disabled={!canUpgrade || isBusy}
           aria-busy={isBusy}
-          className={`mt-2 flex h-20 w-full items-center justify-center gap-3 rounded-2xl text-2xl font-black shadow-md transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
-            plan.id === "pro"
-              ? "bg-white text-gray-900"
-              : "bg-green-600 text-white hover:bg-green-700"
+          className={`mt-2 flex h-20 w-full items-center justify-center gap-3 text-2xl normal-case ${
+            plan.id === "pro" ? "text-gray-900" : ""
           }`}
         >
           {isCurrent
@@ -344,7 +349,7 @@ function PlanCard({
             : isBusy
               ? "Bezig…"
               : `Upgraden naar ${plan.name}`}
-        </button>
+        </SupercellButton>
       )}
     </article>
   );

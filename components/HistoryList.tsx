@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
@@ -370,24 +371,28 @@ export default function HistoryList() {
         </h2>
       </div>
 
-      <button
+      <SupercellButton
         type="button"
+        size="lg"
+        variant="primary"
         onClick={handlePrintClick}
-        className="mb-6 flex h-24 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 text-2xl font-black text-white shadow-sm transition-transform hover:bg-blue-700 active:scale-[0.99] print:hidden"
+        className="mb-6 flex h-24 w-full items-center justify-center gap-3 text-2xl normal-case print:hidden"
       >
         <Printer className="h-8 w-8 shrink-0" strokeWidth={2.25} aria-hidden />
         Genereer NVWA Rapport
-      </button>
+      </SupercellButton>
 
       <div className="mb-4 flex items-center justify-end gap-3 print:hidden">
-        <button
+        <SupercellButton
           type="button"
+          size="sm"
+          variant="neutral"
           onClick={() => void fetchLogs()}
           disabled={loading}
-          className="min-h-[48px] shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-[48px] shrink-0 rounded-xl border border-slate-200 px-4 py-2 text-sm normal-case"
         >
           Vernieuwen
-        </button>
+        </SupercellButton>
       </div>
 
       {loading && rows.length === 0 ? (
@@ -456,10 +461,12 @@ export default function HistoryList() {
                         {translateHaccpText(row.valueOrStatus)}
                       </td>
                       <td className="border-b border-slate-100 px-4 py-5 text-base text-slate-700 print:border-black print:text-black">
-                        <button
+                        <SupercellButton
                           type="button"
+                          size="sm"
+                          variant="neutral"
                           onClick={() => setDetailRow(row)}
-                          className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm transition-transform hover:bg-slate-800 active:scale-95 print:hidden"
+                          className="inline-flex min-h-[44px] items-center gap-2 rounded-full border-b-[4px] px-4 py-2 text-sm normal-case print:hidden"
                         >
                           <Eye
                             className="h-4 w-4"
@@ -472,7 +479,7 @@ export default function HistoryList() {
                               {row.photoUrls.length}
                             </span>
                           ) : null}
-                        </button>
+                        </SupercellButton>
 
                         <div className="hidden print:block">
                           <p className="font-medium text-black">
@@ -572,14 +579,16 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
               {dateLabel}
             </p>
           </div>
-          <button
+          <SupercellButton
             type="button"
+            size="icon"
+            variant="neutral"
             onClick={onClose}
             aria-label="Sluiten"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition-transform active:scale-95"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-b-[4px]"
           >
             <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-          </button>
+          </SupercellButton>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -629,13 +638,15 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
         </div>
 
         <div className="border-t border-slate-100 px-6 py-4">
-          <button
+          <SupercellButton
             type="button"
+            size="lg"
+            variant="neutral"
             onClick={onClose}
-            className="min-h-[56px] w-full rounded-2xl bg-slate-900 text-lg font-black text-white shadow-sm transition-transform active:scale-[0.99]"
+            className="min-h-[56px] w-full text-lg normal-case"
           >
             Sluiten
-          </button>
+          </SupercellButton>
         </div>
       </div>
     </div>

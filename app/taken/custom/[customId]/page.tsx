@@ -1,6 +1,7 @@
 "use client";
 
 import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
+import SupercellButton from "@/components/SupercellButton";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { getModuleIcon } from "@/lib/taskModules";
@@ -579,14 +580,15 @@ function CustomModuleContent() {
     <>
       <VerifyEmailBanner />
       <section className="px-6 pb-36 pt-8 sm:px-10 sm:pb-40 sm:pt-12">
-        <button
-          type="button"
+        <SupercellButton
+          variant="neutral"
           onClick={() => router.push("/")}
-          className="mb-6 flex min-h-[72px] w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 text-2xl font-black text-white shadow-sm transition-transform active:scale-95"
+          size="lg"
+          className="mb-6 flex min-h-[72px] w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
           Terug
-        </button>
+        </SupercellButton>
 
         {module ? (
           <div className="mt-4 flex flex-col gap-6">
@@ -638,8 +640,9 @@ function CustomModuleContent() {
                         {selectedCount}/{fieldSettings.length} velden geselecteerd
                       </p>
                     </div>
-                    <button
-                      type="button"
+                    <SupercellButton
+                      variant={allFieldsSelected ? "primary" : "neutral"}
+                      size="icon"
                       onClick={() => toggleAllFields(!allFieldsSelected)}
                       aria-pressed={allFieldsSelected}
                       aria-label={
@@ -647,15 +650,10 @@ function CustomModuleContent() {
                           ? "Alle velden uitvinken"
                           : "Alle velden aanvinken"
                       }
-                      className={[
-                        "flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 transition-all active:scale-95",
-                        allFieldsSelected
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-slate-300 bg-white text-transparent",
-                      ].join(" ")}
+                      className="h-16 w-16 shrink-0"
                     >
                       <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                    </button>
+                    </SupercellButton>
                   </div>
                 ) : null}
 
@@ -668,7 +666,7 @@ function CustomModuleContent() {
                       <div
                         key={setting.id}
                         className={[
-                          "mb-6 rounded-3xl border p-6 shadow-sm transition-all duration-300",
+                          "mb-6 rounded-3xl border p-5 shadow-sm transition-all duration-300",
                           enabled
                             ? "border-slate-100 bg-white"
                             : "border-slate-200 bg-slate-50 opacity-75",
@@ -678,8 +676,9 @@ function CustomModuleContent() {
                           <h2 className="pt-2 text-xl font-bold text-slate-900">
                             {setting.name}
                           </h2>
-                      <button
-                        type="button"
+                      <SupercellButton
+                        variant={enabled ? "primary" : "neutral"}
+                        size="icon"
                         onClick={() => toggleField(setting.id)}
                         aria-pressed={enabled}
                         aria-label={
@@ -687,27 +686,23 @@ function CustomModuleContent() {
                             ? `${setting.name} niet registreren`
                             : `${setting.name} registreren`
                         }
-                        className={[
-                          "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 transition-all active:scale-95",
-                          enabled
-                            ? "border-blue-600 bg-blue-600 text-white"
-                            : "border-slate-300 bg-white text-transparent",
-                        ].join(" ")}
+                        className="h-14 w-14 shrink-0"
                       >
                         <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                      </button>
+                      </SupercellButton>
                         </div>
 
                         <div className="mt-5 flex items-center gap-3">
-                          <button
-                            type="button"
+                          <SupercellButton
+                            variant="neutral"
+                            size="icon"
                             disabled={!enabled}
                             onClick={() => updateValue(setting, "down")}
-                            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-4xl font-black text-slate-700 transition-all enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-14 w-14 shrink-0"
                             aria-label={`${setting.name} verlagen`}
                           >
                             -
-                          </button>
+                          </SupercellButton>
 
                           <div className="min-w-0 flex-1 text-center">
                             <label className="block">
@@ -723,7 +718,7 @@ function CustomModuleContent() {
                                 onChange={(event) =>
                                   setManualValue(setting, event.target.value)
                                 }
-                                className="w-full appearance-none border-0 bg-transparent text-center text-5xl font-black tabular-nums text-slate-900 outline-none transition-opacity disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="w-full appearance-none border-0 bg-transparent text-center text-3xl font-black tabular-nums text-slate-900 outline-none transition-opacity disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                               />
                               <span className="ml-1 text-3xl">
                                 {setting.unit}
@@ -731,15 +726,16 @@ function CustomModuleContent() {
                             </label>
                           </div>
 
-                          <button
-                            type="button"
+                          <SupercellButton
+                            variant="primary"
+                            size="icon"
                             disabled={!enabled}
                             onClick={() => updateValue(setting, "up")}
-                            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-4xl font-black text-blue-600 transition-all enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-14 w-14 shrink-0"
                             aria-label={`${setting.name} verhogen`}
                           >
                             +
-                          </button>
+                          </SupercellButton>
                         </div>
 
                         {setting.hasRemark ? (
@@ -770,7 +766,7 @@ function CustomModuleContent() {
                       <div
                         key={setting.id}
                         className={[
-                          "mb-6 rounded-3xl border p-6 shadow-sm transition-all duration-300",
+                          "mb-6 rounded-3xl border p-5 shadow-sm transition-all duration-300",
                           enabled
                             ? "border-slate-100 bg-white"
                             : "border-slate-200 bg-slate-50 opacity-75",
@@ -780,8 +776,9 @@ function CustomModuleContent() {
                           <h2 className="pt-2 text-xl font-bold text-slate-900">
                             {setting.name}
                           </h2>
-                          <button
-                            type="button"
+                          <SupercellButton
+                            variant={enabled ? "primary" : "neutral"}
+                            size="icon"
                             onClick={() => toggleField(setting.id)}
                             aria-pressed={enabled}
                             aria-label={
@@ -789,20 +786,16 @@ function CustomModuleContent() {
                                 ? `${setting.name} niet registreren`
                                 : `${setting.name} registreren`
                             }
-                            className={[
-                              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 transition-all active:scale-95",
-                              enabled
-                                ? "border-blue-600 bg-blue-600 text-white"
-                                : "border-slate-300 bg-white text-transparent",
-                            ].join(" ")}
+                            className="h-14 w-14 shrink-0"
                           >
                             <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                          </button>
+                          </SupercellButton>
                         </div>
 
                         <div className="mt-5 grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
+                          <SupercellButton
+                            variant={selected === "goedgekeurd" ? "success" : "neutral"}
+                            size="lg"
                             disabled={!enabled}
                             onClick={() =>
                               setBooleanValues((current) => ({
@@ -810,17 +803,13 @@ function CustomModuleContent() {
                                 [setting.id]: "goedgekeurd",
                               }))
                             }
-                            className={[
-                              "min-h-[88px] rounded-2xl px-4 text-xl font-black transition-all enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
-                              selected === "goedgekeurd"
-                                ? "bg-green-600 text-white"
-                                : "bg-slate-100 text-slate-500",
-                            ].join(" ")}
+                            className="min-h-[88px] text-xl"
                           >
                             Goedgekeurd
-                          </button>
-                          <button
-                            type="button"
+                          </SupercellButton>
+                          <SupercellButton
+                            variant={selected === "afgekeurd" ? "danger" : "neutral"}
+                            size="lg"
                             disabled={!enabled}
                             onClick={() =>
                               setBooleanValues((current) => ({
@@ -828,15 +817,10 @@ function CustomModuleContent() {
                                 [setting.id]: "afgekeurd",
                               }))
                             }
-                            className={[
-                              "min-h-[88px] rounded-2xl px-4 text-xl font-black transition-all enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
-                              selected === "afgekeurd"
-                                ? "bg-red-600 text-white"
-                                : "bg-slate-100 text-slate-500",
-                            ].join(" ")}
+                            className="min-h-[88px] text-xl"
                           >
                             Afgekeurd
-                          </button>
+                          </SupercellButton>
                         </div>
 
                         {setting.hasRemark ? (
@@ -859,14 +843,14 @@ function CustomModuleContent() {
                   })}
 
                 {module.moduleType === "list" && listSettings ? (
-                  <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
                     <div className="flex flex-col gap-3">
                       {listSettings.items.map((item) => {
                         const checked = listChecked[item.id] === true;
                         return (
-                          <button
+                          <SupercellButton
                             key={item.id}
-                            type="button"
+                            size="lg"
                             onClick={() =>
                               setListChecked((current) => ({
                                 ...current,
@@ -874,12 +858,8 @@ function CustomModuleContent() {
                               }))
                             }
                             aria-pressed={checked}
-                            className={[
-                              "flex min-h-[72px] w-full items-center gap-4 rounded-2xl border px-5 text-left text-xl font-black transition-all active:scale-[0.98]",
-                              checked
-                                ? "border-green-200 bg-green-50 text-green-700"
-                                : "border-slate-100 bg-slate-50 text-slate-800",
-                            ].join(" ")}
+                            variant={checked ? "success" : "neutral"}
+                            className="flex min-h-[72px] w-full items-center gap-4 px-5 text-left text-xl normal-case"
                           >
                             <span
                               className={[
@@ -893,7 +873,7 @@ function CustomModuleContent() {
                               <Check className="h-6 w-6" strokeWidth={3} />
                             </span>
                             <span className="flex-1">{item.name}</span>
-                          </button>
+                          </SupercellButton>
                         );
                       })}
                     </div>
@@ -922,7 +902,7 @@ function CustomModuleContent() {
             )}
 
             {module.hasPhoto ? (
-              <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+              <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-black text-slate-900">
@@ -948,15 +928,16 @@ function CustomModuleContent() {
                   onChange={handlePhotoChange}
                 />
 
-                <button
-                  type="button"
+                <SupercellButton
+                  variant="primary"
+                  size="lg"
                   onClick={handlePickPhotos}
                   disabled={
                     isSaving ||
                     isFreePlan ||
                     photoFiles.length >= MAX_PHOTOS
                   }
-                  className="flex min-h-[180px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-blue-200 bg-blue-50/60 px-6 py-8 text-center text-lg font-black text-blue-700 transition-transform enabled:active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex min-h-[180px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-blue-200 px-6 py-8 text-center text-lg normal-case"
                 >
                   <Camera
                     className="h-12 w-12"
@@ -970,7 +951,7 @@ function CustomModuleContent() {
                       : photoFiles.length >= MAX_PHOTOS
                         ? `Maximaal ${MAX_PHOTOS} foto's`
                         : `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`}
-                </button>
+                </SupercellButton>
 
                 {photoPreviews.length > 0 ? (
                   <div className="mt-5 grid grid-cols-3 gap-3">
@@ -981,14 +962,15 @@ function CustomModuleContent() {
                           alt={`Foto ${index + 1}`}
                           className="h-32 w-full rounded-2xl border border-slate-100 object-cover shadow-sm"
                         />
-                        <button
-                          type="button"
+                        <SupercellButton
+                          variant="danger"
+                  size="icon"
                           onClick={() => handleRemovePhoto(index)}
                           aria-label={`Foto ${index + 1} verwijderen`}
-                          className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
+                  className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
                         >
                           <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-                        </button>
+                        </SupercellButton>
                       </div>
                     ))}
                   </div>
@@ -1015,8 +997,9 @@ function CustomModuleContent() {
 
       {module ? (
         <div className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] left-1/2 z-30 w-full max-w-md -translate-x-1/2 px-6">
-          <button
-            type="button"
+          <SupercellButton
+            variant="primary"
+            size="lg"
             onClick={handleSave}
             disabled={
               isSaving ||
@@ -1025,7 +1008,7 @@ function CustomModuleContent() {
                 ? listCheckedCount === 0
                 : selectedCount === 0)
             }
-            className="flex min-h-[64px] w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-5 text-xl font-bold text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-14 w-full text-xl"
           >
             {isSaving ? (
               "Opslaan..."
@@ -1035,7 +1018,7 @@ function CustomModuleContent() {
                 Opslaan
               </>
             )}
-          </button>
+          </SupercellButton>
         </div>
       ) : null}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
@@ -299,24 +300,26 @@ export default function OntvangstCheck() {
         ) : (
           <div className="flex flex-col gap-3">
             {products.map((p) => (
-              <button
+              <SupercellButton
                 key={p.id}
-                type="button"
+                size="lg"
+                variant="neutral"
                 onClick={() => setSelectedProduct(p)}
-                className="flex min-h-[80px] w-full items-center justify-between rounded-2xl border border-slate-100 bg-white px-5 text-left text-2xl font-black text-slate-900 shadow-sm transition-transform active:scale-[0.98]"
+                className="flex min-h-[80px] w-full items-center justify-between text-left text-2xl normal-case"
               >
                 <span className="flex-1 truncate">{p.name}</span>
-              </button>
+              </SupercellButton>
             ))}
 
-            <button
-              type="button"
+            <SupercellButton
+              size="lg"
+              variant="neutral"
               onClick={handleAddProduct}
-              className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-xl font-black text-slate-600 shadow-sm transition-transform active:scale-95"
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
             >
               <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
               Product toevoegen
-            </button>
+            </SupercellButton>
           </div>
         )}
       </Section>
@@ -343,22 +346,24 @@ export default function OntvangstCheck() {
           }
         >
           <div className="flex flex-col gap-3">
-            <button
-              type="button"
+            <SupercellButton
+              size="lg"
+              variant="success"
               onClick={() => setStatus("goedgekeurd")}
-              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl bg-green-600 px-6 py-5 text-3xl font-black text-white shadow-sm transition-transform active:scale-95 hover:bg-green-700"
+              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl text-3xl normal-case"
             >
               <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
               Goedgekeurd
-            </button>
-            <button
-              type="button"
+            </SupercellButton>
+            <SupercellButton
+              size="lg"
+              variant="danger"
               onClick={() => setStatus("afgekeurd")}
-              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl bg-red-600 px-6 py-5 text-3xl font-black text-white shadow-sm transition-transform active:scale-95 hover:bg-red-700"
+              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl text-3xl normal-case"
             >
               <X className="h-9 w-9" strokeWidth={3} aria-hidden />
               Afgekeurd
-            </button>
+            </SupercellButton>
           </div>
         </Section>
       ) : null}
@@ -374,28 +379,30 @@ export default function OntvangstCheck() {
         >
           <div className="flex flex-col gap-3">
             {DEFAULT_REJECT_REASONS.map((r) => (
-              <button
+              <SupercellButton
                 key={r}
-                type="button"
+                size="lg"
+                variant="neutral"
                 onClick={() => setReason(r)}
-                className="flex min-h-[80px] w-full items-center justify-center rounded-2xl border border-slate-100 bg-white px-5 text-center text-xl font-black text-slate-900 shadow-sm transition-transform active:scale-[0.98]"
+                className="flex min-h-[80px] w-full items-center justify-center text-center text-xl normal-case"
               >
                 {r}
-              </button>
+              </SupercellButton>
             ))}
-            <button
-              type="button"
+            <SupercellButton
+              size="lg"
+              variant="neutral"
               onClick={() => {
                 const custom = window.prompt("Beschrijf de reden van afkeuring");
                 if (!custom) return;
                 const trimmed = custom.trim();
                 if (trimmed) setReason(trimmed);
               }}
-              className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white text-xl font-black text-slate-600 shadow-sm transition-transform active:scale-95"
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
             >
               <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
               Anders…
-            </button>
+            </SupercellButton>
           </div>
         </Section>
       ) : null}
@@ -416,11 +423,12 @@ export default function OntvangstCheck() {
             onChange={handlePhotoChange}
           />
 
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="neutral"
             onClick={handlePickPhotos}
             disabled={isSaving || photoSlotsLeft <= 0}
-            className="flex min-h-[80px] w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-xl font-bold text-slate-900 shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex min-h-[80px] w-full items-center justify-center gap-3 border border-slate-200 text-xl normal-case"
           >
             <Camera className="h-7 w-7" aria-hidden />
             {photoSlotsLeft <= 0
@@ -428,7 +436,7 @@ export default function OntvangstCheck() {
               : photoFiles.length > 0
                 ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
                 : "Foto maken of kiezen (max 5)"}
-          </button>
+          </SupercellButton>
 
           {photoPreviews.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
@@ -439,25 +447,27 @@ export default function OntvangstCheck() {
                     alt={`Foto ${i + 1}`}
                     className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
                   />
-                  <button
-                    type="button"
+                  <SupercellButton
+                    size="icon"
+                    variant="danger"
                     onClick={() => removePhoto(i)}
                     aria-label={`Foto ${i + 1} verwijderen`}
-                    className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-sm ring-4 ring-white transition-transform active:scale-95"
+                    className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
                   >
                     <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-                  </button>
+                  </SupercellButton>
                 </div>
               ))}
             </div>
           ) : null}
 
-          <button
-            type="button"
+          <SupercellButton
+            size="lg"
+            variant="success"
             onClick={handleSave}
             disabled={!canSave}
             aria-busy={isSaving}
-            className="flex min-h-[96px] w-full items-center justify-center gap-3 rounded-2xl bg-green-600 px-6 py-5 text-2xl font-black text-white shadow-sm transition-transform enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex min-h-[96px] w-full items-center justify-center gap-3 text-2xl normal-case"
           >
             {isSaving ? (
               "Opslaan…"
@@ -467,7 +477,7 @@ export default function OntvangstCheck() {
                 Opslaan
               </>
             )}
-          </button>
+          </SupercellButton>
         </div>
       ) : null}
     </div>
@@ -502,14 +512,15 @@ function Section({
           {title}
         </h3>
         {collapsed && summary && onEdit ? (
-          <button
-            type="button"
+          <SupercellButton
+            size="sm"
+            variant="neutral"
             onClick={onEdit}
-            className="flex min-h-[64px] items-center gap-2 rounded-2xl bg-white px-5 text-base font-bold text-slate-700 shadow-sm transition-transform active:scale-95"
+            className="flex min-h-[64px] items-center gap-2 text-base normal-case"
           >
             <Pencil className="h-4 w-4" aria-hidden />
             Wijzigen
-          </button>
+          </SupercellButton>
         ) : null}
       </div>
 
