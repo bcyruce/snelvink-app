@@ -5,10 +5,11 @@ import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
 import HistoryList from "@/components/HistoryList";
 import SettingsTab from "@/components/SettingsTab";
 import SortableModuleCard from "@/components/SortableModuleCard";
-import SupercellButton from "@/components/SupercellButton";
+import ThemePicker from "@/components/ThemePicker";
 import UndoToast from "@/components/UndoToast";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { useTheme } from "@/hooks/useTheme";
 import {
   DEFAULT_MODULES,
   loadLayout,
@@ -31,7 +32,7 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
@@ -50,6 +51,7 @@ function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useUser();
+  const { theme } = useTheme();
 
   const initialTab: BottomNavTab = (() => {
     const t = searchParams.get("tab");
@@ -201,7 +203,7 @@ function HomeContent() {
   if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
-        <p className="text-center text-lg font-bold text-slate-500">
+        <p className="text-center text-lg font-bold" style={{ color: theme.muted }}>
           SnelVink laden...
         </p>
       </div>
@@ -211,40 +213,73 @@ function HomeContent() {
   return (
     <>
       <VerifyEmailBanner />
-      <section
-        className="relative px-5 pb-28 pt-8 sm:px-8 sm:pb-32 sm:pt-12"
-        onClick={handleBackgroundClick}
+      
+      {/* 深色 Header */}
+      <header 
+        className="px-5 pt-6 pb-5"
+        style={{ background: theme.primary }}
       >
-        <header className="mb-8 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">
-              HACCP
-            </p>
-            <h1 className="mt-1 text-5xl font-black tracking-tight text-slate-900 sm:text-6xl">
-              SnelVink
-            </h1>
-            
+        <div className="flex items-center justify-between">
+          {/* 标题 */}
+          <div>
+            <div style={{
+              fontSize: 34,
+              fontWeight: 800,
+              color: "#fff",
+              letterSpacing: "0.06em",
+              lineHeight: 1,
+              fontFamily: "'Trebuchet MS', sans-serif",
+              textTransform: "uppercase",
+            }}>
+              SNEL<span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
+            </div>
+            <div style={{
+              fontSize: 9.5,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.4)",
+              letterSpacing: "0.15em",
+              marginTop: 3,
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}>
+              Meten · Vinken · Weten
+            </div>
           </div>
 
-          {activeTab === "tasks" ? (
-            <div
-              className="shrink-0"
-              onClick={(event) => event.stopPropagation()}
+          {/* 调色盘按钮 */}
+          <ThemePicker />
+        </div>
+      </header>
+
+      <section
+        className="relative px-4 pb-28 pt-0"
+        style={{ background: theme.bg }}
+        onClick={handleBackgroundClick}
+      >
+        {/* Taken + Wijzigen 行 */}
+        {activeTab === "tasks" && (
+          <div className="flex items-center justify-between pt-4 pb-3">
+            <span 
+              className="text-[11px] font-black uppercase tracking-widest"
+              style={{ color: theme.muted }}
             >
-              <SupercellButton
-                type="button"
-                size="md"
-                variant={isEditing ? "success" : "neutral"}
-                onClick={toggleEditing}
-                aria-pressed={isEditing}
-                textCase="normal"
-                className="min-h-[56px] px-5 text-base"
-              >
-                {isEditing ? "Klaar" : "Wijzigen"}
-              </SupercellButton>
-            </div>
-          ) : null}
-        </header>
+              Taken
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleEditing(); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black transition-all"
+              style={{
+                background: isEditing ? theme.primary : "transparent",
+                border: `1.5px solid ${isEditing ? theme.primary : theme.cardBorder}`,
+                color: isEditing ? "#fff" : theme.primary,
+                letterSpacing: "0.04em",
+              }}
+            >
+              <Pencil className="h-3 w-3" strokeWidth={2.5} />
+              {isEditing ? "Klaar" : "Wijzigen"}
+            </button>
+          </div>
+        )}
 
         <div key={activeTab} className="tab-panel-enter">
           {activeTab === "tasks" ? (
@@ -257,7 +292,7 @@ function HomeContent() {
                 items={modules.map((m) => m.id)}
                 strategy={rectSortingStrategy}
               >
-                <div className="grid grid-cols-2 gap-4 sm:gap-5">
+                <div className="grid grid-cols-2 gap-3">
                   {modules.map((m, i) => (
                     <SortableModuleCard
                       key={m.id}
@@ -277,28 +312,30 @@ function HomeContent() {
 
           {activeTab === "tasks" && isEditing ? (
             <div onClick={(event) => event.stopPropagation()}>
-              <SupercellButton
+              <button
                 type="button"
-                size="lg"
-                variant="primary"
                 onClick={handleOpenAddModule}
-                textCase="normal"
-                className="mt-5 flex min-h-[88px] w-full flex-col items-center justify-center gap-2 py-6 text-lg"
+                className="mt-3 flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl text-base font-black transition-transform active:scale-95"
+                style={{
+                  background: "rgba(0,0,0,0.04)",
+                  border: `1.5px dashed ${theme.cardBorder}`,
+                  color: theme.muted,
+                }}
               >
-                <Plus className="h-8 w-8" strokeWidth={2.75} aria-hidden />
+                <Plus className="h-10 w-10" strokeWidth={1.75} />
                 Toevoegen
-              </SupercellButton>
+              </button>
             </div>
           ) : null}
 
           {activeTab === "history" ? (
-            <div onClick={stopEditingExit}>
+            <div onClick={stopEditingExit} className="pt-4">
               <HistoryList />
             </div>
           ) : null}
 
           {activeTab === "settings" ? (
-            <div onClick={stopEditingExit}>
+            <div onClick={stopEditingExit} className="pt-4">
               <SettingsTab />
             </div>
           ) : null}

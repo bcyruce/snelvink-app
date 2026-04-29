@@ -1,6 +1,6 @@
 "use client";
 
-import SupercellButton from "@/components/SupercellButton";
+import { useTheme } from "@/hooks/useTheme";
 import { ClipboardCheck, History, Settings } from "lucide-react";
 
 export type BottomNavTab = "tasks" | "history" | "settings";
@@ -21,39 +21,48 @@ const tabs: {
 ];
 
 export default function BottomNav({ active, onChange }: BottomNavProps) {
+  const { theme } = useTheme();
+
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t-2 border-slate-300 bg-white print:hidden"
+      className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t print:hidden"
+      style={{
+        background: theme.navBg,
+        borderColor: theme.navBorder,
+        backdropFilter: "blur(16px)",
+      }}
       aria-label="Hoofdnavigatie"
     >
-      <div className="mx-auto flex max-w-md items-stretch justify-around gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+      <div className="mx-auto flex max-w-md items-stretch justify-around gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5">
         {tabs.map(({ id, label, Icon }) => {
           const isActive = active === id;
           return (
-            <SupercellButton
+            <button
               key={id}
               type="button"
-              size="sm"
-              variant={isActive ? "primary" : "neutral"}
               onClick={() => onChange(id)}
               aria-current={isActive ? "page" : undefined}
-              textCase="normal"
-              className="flex min-h-[64px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-2 py-3"
+              className="flex flex-1 flex-col items-center justify-center gap-1 min-h-14 text-[10px] font-black rounded-xl transition-all"
+              style={isActive ? {
+                background: theme.primary,
+                border: `2px solid ${theme.primaryDark}`,
+                color: "#fff",
+                boxShadow: `0 2px 0 ${theme.primaryDark}`,
+              } : {
+                background: "transparent",
+                border: "2px solid transparent",
+                color: theme.muted,
+              }}
             >
               <Icon
-                className="h-6 w-6 shrink-0"
-                strokeWidth={isActive ? 2.5 : 2.25}
+                className="h-5 w-5 shrink-0"
+                strokeWidth={isActive ? 2.5 : 2}
                 aria-hidden
               />
-              <span
-                className={[
-                  "max-w-full truncate text-xs font-black",
-                  isActive ? "text-white" : "text-slate-700",
-                ].join(" ")}
-              >
+              <span className="max-w-full truncate">
                 {label}
               </span>
-            </SupercellButton>
+            </button>
           );
         })}
       </div>

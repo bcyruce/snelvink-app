@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import type { HTMLMotionProps } from "framer-motion";
 import { forwardRef } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, CSSProperties } from "react";
 
 type SupercellButtonVariant = "primary" | "danger" | "success" | "neutral";
 type SupercellButtonSize = "sm" | "md" | "lg" | "icon";
@@ -15,17 +15,19 @@ type SupercellButtonProps = {
   variant?: SupercellButtonVariant;
   size?: SupercellButtonSize;
   textCase?: SupercellButtonTextCase;
-} & Omit<HTMLMotionProps<"button">, "children" | "className">;
+  style?: CSSProperties;
+} & Omit<HTMLMotionProps<"button">, "children" | "className" | "style">;
 
+// 使用 CSS 变量的主题色
 const variantClasses: Record<SupercellButtonVariant, string> = {
   primary:
-    "bg-blue-500 border-blue-700 text-white hover:bg-blue-400 active:bg-blue-600 focus-visible:ring-blue-400/50",
+    "bg-[var(--theme-primary,#2D5C3C)] border-[var(--theme-primary-dark,#1E4029)] text-white hover:opacity-90 active:opacity-100 focus-visible:ring-[var(--theme-primary,#2D5C3C)]/50",
   danger:
     "bg-red-500 border-red-700 text-white hover:bg-red-400 active:bg-red-600 focus-visible:ring-red-400/50",
   success:
     "bg-emerald-500 border-emerald-700 text-white hover:bg-emerald-400 active:bg-emerald-600 focus-visible:ring-emerald-400/50",
   neutral:
-    "bg-white border-slate-300 text-slate-800 hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-slate-300/60",
+    "bg-white border-[var(--theme-card-border,rgba(200,215,205,0.9))] text-[var(--theme-fg,#1A2520)] hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-slate-300/60",
 };
 
 const sizeClasses: Record<SupercellButtonSize, string> = {
@@ -51,6 +53,7 @@ const SupercellButton = forwardRef<HTMLButtonElement, SupercellButtonProps>(
       textCase = "upper",
       type = "button",
       disabled,
+      style,
       ...rest
     },
     ref,
@@ -62,16 +65,17 @@ const SupercellButton = forwardRef<HTMLButtonElement, SupercellButtonProps>(
         onClick={onClick}
         disabled={disabled}
         whileHover={disabled ? undefined : { scale: 1.02 }}
-        whileTap={disabled ? undefined : { y: 5, scale: 0.98 }}
+        whileTap={disabled ? undefined : { y: 3, scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className={[
-          "rounded-2xl border-2 border-b-4 font-black outline-none focus-visible:ring-4 transition-colors",
+          "rounded-xl border-2 border-b-4 font-black outline-none focus-visible:ring-4 transition-colors",
           variantClasses[variant],
           sizeClasses[size],
           textCaseClasses[textCase],
           disabled ? "cursor-not-allowed opacity-50" : "",
           className,
         ].join(" ")}
+        style={style}
         {...rest}
       >
         {children}

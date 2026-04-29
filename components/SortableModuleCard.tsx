@@ -6,6 +6,7 @@ import {
   getModuleIcon,
   type TaskModule,
 } from "@/lib/taskModules";
+import { useTheme } from "@/hooks/useTheme";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
@@ -29,6 +30,8 @@ export default function SortableModuleCard({
   onDelete,
   onEdit,
 }: SortableModuleCardProps) {
+  const { theme } = useTheme();
+  
   const {
     attributes,
     listeners,
@@ -46,25 +49,34 @@ export default function SortableModuleCard({
     opacity: isDragging ? 0.9 : 1,
   };
 
-  const cardClass =
-    "relative flex min-h-[168px] w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 text-center text-lg font-black text-slate-900";
+  const cardStyle: React.CSSProperties = {
+    background: theme.cardBg,
+    border: `1.5px solid ${theme.cardBorder}`,
+    backdropFilter: "blur(12px)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+  };
+
   const controlBaseClass =
-    "absolute z-10 flex h-10 w-10 origin-center transform items-center justify-center rounded-full text-white ring-4 ring-slate-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]";
+    "absolute z-10 flex h-10 w-10 origin-center transform items-center justify-center rounded-full text-white ring-4 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]";
   const controlVisibilityClass = isEditing
     ? "scale-100 opacity-100"
     : "pointer-events-none scale-0 opacity-0";
   const isCustomModule = module.isCustom || !DEFAULT_MODULE_IDS.has(module.id);
+  
   const moduleIcon = createElement(getModuleIcon(module.icon), {
-    className: "h-10 w-10 text-blue-600",
-    strokeWidth: 2.5,
+    className: "h-10 w-10",
+    strokeWidth: 1.75,
+    style: { color: theme.primary },
     "aria-hidden": true,
   });
+  
   const content = (
     <>
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-blue-200 border-b-4 border-b-blue-300 bg-blue-50">
-        {moduleIcon}
-      </div>
-      <span className="line-clamp-2 text-base font-black leading-tight text-slate-900">
+      {moduleIcon}
+      <span 
+        className="line-clamp-2 text-base font-black leading-tight"
+        style={{ color: theme.fg }}
+      >
         {module.name}
       </span>
     </>
@@ -85,11 +97,17 @@ export default function SortableModuleCard({
       <div className={animationClass}>
         <div className="relative">
           {isEditing ? (
-            <div className={cardClass}>{content}</div>
+            <div 
+              className="relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center"
+              style={cardStyle}
+            >
+              {content}
+            </div>
           ) : (
             <Link
               href={module.href}
-              className={`${cardClass} transition-transform active:scale-95`}
+              className="relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center transition-transform active:scale-95"
+              style={cardStyle}
             >
               {content}
             </Link>
@@ -103,6 +121,9 @@ export default function SortableModuleCard({
             aria-label={`Verwijder ${module.name}`}
             tabIndex={isEditing ? 0 : -1}
             className={`${controlBaseClass} -left-2 -top-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
+            style={{ 
+              ringColor: theme.bg,
+            }}
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.75} aria-hidden />
           </SupercellButton>
@@ -114,11 +135,14 @@ export default function SortableModuleCard({
             variant="neutral"
             aria-label={`Verplaats ${module.name}`}
             className={`${controlBaseClass} -right-2 -top-2 h-10 w-10 cursor-grab rounded-full ${controlVisibilityClass} active:cursor-grabbing`}
+            style={{ 
+              ringColor: theme.bg,
+            }}
             {...listeners}
             {...attributes}
             tabIndex={isEditing ? 0 : -1}
           >
-            <GripVertical className="h-4 w-4 text-slate-700" strokeWidth={2.75} aria-hidden />
+            <GripVertical className="h-4 w-4" strokeWidth={2.75} style={{ color: theme.muted }} aria-hidden />
           </SupercellButton>
 
           {isCustomModule ? (
@@ -130,6 +154,9 @@ export default function SortableModuleCard({
               aria-label={`Bewerk ${module.name}`}
               tabIndex={isEditing ? 0 : -1}
               className={`${controlBaseClass} -right-2 -bottom-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
+              style={{ 
+                ringColor: theme.bg,
+              }}
             >
               <Pencil className="h-4 w-4" strokeWidth={2.75} aria-hidden />
             </SupercellButton>
