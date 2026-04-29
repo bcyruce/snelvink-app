@@ -10,9 +10,9 @@ type AuthView = "login" | "register";
 type RegisterRole = "owner" | "employee";
 
 const inputClass =
-  "h-16 w-full rounded-2xl border border-gray-200 bg-white px-5 text-xl text-gray-900 shadow-sm outline-none ring-0 transition-colors focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10";
+  "h-16 w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-5 text-lg font-bold text-slate-900 outline-none transition-colors focus:border-blue-500 focus:border-b-blue-700";
 
-const labelClass = "text-sm font-semibold text-gray-800";
+const labelClass = "text-sm font-black uppercase tracking-wide text-slate-700";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -265,15 +265,18 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col justify-center px-6 py-14 sm:px-10 sm:py-20">
       <div className="mx-auto w-full max-w-sm">
         <header className="mb-10 text-center">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-white shadow-md">
-            <ChefHat className="h-11 w-11" strokeWidth={1.75} aria-hidden />
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border-2 border-blue-700 border-b-4 bg-blue-500 text-white">
+            <ChefHat className="h-11 w-11" strokeWidth={2.25} aria-hidden />
           </div>
-          <p className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
+          <p className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
             SnelVink
+          </p>
+          <p className="mt-2 text-sm font-bold uppercase tracking-[0.2em] text-blue-600">
+            HACCP
           </p>
         </header>
 
-        <h1 className="mb-8 text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+        <h1 className="mb-8 text-center text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
           {authView === "login" ? "Aanmelden" : "Registreren"}
         </h1>
 
@@ -377,10 +380,11 @@ export default function LoginPage() {
             <SupercellButton
               type="submit"
               size="lg"
-              variant="neutral"
+              variant="primary"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 h-16 w-full text-xl normal-case"
+              textCase="normal"
+              className="mt-2 h-16 w-full text-xl"
             >
               {loading ? "Bezig…" : "Aanmelden"}
             </SupercellButton>
@@ -399,10 +403,10 @@ export default function LoginPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label
                   className={[
-                    "flex min-h-16 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-colors",
+                    "flex min-h-16 cursor-pointer items-center justify-center rounded-2xl border-2 border-b-4 px-4 py-4 text-center text-base font-black transition-colors",
                     registerRole === "owner"
-                      ? "border-gray-900 bg-gray-100 text-gray-900"
-                      : "border-gray-200 bg-white text-gray-700",
+                      ? "border-blue-700 bg-blue-500 text-white"
+                      : "border-slate-300 bg-white text-slate-700",
                   ].join(" ")}
                 >
                   <input
@@ -417,10 +421,10 @@ export default function LoginPage() {
                 </label>
                 <label
                   className={[
-                    "flex min-h-16 cursor-pointer items-center justify-center rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-colors",
+                    "flex min-h-16 cursor-pointer items-center justify-center rounded-2xl border-2 border-b-4 px-4 py-4 text-center text-base font-black transition-colors",
                     registerRole === "employee"
-                      ? "border-gray-900 bg-gray-100 text-gray-900"
-                      : "border-gray-200 bg-white text-gray-700",
+                      ? "border-blue-700 bg-blue-500 text-white"
+                      : "border-slate-300 bg-white text-slate-700",
                   ].join(" ")}
                 >
                   <input
@@ -540,10 +544,11 @@ export default function LoginPage() {
             <SupercellButton
               type="submit"
               size="lg"
-              variant="neutral"
+              variant="primary"
               disabled={loading}
               aria-busy={loading}
-              className="mt-2 h-16 w-full text-xl normal-case"
+              textCase="normal"
+              className="mt-2 h-16 w-full text-xl"
             >
               {loading ? "Bezig…" : "Account aanmaken"}
             </SupercellButton>

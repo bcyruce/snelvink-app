@@ -201,7 +201,7 @@ function HomeContent() {
   if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
-        <p className="text-center text-lg font-semibold text-slate-500">
+        <p className="text-center text-lg font-bold text-slate-500">
           SnelVink laden...
         </p>
       </div>
@@ -212,33 +212,41 @@ function HomeContent() {
     <>
       <VerifyEmailBanner />
       <section
-        className="relative px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28"
+        className="relative px-5 pb-28 pt-8 sm:px-8 sm:pb-32 sm:pt-12"
         onClick={handleBackgroundClick}
       >
-        {activeTab === "tasks" ? (
-          <div
-            className="absolute right-6 top-6 z-20 sm:right-10 sm:top-10"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <SupercellButton
-              type="button"
-              size="lg"
-              variant={isEditing ? "success" : "neutral"}
-              onClick={toggleEditing}
-              aria-pressed={isEditing}
-              className="min-h-[64px] text-xl"
-            >
-              {isEditing ? "Klaar" : "Wijzigen"}
-            </SupercellButton>
+        <header className="mb-8 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">
+              HACCP
+            </p>
+            <h1 className="mt-1 text-5xl font-black tracking-tight text-slate-900 sm:text-6xl">
+              SnelVink
+            </h1>
+            <p className="mt-2 text-base font-bold text-slate-500 sm:text-lg">
+              De keuken is open.
+            </p>
           </div>
-        ) : null}
 
-        <h1 className="text-6xl font-extrabold tracking-tight text-slate-900 sm:text-7xl">
-          SnelVink
-        </h1>
-        <p className="mt-5 text-lg text-slate-500 sm:text-xl">
-          De keuken is open.
-        </p>
+          {activeTab === "tasks" ? (
+            <div
+              className="shrink-0"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <SupercellButton
+                type="button"
+                size="md"
+                variant={isEditing ? "success" : "neutral"}
+                onClick={toggleEditing}
+                aria-pressed={isEditing}
+                textCase="normal"
+                className="min-h-[56px] px-5 text-base"
+              >
+                {isEditing ? "Klaar" : "Wijzigen"}
+              </SupercellButton>
+            </div>
+          ) : null}
+        </header>
 
         <div key={activeTab} className="tab-panel-enter">
           {activeTab === "tasks" ? (
@@ -251,7 +259,7 @@ function HomeContent() {
                 items={modules.map((m) => m.id)}
                 strategy={rectSortingStrategy}
               >
-                <div className="mt-8 grid grid-cols-2 gap-5 sm:gap-6">
+                <div className="grid grid-cols-2 gap-4 sm:gap-5">
                   {modules.map((m, i) => (
                     <SortableModuleCard
                       key={m.id}
@@ -274,11 +282,12 @@ function HomeContent() {
               <SupercellButton
                 type="button"
                 size="lg"
-                variant="neutral"
+                variant="primary"
                 onClick={handleOpenAddModule}
-                className="mt-6 flex min-h-[96px] w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-200 py-8 text-xl"
+                textCase="normal"
+                className="mt-5 flex min-h-[88px] w-full flex-col items-center justify-center gap-2 py-6 text-lg"
               >
-                <Plus className="h-10 w-10" strokeWidth={2.5} aria-hidden />
+                <Plus className="h-8 w-8" strokeWidth={2.75} aria-hidden />
                 Toevoegen
               </SupercellButton>
             </div>

@@ -19,13 +19,13 @@ type SupercellButtonProps = {
 
 const variantClasses: Record<SupercellButtonVariant, string> = {
   primary:
-    "bg-blue-500 border-blue-700 text-white hover:bg-blue-400 focus-visible:ring-blue-400/50",
+    "bg-blue-500 border-blue-700 text-white hover:bg-blue-400 active:bg-blue-600 focus-visible:ring-blue-400/50",
   danger:
-    "bg-red-500 border-red-700 text-white hover:bg-red-400 focus-visible:ring-red-400/50",
+    "bg-red-500 border-red-700 text-white hover:bg-red-400 active:bg-red-600 focus-visible:ring-red-400/50",
   success:
-    "bg-green-500 border-green-700 text-white hover:bg-green-400 focus-visible:ring-green-400/50",
+    "bg-emerald-500 border-emerald-700 text-white hover:bg-emerald-400 active:bg-emerald-600 focus-visible:ring-emerald-400/50",
   neutral:
-    "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-300/60",
+    "bg-white border-slate-300 text-slate-800 hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-slate-300/60",
 };
 
 const sizeClasses: Record<SupercellButtonSize, string> = {
@@ -65,7 +65,7 @@ const SupercellButton = forwardRef<HTMLButtonElement, SupercellButtonProps>(
         whileTap={disabled ? undefined : { y: 5, scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className={[
-          "rounded-2xl border-b-[5px] font-black outline-none focus-visible:ring-4 transition-colors",
+          "rounded-2xl border-2 border-b-4 font-black outline-none focus-visible:ring-4 transition-colors",
           variantClasses[variant],
           sizeClasses[size],
           textCaseClasses[textCase],

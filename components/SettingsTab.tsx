@@ -219,15 +219,15 @@ export default function SettingsTab() {
   }, [router]);
 
   return (
-    <div className="mt-12">
-      <h2 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-        {"Instellingen & Export"}
+    <div className="mt-2">
+      <h2 className="mb-5 text-3xl font-black tracking-tight text-slate-900">
+        Instellingen
       </h2>
 
-      <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-4">
-        <h3 className="text-base font-bold text-gray-900">{t("languageSectionTitle")}</h3>
-        <p className="mt-1 text-sm text-gray-600">{t("languageSectionSubtitle")}</p>
-        <div className="mt-3 grid grid-cols-2 gap-3">
+      <section className="mb-6 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
+        <h3 className="text-base font-black text-slate-900">{t("languageSectionTitle")}</h3>
+        <p className="mt-1 text-sm font-semibold text-slate-500">{t("languageSectionSubtitle")}</p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
           <SupercellButton
             type="button"
             size="sm"
@@ -251,13 +251,13 @@ export default function SettingsTab() {
         </div>
       </section>
 
-      <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+      <div className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
               Restaurant
             </p>
-            <p className="mt-1 truncate text-xl font-bold text-gray-900">
+            <p className="mt-1 truncate text-2xl font-black text-slate-900">
               {restaurant?.name ?? "—"}
             </p>
           </div>
@@ -278,7 +278,7 @@ export default function SettingsTab() {
           </SupercellButton>
         </div>
 
-        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <p className="mt-5 text-xs font-black uppercase tracking-wide text-slate-500">
           Abonnement
         </p>
         <SupercellButton
@@ -286,18 +286,19 @@ export default function SettingsTab() {
           size="lg"
           variant="neutral"
           onClick={() => router.push("/dashboard/subscription")}
-          className="mt-2 flex w-full items-center justify-between gap-3 border-2 border-gray-200 px-4 py-4 text-left normal-case"
+          textCase="normal"
+          className="mt-2 flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
         >
           <div className="min-w-0">
-            <p className="truncate text-xl font-black text-gray-900">
+            <p className="truncate text-xl font-black text-slate-900">
               {planLabel(restaurant?.plan ?? restaurant?.plan_type ?? "free")}
             </p>
             {restaurant?.plan_status ? (
-              <p className="mt-0.5 truncate text-xs font-semibold text-gray-500">
+              <p className="mt-0.5 truncate text-xs font-bold text-slate-500">
                 {planStatusLabel(restaurant.plan_status).label}
               </p>
             ) : (
-              <p className="mt-0.5 truncate text-xs text-gray-500">
+              <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
                 {isOwner
                   ? "Beheer abonnement"
                   : "Bekijk het abonnement van dit restaurant"}
@@ -305,42 +306,42 @@ export default function SettingsTab() {
             )}
           </div>
           <ChevronRight
-            className="h-6 w-6 shrink-0 text-gray-400"
-            strokeWidth={2.5}
+            className="h-6 w-6 shrink-0 text-blue-600"
+            strokeWidth={2.75}
             aria-hidden
           />
         </SupercellButton>
 
         {isOwner ? (
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <p className="text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <div className="mt-6 border-t-2 border-slate-200 pt-6">
+            <p className="text-center text-xs font-black uppercase tracking-wide text-slate-500">
               Koppelcode
             </p>
             {!restaurant ? (
-              <p className="mt-3 text-center text-sm text-gray-500">
+              <p className="mt-3 text-center text-sm font-bold text-slate-500">
                 Laden...
               </p>
             ) : isFreePlan ? (
-              <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-5 text-center">
-                <p className="text-base font-bold text-amber-900">
+              <div className="mt-3 rounded-2xl border-2 border-amber-300 border-b-4 border-b-amber-400 bg-amber-100 px-4 py-5 text-center">
+                <p className="text-base font-black text-amber-900">
                   Nog geen koppelcode beschikbaar
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-amber-900">
+                <p className="mt-2 text-sm font-semibold leading-relaxed text-amber-900">
                   Upgrade je abonnement naar Basic of Pro om medewerkers te kunnen
                   koppelen en de koppelcode te ontgrendelen.
                 </p>
               </div>
             ) : restaurant.invite_code ? (
-              <>
-                <p className="mt-3 text-center text-5xl font-black tabular-nums tracking-widest text-gray-900 sm:text-6xl">
+              <div className="mt-3 rounded-2xl border-2 border-blue-300 border-b-4 border-b-blue-400 bg-blue-50 px-4 py-5">
+                <p className="text-center text-5xl font-black tabular-nums tracking-widest text-blue-700 sm:text-6xl">
                   {restaurant.invite_code}
                 </p>
-                <p className="mt-4 text-center text-sm leading-relaxed text-gray-600">
+                <p className="mt-4 text-center text-sm font-semibold leading-relaxed text-slate-600">
                   Deel deze code met je werknemers om ze te koppelen.
                 </p>
-              </>
+              </div>
             ) : (
-              <p className="mt-3 text-center text-sm text-gray-500">
+              <p className="mt-3 text-center text-sm font-bold text-slate-500">
                 Geen koppelcode beschikbaar.
               </p>
             )}
@@ -349,27 +350,27 @@ export default function SettingsTab() {
       </div>
 
       {isOwner ? (
-        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-5">
-          <h3 className="text-lg font-bold text-gray-900">Personeel</h3>
-          <p className="mt-1 text-sm text-gray-600">
+        <div className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
+          <h3 className="text-lg font-black text-slate-900">Personeel</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-500">
             Gekoppelde medewerkers van dit restaurant.
           </p>
           {isLoadingStaff ? (
-            <p className="mt-4 text-sm text-gray-500">Laden...</p>
+            <p className="mt-4 text-sm font-bold text-slate-500">Laden...</p>
           ) : staff.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-500">Nog geen personeel gekoppeld.</p>
+            <p className="mt-4 text-sm font-bold text-slate-500">Nog geen personeel gekoppeld.</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {staff.map((member) => (
                 <li
                   key={member.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3"
+                  className="flex items-center justify-between gap-3 rounded-xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 px-3 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-gray-900">
+                    <p className="truncate text-sm font-black text-slate-900">
                       {member.full_name?.trim() || "Naamloos"}
                     </p>
-                    <p className="truncate text-xs text-gray-500">
+                    <p className="truncate text-xs font-semibold text-slate-500">
                       {member.email ?? "Onbekend e-mailadres"}
                     </p>
                   </div>
@@ -379,7 +380,8 @@ export default function SettingsTab() {
                     variant="danger"
                     onClick={() => void handleDeleteStaff(member.id)}
                     disabled={deletingStaffId === member.id}
-                    className="shrink-0 rounded-lg px-3 py-2 text-sm normal-case"
+                    textCase="normal"
+                    className="shrink-0 rounded-xl px-3 py-2 text-sm"
                   >
                     {deletingStaffId === member.id ? "Bezig..." : "Verwijderen"}
                   </SupercellButton>
@@ -390,21 +392,9 @@ export default function SettingsTab() {
         </div>
       ) : null}
 
-      <p className="mb-6 text-sm text-gray-600">
+      <p className="mb-5 text-sm font-semibold text-slate-600">
         Download een overzicht van alle temperatuur- en schoonmaakregistraties.
       </p>
-
-      <SupercellButton
-        type="button"
-        size="lg"
-        variant="neutral"
-        onClick={() => void handleSignOut()}
-        disabled={isSigningOut}
-        className="mb-8 flex min-h-14 w-full items-center justify-center gap-2 border border-gray-200 px-4 py-3 text-base normal-case"
-      >
-        <LogOut className="h-5 w-5 shrink-0 text-gray-700" strokeWidth={2} />
-        {isSigningOut ? "Uitloggen..." : "Uitloggen"}
-      </SupercellButton>
 
       <SupercellButton
         type="button"
@@ -413,10 +403,24 @@ export default function SettingsTab() {
         onClick={() => void generatePDF()}
         disabled={isExporting || !restaurantId}
         aria-busy={isExporting}
-        className="flex w-full items-center justify-center gap-3 py-6 text-xl normal-case"
+        textCase="normal"
+        className="mb-4 flex w-full items-center justify-center gap-3 py-6 text-xl"
       >
-        <Download className="h-7 w-7 shrink-0 text-white" strokeWidth={2.25} />
-        {isExporting ? "Genereren..." : "Download HACCP Rapport (PDF)"}
+        <Download className="h-7 w-7 shrink-0 text-white" strokeWidth={2.5} />
+        {isExporting ? "Genereren..." : "Download HACCP Rapport"}
+      </SupercellButton>
+
+      <SupercellButton
+        type="button"
+        size="lg"
+        variant="danger"
+        onClick={() => void handleSignOut()}
+        disabled={isSigningOut}
+        textCase="normal"
+        className="flex min-h-14 w-full items-center justify-center gap-2 px-4 py-3 text-base"
+      >
+        <LogOut className="h-5 w-5 shrink-0 text-white" strokeWidth={2.5} />
+        {isSigningOut ? "Uitloggen..." : "Uitloggen"}
       </SupercellButton>
     </div>
   );

@@ -71,28 +71,29 @@ export default function UpgradePromptModal({
         className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-6">
         {showUpgradeContent ? (
           <>
-            <p className="text-center text-lg font-semibold leading-relaxed text-gray-900">
+            <p className="text-center text-lg font-bold leading-relaxed text-slate-900">
               {children}
             </p>
             <SupercellButton
               type="button"
               size="lg"
-              variant="neutral"
+              variant="primary"
               onClick={onClose}
-              className="mt-6 h-20 w-full text-xl normal-case"
+              textCase="normal"
+              className="mt-6 h-16 w-full text-xl"
             >
               Begrepen
             </SupercellButton>
           </>
         ) : (
           <>
-            <p className="text-center text-lg font-bold text-gray-900">
+            <p className="text-center text-xl font-black text-slate-900">
               Bevestig je e-mailadres
             </p>
-            <p className="mt-2 text-center text-base font-medium text-gray-600">
+            <p className="mt-2 text-center text-base font-semibold text-slate-600">
               Voer de 6-cijferige code uit je e-mail in om verder te gaan.
             </p>
 
@@ -111,11 +112,11 @@ export default function UpgradePromptModal({
                 setOtpError(null);
               }}
               placeholder="000000"
-              className="mt-6 h-20 w-full rounded-2xl border-2 border-gray-200 bg-gray-50 px-4 text-center text-4xl font-black tabular-nums tracking-[1em] text-gray-900 outline-none focus:border-gray-400"
+              className="mt-6 h-20 w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-center text-4xl font-black tabular-nums tracking-[1em] text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
             />
 
             {otpError ? (
-              <p className="mt-2 text-center text-sm font-semibold text-red-600">
+              <p className="mt-2 text-center text-sm font-bold text-red-600">
                 {otpError}
               </p>
             ) : null}
@@ -123,11 +124,12 @@ export default function UpgradePromptModal({
             <SupercellButton
               type="button"
               size="lg"
-              variant="neutral"
+              variant="primary"
               onClick={handleVerifyOTP}
               disabled={verifying}
               aria-busy={verifying}
-              className="mt-6 h-20 w-full text-xl normal-case"
+              textCase="normal"
+              className="mt-6 h-16 w-full text-xl"
             >
               {verifying ? "Controleren…" : "Code controleren"}
             </SupercellButton>

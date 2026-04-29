@@ -350,7 +350,7 @@ export default function HistoryList() {
   const groupedRows = groupRowsByDate(rows);
 
   return (
-    <div className="mt-12 border-t border-slate-200 pt-10 print:mt-0 print:border-none print:pt-0">
+    <div className="mt-2 print:mt-0">
       <UpgradePromptModal
         open={showPrintUpgradeModal}
         onClose={() => setShowPrintUpgradeModal(false)}
@@ -363,11 +363,9 @@ export default function HistoryList() {
         HACCP Logboek - SnelVink
       </h1>
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl print:text-black">
-          {isFreePlan
-            ? "NVWA Rapport (Laatste 30 dagen)"
-            : "NVWA Rapport (volledige historie)"}
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl print:text-black">
+          {isFreePlan ? "Laatste 30 dagen" : "Geschiedenis"}
         </h2>
       </div>
 
@@ -376,9 +374,10 @@ export default function HistoryList() {
         size="lg"
         variant="primary"
         onClick={handlePrintClick}
-        className="mb-6 flex h-24 w-full items-center justify-center gap-3 text-2xl normal-case print:hidden"
+        textCase="normal"
+        className="mb-5 flex h-20 w-full items-center justify-center gap-3 text-xl print:hidden"
       >
-        <Printer className="h-8 w-8 shrink-0" strokeWidth={2.25} aria-hidden />
+        <Printer className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
         Genereer NVWA Rapport
       </SupercellButton>
 
@@ -389,24 +388,25 @@ export default function HistoryList() {
           variant="neutral"
           onClick={() => void fetchLogs()}
           disabled={loading}
-          className="min-h-[48px] shrink-0 rounded-xl border border-slate-200 px-4 py-2 text-sm normal-case"
+          textCase="normal"
+          className="min-h-[44px] shrink-0 rounded-xl px-4 py-2 text-sm"
         >
           Vernieuwen
         </SupercellButton>
       </div>
 
       {loading && rows.length === 0 ? (
-        <p className="text-center text-sm text-slate-500">Laden…</p>
+        <p className="text-center text-sm font-bold text-slate-500">Laden…</p>
       ) : null}
 
       {!loading && !restaurantId ? (
-        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm print:border print:border-black print:bg-white print:text-black">
+        <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:border print:border-black print:bg-white print:text-black">
           Geen restaurant gekoppeld aan je account.
         </p>
       ) : null}
 
       {!loading && restaurantId && rows.length === 0 ? (
-        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm print:border print:border-black print:bg-white print:text-black">
+        <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:border print:border-black print:bg-white print:text-black">
           {isFreePlan
             ? "Geen registraties in de afgelopen 30 dagen."
             : "Geen registraties gevonden."}
@@ -414,23 +414,23 @@ export default function HistoryList() {
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm print:rounded-none print:border-black print:bg-white print:shadow-none">
+        <div className="overflow-x-auto rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white print:rounded-none print:border print:border-black print:bg-white">
           <table className="min-w-[760px] w-full border-collapse text-left print:min-w-0 print:bg-white">
             <thead>
-              <tr className="bg-slate-50 print:bg-white">
-                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+              <tr className="bg-blue-500 print:bg-white">
+                <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
                   Tijd
                 </th>
-                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
                   Apparaat
                 </th>
-                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
                   Taak
                 </th>
-                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
                   Waarde/Status
                 </th>
-                <th className="border-b border-slate-200 px-4 py-4 text-sm font-black uppercase tracking-wide text-slate-600 print:border-black print:text-black">
+                <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
                   Opmerkingen
                 </th>
               </tr>
@@ -441,7 +441,7 @@ export default function HistoryList() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-base font-black text-slate-900 print:border-black print:bg-white print:text-black"
+                      className="border-b-2 border-slate-200 bg-slate-100 px-4 py-3 text-base font-black uppercase tracking-wide text-slate-700 print:border-black print:bg-white print:text-black"
                     >
                       {group.label}
                     </td>
@@ -464,18 +464,19 @@ export default function HistoryList() {
                         <SupercellButton
                           type="button"
                           size="sm"
-                          variant="neutral"
+                          variant="primary"
                           onClick={() => setDetailRow(row)}
-                          className="inline-flex min-h-[44px] items-center gap-2 rounded-full border-b-[4px] px-4 py-2 text-sm normal-case print:hidden"
+                          textCase="normal"
+                          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm print:hidden"
                         >
                           <Eye
                             className="h-4 w-4"
-                            strokeWidth={2.25}
+                            strokeWidth={2.5}
                             aria-hidden
                           />
-                          Details bekijken
+                          Details
                           {row.photoUrls.length > 0 ? (
-                            <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs font-black tabular-nums">
+                            <span className="ml-1 rounded-full bg-blue-700 px-2 py-0.5 text-xs font-black tabular-nums">
                               {row.photoUrls.length}
                             </span>
                           ) : null}

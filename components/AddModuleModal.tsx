@@ -354,12 +354,12 @@ export default function AddModuleModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="toast-slide-up max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white px-6 pb-8 pt-6 shadow-sm sm:rounded-3xl sm:pb-6"
+        className="toast-slide-up max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-2 border-slate-200 bg-white px-6 pb-8 pt-6 sm:rounded-3xl sm:pb-6"
       >
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2
             id="add-module-title"
-            className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl"
+            className="text-3xl font-black tracking-tight text-slate-900"
           >
             {isEditing ? "Module bewerken" : "Nieuwe module"}
           </h2>
@@ -368,23 +368,24 @@ export default function AddModuleModal({
             variant="neutral"
             onClick={onClose}
             aria-label="Sluiten"
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-b-[4px]"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
           >
-            <X className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+            <X className="h-6 w-6" strokeWidth={2.75} aria-hidden />
           </SupercellButton>
         </div>
 
         {!isEditing ? (
-          <div className="mb-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">
+          <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border-2 border-slate-200 bg-slate-100 p-1.5">
             {(["standard", "custom"] as const).map((tab) => {
               const active = activeTab === tab;
               return (
                 <SupercellButton
                   key={tab}
-                  size="lg"
+                  size="md"
                   variant={active ? "primary" : "neutral"}
                   onClick={() => setActiveTab(tab)}
-                  className="min-h-[64px] rounded-xl py-3 text-lg normal-case"
+                  textCase="normal"
+                  className="min-h-[56px] rounded-xl py-3 text-base"
                 >
                   {tab === "standard" ? "Standaard" : "Aangepast"}
                 </SupercellButton>
@@ -431,7 +432,7 @@ export default function AddModuleModal({
         ) : (
           <form onSubmit={handleSaveCustomModule} className="flex flex-col gap-6">
             {errorMessage ? (
-              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-base font-bold text-red-700">
+              <p className="rounded-2xl border-2 border-red-300 border-b-4 border-b-red-400 bg-red-50 px-4 py-3 text-center text-base font-bold text-red-700">
                 {errorMessage}
               </p>
             ) : null}
@@ -452,7 +453,7 @@ export default function AddModuleModal({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Bijv. Kerntemperatuur soep"
                   maxLength={40}
-                  className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-bold text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                  className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-bold text-slate-900 outline-none transition-colors focus:border-blue-500 focus:border-b-blue-700"
                 />
               </div>
 
@@ -595,12 +596,12 @@ function PhotoToggle({ hasPhoto, onToggle }: PhotoToggleProps) {
     >
       <span
         className={[
-          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-colors",
-          hasPhoto ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-b-4 transition-colors",
+          hasPhoto ? "border-blue-700 bg-blue-500 text-white" : "border-slate-300 bg-slate-100 text-slate-500",
         ].join(" ")}
         aria-hidden
       >
-        <Camera className="h-6 w-6" strokeWidth={2.25} />
+        <Camera className="h-6 w-6" strokeWidth={2.5} />
       </span>
       <span className="flex flex-1 flex-col">
         <span className="text-lg font-black text-slate-900">
@@ -612,14 +613,14 @@ function PhotoToggle({ hasPhoto, onToggle }: PhotoToggleProps) {
       </span>
       <span
         className={[
-          "relative flex h-8 w-14 shrink-0 items-center rounded-full transition-colors",
-          hasPhoto ? "bg-blue-600" : "bg-slate-200",
+          "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+          hasPhoto ? "border-blue-700 bg-blue-500" : "border-slate-400 bg-slate-200",
         ].join(" ")}
         aria-hidden
       >
         <span
           className={[
-            "absolute top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+            "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
             hasPhoto ? "translate-x-7" : "translate-x-1",
           ].join(" ")}
         />
@@ -660,7 +661,7 @@ function NumberInputsBuilder({
           return (
             <div
               key={input.id}
-              className="relative rounded-2xl border border-slate-200 bg-slate-50 p-5"
+              className="relative rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 p-5"
             >
               <div className="flex items-start gap-3">
                 <label className="flex flex-1 flex-col gap-2">
@@ -673,7 +674,7 @@ function NumberInputsBuilder({
                     onChange={(e) =>
                       onUpdate(input.id, { name: e.target.value })
                     }
-                    className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                    className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
                   />
                 </label>
 
@@ -689,21 +690,21 @@ function NumberInputsBuilder({
                 </SupercellButton>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
+              <div className="mt-5 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-4">
+                <p className="mb-3 text-sm font-black uppercase tracking-wide text-slate-500">
                   Voorbeeld
                 </p>
                 <div className="flex items-center gap-3">
-                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
+                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl border-2 border-slate-300 border-b-4 bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
                     - {stepLabel}
                   </div>
                   <div className="min-w-0 flex-[1.4] text-center">
-                    <p className="truncate text-5xl font-black tabular-nums text-slate-900">
+                    <p className="truncate text-5xl font-black tabular-nums text-blue-600">
                       {input.defaultValue}
                       {input.unit}
                     </p>
                   </div>
-                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
+                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl border-2 border-slate-300 border-b-4 bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
                     + {stepLabel}
                   </div>
                 </div>
@@ -723,7 +724,7 @@ function NumberInputsBuilder({
                         step: Number.parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                    className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-base font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
                   />
                 </label>
 
@@ -740,7 +741,7 @@ function NumberInputsBuilder({
                         defaultValue: Number.parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                    className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-base font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
                   />
                 </label>
 
@@ -754,7 +755,7 @@ function NumberInputsBuilder({
                     onChange={(e) =>
                       onUpdate(input.id, { unit: e.target.value })
                     }
-                    className="min-h-[56px] w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-black text-slate-900 shadow-sm outline-none focus:border-slate-900"
+                    className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-base font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
                   />
                 </label>
               </div>
@@ -778,7 +779,7 @@ function NumberInputsBuilder({
                   disabled
                   rows={3}
                   placeholder="Opmerking"
-                  className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-400 shadow-sm"
+                  className="mt-3 w-full resize-none rounded-2xl border-2 border-slate-300 border-b-4 bg-white px-4 py-4 text-lg font-semibold text-slate-400"
                 />
               ) : null}
             </div>
@@ -818,7 +819,7 @@ function BooleanInputsBuilder({
         {booleanInputs.map((input) => (
           <div
             key={input.id}
-            className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+            className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 p-5"
           >
             <div className="flex items-start gap-3">
               <label className="flex flex-1 flex-col gap-2">
@@ -832,7 +833,7 @@ function BooleanInputsBuilder({
                     onUpdate(input.id, { name: event.target.value })
                   }
                   placeholder="Bijv. Frituurolie helder?"
-                  className="min-h-[64px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-xl font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                  className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
                 />
               </label>
 
@@ -849,10 +850,10 @@ function BooleanInputsBuilder({
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="flex min-h-[72px] items-center justify-center rounded-2xl bg-green-600 px-4 text-xl font-black text-white">
+              <div className="flex min-h-[72px] items-center justify-center rounded-2xl border-2 border-emerald-700 border-b-4 bg-emerald-500 px-4 text-xl font-black text-white">
                 Goedgekeurd
               </div>
-              <div className="flex min-h-[72px] items-center justify-center rounded-2xl bg-red-600 px-4 text-xl font-black text-white">
+              <div className="flex min-h-[72px] items-center justify-center rounded-2xl border-2 border-red-700 border-b-4 bg-red-500 px-4 text-xl font-black text-white">
                 Afgekeurd
               </div>
             </div>
@@ -895,7 +896,7 @@ function ListBuilder({
   onToggleRemark,
 }: ListBuilderProps) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+    <section className="flex flex-col gap-4 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 p-5">
       <SupercellButton
         type="button"
         size="sm"
@@ -914,7 +915,7 @@ function ListBuilder({
               value={item.name}
               onChange={(event) => onUpdate(item.id, event.target.value)}
               placeholder="Bijv. Afzuigkap reinigen"
-              className="min-h-[64px] min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-lg font-black text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+              className="min-h-[64px] min-w-0 flex-1 rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-lg font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
             />
             <SupercellButton
               type="button"

@@ -20,12 +20,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl">
+    <html lang="nl" className="bg-slate-200">
       <body
-        className={`${nunito.className} ${nunito.variable} bg-slate-50 text-slate-900 antialiased`}
+        className={`${nunito.className} ${nunito.variable} bg-slate-200 text-slate-900 antialiased`}
       >
         <Providers>
-          <main className="relative mx-auto min-h-screen max-w-md overflow-x-hidden bg-slate-50">
+          <main className="relative mx-auto min-h-screen max-w-md overflow-x-hidden bg-slate-100 sm:border-x-2 sm:border-slate-300">
             {children}
           </main>
         </Providers>

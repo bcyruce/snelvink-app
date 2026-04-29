@@ -68,22 +68,23 @@ export default function VerifyEmailBanner() {
   };
 
   return (
-    <div className="sticky top-0 z-30 border-b border-amber-300 bg-amber-200 px-4 py-4 shadow-sm sm:px-6">
+    <div className="sticky top-0 z-30 border-b-4 border-amber-500 bg-amber-300 px-4 py-4 sm:px-6">
       <div className="mx-auto flex max-w-md flex-col gap-3">
-        <p className="text-center text-base font-bold leading-snug text-amber-950 sm:text-lg">
+        <p className="text-center text-base font-black leading-snug text-amber-950 sm:text-lg">
           E-mailadres nog niet geverifieerd. Bevestig je account om je gegevens
           veilig te stellen.
         </p>
         <SupercellButton
           type="button"
           size="lg"
-          variant="neutral"
+          variant="primary"
           onClick={() => void handleVerifyNow()}
           disabled={isSending}
           aria-busy={isSending}
-          className="flex h-20 w-full items-center justify-center gap-3 border-2 border-amber-900/30 text-lg normal-case text-amber-950"
+          textCase="normal"
+          className="flex h-16 w-full items-center justify-center gap-3 text-lg"
         >
-          <Mail className="h-7 w-7 shrink-0" strokeWidth={2.25} aria-hidden />
+          <Mail className="h-6 w-6 shrink-0" strokeWidth={2.5} aria-hidden />
           {isSending ? "Versturen…" : "Nu verifiëren"}
         </SupercellButton>
         {feedback ? (

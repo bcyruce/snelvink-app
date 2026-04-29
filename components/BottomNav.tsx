@@ -23,10 +23,10 @@ const tabs: {
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-slate-100 bg-white shadow-sm print:hidden"
+      className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t-2 border-slate-300 bg-white print:hidden"
       aria-label="Hoofdnavigatie"
     >
-      <div className="mx-auto flex max-w-md items-stretch justify-around gap-1 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+      <div className="mx-auto flex max-w-md items-stretch justify-around gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
         {tabs.map(({ id, label, Icon }) => {
           const isActive = active === id;
           return (
@@ -37,17 +37,20 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
               variant={isActive ? "primary" : "neutral"}
               onClick={() => onChange(id)}
               aria-current={isActive ? "page" : undefined}
-              className={[
-                "flex min-h-[64px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-2 py-3 normal-case",
-                isActive ? "" : "opacity-80",
-              ].join(" ")}
+              textCase="normal"
+              className="flex min-h-[64px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-2 py-3"
             >
               <Icon
-                className="h-7 w-7 shrink-0"
-                strokeWidth={isActive ? 2.25 : 2}
+                className="h-6 w-6 shrink-0"
+                strokeWidth={isActive ? 2.5 : 2.25}
                 aria-hidden
               />
-              <span className="max-w-full truncate text-sm font-semibold text-white">
+              <span
+                className={[
+                  "max-w-full truncate text-xs font-black",
+                  isActive ? "text-white" : "text-slate-700",
+                ].join(" ")}
+              >
                 {label}
               </span>
             </SupercellButton>

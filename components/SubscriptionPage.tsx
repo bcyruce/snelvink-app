@@ -133,45 +133,49 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
+    <section className="px-5 pb-28 pt-8 sm:px-8 sm:pb-32 sm:pt-12">
       <SupercellButton
         type="button"
-        size="lg"
+        size="md"
         variant="neutral"
         onClick={() => router.push("/?tab=settings")}
-        className="mb-8 flex h-16 w-full items-center justify-center gap-3 text-xl"
+        textCase="normal"
+        className="mb-6 inline-flex items-center gap-2 px-4 py-3 text-base"
       >
-        <ArrowLeft className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+        <ArrowLeft className="h-5 w-5" strokeWidth={2.75} aria-hidden />
         Terug
       </SupercellButton>
 
       <header className="mb-8">
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">
+          Plannen
+        </p>
+        <h1 className="mt-1 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
           Abonnement
         </h1>
-        <p className="mt-3 text-lg text-gray-600">
+        <p className="mt-2 text-base font-bold text-slate-500 sm:text-lg">
           Kies het plan dat past bij jouw keuken.
         </p>
       </header>
 
       {flash ? (
-        <div className="mb-6 rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-900">
+        <div className="mb-6 rounded-2xl border-2 border-emerald-300 border-b-4 border-b-emerald-400 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900">
           {flash}
         </div>
       ) : null}
       {error ? (
-        <div className="mb-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-900">
+        <div className="mb-6 rounded-2xl border-2 border-red-300 border-b-4 border-b-red-400 bg-red-50 px-4 py-3 text-center text-sm font-bold text-red-900">
           {error}
         </div>
       ) : null}
 
       {/* Huidig plan */}
-      <div className="mb-8 rounded-3xl border-2 border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-wide text-gray-500">
+      <div className="mb-8 rounded-2xl border-2 border-blue-300 border-b-4 border-b-blue-400 bg-blue-50 p-6">
+        <p className="text-xs font-black uppercase tracking-wide text-blue-700">
           Huidig plan
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
-          <p className="text-4xl font-black text-gray-900 sm:text-5xl">
+          <p className="text-4xl font-black text-slate-900 sm:text-5xl">
             {planLabel(currentPlan)}
           </p>
           {restaurant?.plan_status ? (
@@ -182,7 +186,7 @@ export default function SubscriptionPage() {
           ) : null}
         </div>
         {periodEnd ? (
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-sm font-semibold text-slate-600">
             Huidige periode loopt tot <strong>{periodEnd}</strong>.
           </p>
         ) : null}
@@ -194,16 +198,17 @@ export default function SubscriptionPage() {
             variant="neutral"
             onClick={handleManage}
             disabled={busy !== null}
-            className="mt-5 inline-flex items-center gap-2 border-2 border-gray-200 px-4 py-3 text-sm normal-case"
+            textCase="normal"
+            className="mt-5 inline-flex items-center gap-2 px-4 py-3 text-sm"
           >
-            <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            <ExternalLink className="h-4 w-4" strokeWidth={2.75} aria-hidden />
             {busy === "portal" ? "Openen…" : "Abonnement beheren"}
           </SupercellButton>
         ) : null}
       </div>
 
       {!isOwner ? (
-        <p className="mb-8 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-center text-amber-900">
+        <p className="mb-8 rounded-2xl border-2 border-amber-300 border-b-4 border-b-amber-400 bg-amber-100 px-4 py-4 text-center font-bold text-amber-900">
           Alleen de eigenaar kan het abonnement wijzigen. Vraag je baas om te
           upgraden.
         </p>
@@ -251,18 +256,23 @@ function PlanCard({
 }: PlanCardProps) {
   const accent =
     plan.id === "pro"
-      ? "bg-gradient-to-br from-gray-900 to-gray-700 text-white"
+      ? "border-blue-700 border-b-blue-800 bg-blue-600 text-white"
       : plan.id === "basic"
-        ? "bg-blue-50 text-gray-900"
-        : "bg-gray-50 text-gray-900";
+        ? "border-blue-200 border-b-blue-300 bg-blue-50 text-slate-900"
+        : "border-slate-200 border-b-slate-300 bg-white text-slate-900";
+
+  const iconBoxClass =
+    plan.id === "pro"
+      ? "border-blue-800 border-b-4 bg-blue-700 text-white"
+      : "border-blue-700 border-b-4 bg-blue-500 text-white";
 
   const icon =
     plan.id === "pro" ? (
-      <Crown className="h-7 w-7" strokeWidth={2.25} aria-hidden />
+      <Crown className="h-7 w-7" strokeWidth={2.5} aria-hidden />
     ) : plan.id === "basic" ? (
-      <ShieldCheck className="h-7 w-7" strokeWidth={2.25} aria-hidden />
+      <ShieldCheck className="h-7 w-7" strokeWidth={2.5} aria-hidden />
     ) : (
-      <Users className="h-7 w-7" strokeWidth={2.25} aria-hidden />
+      <Users className="h-7 w-7" strokeWidth={2.5} aria-hidden />
     );
 
   const priceLine =
@@ -270,33 +280,32 @@ function PlanCard({
       ? "Gratis"
       : `€ ${plan.pricePerMonth},- / maand`;
 
+  const taglineClass =
+    plan.id === "pro" ? "text-blue-100" : "text-slate-500";
+  const checkClass =
+    plan.id === "pro" ? "text-emerald-300" : "text-emerald-600";
+
   return (
     <article
-      className={`relative flex flex-col gap-5 rounded-3xl p-6 shadow-md ${accent} ${
-        isCurrent ? "ring-4 ring-green-400" : ""
+      className={`relative flex flex-col gap-5 rounded-2xl border-2 border-b-4 p-6 ${accent} ${
+        isCurrent ? "ring-4 ring-emerald-400" : ""
       }`}
     >
       {isCurrent ? (
-        <span className="absolute -top-3 right-6 rounded-full bg-green-500 px-3 py-1 text-xs font-black uppercase tracking-wide text-white shadow">
+        <span className="absolute -top-3 right-6 rounded-full border-2 border-emerald-700 border-b-4 bg-emerald-500 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
           Huidig plan
         </span>
       ) : null}
 
       <div className="flex items-center gap-3">
         <span
-          className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-            plan.id === "pro" ? "bg-white/15" : "bg-white"
-          }`}
+          className={`flex h-14 w-14 items-center justify-center rounded-2xl border-2 ${iconBoxClass}`}
         >
           {icon}
         </span>
         <div>
           <h2 className="text-3xl font-black tracking-tight">{plan.name}</h2>
-          <p
-            className={`text-sm font-semibold ${
-              plan.id === "pro" ? "text-white/70" : "text-gray-500"
-            }`}
-          >
+          <p className={`text-sm font-bold ${taglineClass}`}>
             {plan.tagline}
           </p>
         </div>
@@ -306,11 +315,7 @@ function PlanCard({
         <p className="text-4xl font-black tabular-nums sm:text-5xl">
           {priceLine}
         </p>
-        <p
-          className={`mt-1 text-sm font-semibold ${
-            plan.id === "pro" ? "text-white/70" : "text-gray-500"
-          }`}
-        >
+        <p className={`mt-1 text-sm font-bold ${taglineClass}`}>
           {plan.maxStaff === 0
             ? "Alleen eigenaar"
             : `Tot ${plan.maxStaff} medewerkers`}
@@ -319,11 +324,9 @@ function PlanCard({
 
       <ul className="flex flex-col gap-2.5">
         {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-base">
+          <li key={f} className="flex items-start gap-2.5 text-base font-semibold">
             <Check
-              className={`mt-0.5 h-5 w-5 shrink-0 ${
-                plan.id === "pro" ? "text-green-300" : "text-green-600"
-              }`}
+              className={`mt-0.5 h-5 w-5 shrink-0 ${checkClass}`}
               strokeWidth={3}
               aria-hidden
             />
@@ -336,13 +339,12 @@ function PlanCard({
         <SupercellButton
           type="button"
           size="lg"
-          variant={plan.id === "pro" ? "neutral" : "success"}
+          variant={plan.id === "pro" ? "neutral" : "primary"}
           onClick={onUpgrade}
           disabled={!canUpgrade || isBusy}
           aria-busy={isBusy}
-          className={`mt-2 flex h-20 w-full items-center justify-center gap-3 text-2xl normal-case ${
-            plan.id === "pro" ? "text-gray-900" : ""
-          }`}
+          textCase="normal"
+          className="mt-2 flex h-16 w-full items-center justify-center gap-3 text-lg"
         >
           {isCurrent
             ? "Actief"
@@ -367,15 +369,15 @@ function StatusBadge({
 }) {
   const cls =
     tone === "ok"
-      ? "bg-green-100 text-green-800"
+      ? "border-emerald-700 bg-emerald-500 text-white"
       : tone === "warn"
-        ? "bg-amber-100 text-amber-900"
+        ? "border-amber-600 bg-amber-400 text-amber-950"
         : tone === "bad"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-700";
+          ? "border-red-700 bg-red-500 text-white"
+          : "border-slate-400 bg-slate-200 text-slate-700";
   return (
     <span
-      className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${cls}`}
+      className={`rounded-full border-2 border-b-4 px-3 py-1 text-xs font-black uppercase tracking-wide ${cls}`}
     >
       {label}
     </span>

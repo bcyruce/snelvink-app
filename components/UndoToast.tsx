@@ -61,29 +61,30 @@ export default function UndoToast({
 
   return (
     <div
-      className="toast-slide-up fixed bottom-28 left-1/2 z-50 w-[min(calc(100%-2rem),28rem)] -translate-x-1/2"
+      className="toast-slide-up fixed bottom-32 left-1/2 z-50 w-[min(calc(100%-2rem),28rem)] -translate-x-1/2"
       role="status"
       aria-live="polite"
     >
-      <div className="overflow-hidden rounded-2xl bg-gray-900 shadow-2xl">
+      <div className="overflow-hidden rounded-2xl border-2 border-slate-700 border-b-4 bg-slate-900">
         <div className="flex items-center justify-between gap-3 px-5 py-4">
-          <p className="flex-1 text-base font-semibold text-white sm:text-lg">
+          <p className="flex-1 text-base font-bold text-white sm:text-lg">
             {message}
           </p>
           <SupercellButton
             type="button"
             size="sm"
-            variant="neutral"
+            variant="primary"
             onClick={handleUndo}
-            className="flex h-12 items-center gap-2 rounded-xl px-4 text-base normal-case text-gray-900 sm:text-lg"
+            textCase="normal"
+            className="flex h-12 items-center gap-2 rounded-xl px-4 text-base sm:text-lg"
           >
-            <Undo2 className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            <Undo2 className="h-5 w-5" strokeWidth={2.75} aria-hidden />
             {actionLabel}
           </SupercellButton>
         </div>
-        <div className="h-1 w-full bg-gray-700">
+        <div className="h-1.5 w-full bg-slate-700">
           <div
-            className="h-full bg-white transition-[width] duration-75 ease-linear"
+            className="h-full bg-blue-500 transition-[width] duration-75 ease-linear"
             style={{ width: `${progress}%` }}
           />
         </div>
