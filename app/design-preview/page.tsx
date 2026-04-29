@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ClipboardCheck, History, Settings, Thermometer, SprayCan, Package, Plus } from "lucide-react";
 
-type ThemeKey = "forest" | "navy" | "warm";
+type ThemeKey = "forest" | "emerald" | "teal" | "sage" | "navy" | "indigo" | "slate" | "steel";
 
 const themes: Record<ThemeKey, {
   name: string;
@@ -29,10 +29,12 @@ const themes: Record<ThemeKey, {
   neutralText: string;
   successBg: string;
   successBorder: string;
+  category: "green" | "blue";
 }> = {
+  // 绿色系
   forest: {
-    name: "方案 A: 森林绿",
-    description: "深绿色主色调，象征新鲜、食品安全和专业性，搭配温暖的米色背景",
+    name: "森林绿",
+    description: "深邃的森林绿，象征新鲜与食品安全，专业可靠",
     background: "#F5F3EF",
     foreground: "#1F2937",
     primary: "#166534",
@@ -54,10 +56,90 @@ const themes: Record<ThemeKey, {
     neutralText: "#374151",
     successBg: "#10B981",
     successBorder: "#059669",
+    category: "green",
   },
+  emerald: {
+    name: "翡翠绿",
+    description: "明亮的翡翠绿，清新活力，现代感十足",
+    background: "#F0FDF4",
+    foreground: "#1F2937",
+    primary: "#059669",
+    primaryHover: "#10B981",
+    primaryBorder: "#047857",
+    secondary: "#ECFDF5",
+    secondaryBorder: "#D1FAE5",
+    accent: "#059669",
+    accentBg: "#D1FAE5",
+    accentBorder: "#A7F3D0",
+    cardBg: "#FFFFFF",
+    cardBorder: "#D1FAE5",
+    cardBorderBottom: "#A7F3D0",
+    navBg: "#FFFFFF",
+    navBorder: "#D1FAE5",
+    mutedText: "#6B7280",
+    neutralBg: "#FFFFFF",
+    neutralBorder: "#D1D5DB",
+    neutralText: "#374151",
+    successBg: "#10B981",
+    successBorder: "#059669",
+    category: "green",
+  },
+  teal: {
+    name: "青绿色",
+    description: "介于蓝绿之间，平静专业，兼具信任感",
+    background: "#F0FDFA",
+    foreground: "#134E4A",
+    primary: "#0D9488",
+    primaryHover: "#14B8A6",
+    primaryBorder: "#0F766E",
+    secondary: "#CCFBF1",
+    secondaryBorder: "#99F6E4",
+    accent: "#0D9488",
+    accentBg: "#CCFBF1",
+    accentBorder: "#99F6E4",
+    cardBg: "#FFFFFF",
+    cardBorder: "#CCFBF1",
+    cardBorderBottom: "#99F6E4",
+    navBg: "#FFFFFF",
+    navBorder: "#CCFBF1",
+    mutedText: "#5F7B7A",
+    neutralBg: "#FFFFFF",
+    neutralBorder: "#CBD5D4",
+    neutralText: "#374544",
+    successBg: "#10B981",
+    successBorder: "#059669",
+    category: "green",
+  },
+  sage: {
+    name: "鼠尾草绿",
+    description: "柔和的灰绿色，自然舒适，低调优雅",
+    background: "#F8FAF8",
+    foreground: "#2D3A2D",
+    primary: "#5F7A5F",
+    primaryHover: "#6B8A6B",
+    primaryBorder: "#4A654A",
+    secondary: "#F0F4F0",
+    secondaryBorder: "#DCE4DC",
+    accent: "#5F7A5F",
+    accentBg: "#E8EFE8",
+    accentBorder: "#C8D8C8",
+    cardBg: "#FFFFFF",
+    cardBorder: "#DCE4DC",
+    cardBorderBottom: "#C8D8C8",
+    navBg: "#FFFFFF",
+    navBorder: "#DCE4DC",
+    mutedText: "#6B7A6B",
+    neutralBg: "#FFFFFF",
+    neutralBorder: "#C8D4C8",
+    neutralText: "#3D4A3D",
+    successBg: "#5F9A5F",
+    successBorder: "#4A854A",
+    category: "green",
+  },
+  // 蓝色系
   navy: {
-    name: "方案 B: 海军蓝",
-    description: "深海军蓝主色调，搭配极简的纯白/浅灰背景，专业、权威且现代",
+    name: "海军蓝",
+    description: "深邃海军蓝，专业权威，企业级品质感",
     background: "#F8FAFC",
     foreground: "#0F172A",
     primary: "#1E3A5F",
@@ -79,31 +161,85 @@ const themes: Record<ThemeKey, {
     neutralText: "#334155",
     successBg: "#059669",
     successBorder: "#047857",
+    category: "blue",
   },
-  warm: {
-    name: "方案 C: 暖橙色",
-    description: "温暖的橙色/琥珀色主色调，搭配浅米色背景，友好、活力且符合餐饮行业氛围",
-    background: "#FFFBF5",
-    foreground: "#292524",
-    primary: "#C2410C",
-    primaryHover: "#EA580C",
-    primaryBorder: "#9A3412",
-    secondary: "#FEF7ED",
-    secondaryBorder: "#FED7AA",
-    accent: "#C2410C",
-    accentBg: "#FFF7ED",
-    accentBorder: "#FDBA74",
+  indigo: {
+    name: "靛蓝色",
+    description: "深邃的靛蓝，沉稳大气，科技感强",
+    background: "#F5F7FF",
+    foreground: "#1E1B4B",
+    primary: "#4338CA",
+    primaryHover: "#4F46E5",
+    primaryBorder: "#3730A3",
+    secondary: "#EEF2FF",
+    secondaryBorder: "#E0E7FF",
+    accent: "#4338CA",
+    accentBg: "#E0E7FF",
+    accentBorder: "#C7D2FE",
     cardBg: "#FFFFFF",
-    cardBorder: "#F5D0B0",
-    cardBorderBottom: "#E5B090",
+    cardBorder: "#E0E7FF",
+    cardBorderBottom: "#C7D2FE",
     navBg: "#FFFFFF",
-    navBorder: "#F5D0B0",
-    mutedText: "#78716C",
+    navBorder: "#E0E7FF",
+    mutedText: "#6366A0",
     neutralBg: "#FFFFFF",
-    neutralBorder: "#D6D3D1",
-    neutralText: "#44403C",
+    neutralBorder: "#C7D2FE",
+    neutralText: "#3730A3",
     successBg: "#059669",
     successBorder: "#047857",
+    category: "blue",
+  },
+  slate: {
+    name: "岩石灰蓝",
+    description: "低饱和度蓝灰，极简现代，专注于内容",
+    background: "#F8FAFC",
+    foreground: "#0F172A",
+    primary: "#475569",
+    primaryHover: "#64748B",
+    primaryBorder: "#334155",
+    secondary: "#F1F5F9",
+    secondaryBorder: "#E2E8F0",
+    accent: "#475569",
+    accentBg: "#F1F5F9",
+    accentBorder: "#E2E8F0",
+    cardBg: "#FFFFFF",
+    cardBorder: "#E2E8F0",
+    cardBorderBottom: "#CBD5E1",
+    navBg: "#FFFFFF",
+    navBorder: "#E2E8F0",
+    mutedText: "#64748B",
+    neutralBg: "#FFFFFF",
+    neutralBorder: "#CBD5E1",
+    neutralText: "#334155",
+    successBg: "#059669",
+    successBorder: "#047857",
+    category: "blue",
+  },
+  steel: {
+    name: "钢青蓝",
+    description: "冷静的钢蓝色，工业感强，可靠稳重",
+    background: "#F4F7FA",
+    foreground: "#1A2A3A",
+    primary: "#3D5A80",
+    primaryHover: "#4D6A90",
+    primaryBorder: "#2D4A70",
+    secondary: "#E8EEF4",
+    secondaryBorder: "#D0DCE8",
+    accent: "#3D5A80",
+    accentBg: "#E0EAF4",
+    accentBorder: "#B8CCE0",
+    cardBg: "#FFFFFF",
+    cardBorder: "#D0DCE8",
+    cardBorderBottom: "#B8CCE0",
+    navBg: "#FFFFFF",
+    navBorder: "#D0DCE8",
+    mutedText: "#5A7A9A",
+    neutralBg: "#FFFFFF",
+    neutralBorder: "#B8CCE0",
+    neutralText: "#2A4A6A",
+    successBg: "#059669",
+    successBorder: "#047857",
+    category: "blue",
   },
 };
 
@@ -114,6 +250,9 @@ const modules = [
   { name: "Ontvangst", icon: Package },
 ];
 
+const greenThemes: ThemeKey[] = ["forest", "emerald", "teal", "sage"];
+const blueThemes: ThemeKey[] = ["navy", "indigo", "slate", "steel"];
+
 export default function DesignPreview() {
   const [activeTheme, setActiveTheme] = useState<ThemeKey>("forest");
   const theme = themes[activeTheme];
@@ -122,28 +261,87 @@ export default function DesignPreview() {
     <div className="min-h-screen pb-8" style={{ background: theme.background, color: theme.foreground }}>
       {/* Theme Selector */}
       <div className="sticky top-0 z-50 border-b-2 px-4 py-4" style={{ background: theme.navBg, borderColor: theme.navBorder }}>
-        <h2 className="mb-3 text-center text-sm font-bold" style={{ color: theme.mutedText }}>
+        <h2 className="mb-4 text-center text-base font-black" style={{ color: theme.foreground }}>
           选择配色方案
         </h2>
-        <div className="flex gap-2 overflow-x-auto">
-          {(Object.keys(themes) as ThemeKey[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => setActiveTheme(key)}
-              className="flex-1 rounded-xl border-2 border-b-4 px-3 py-2.5 text-xs font-black transition-all"
-              style={{
-                background: activeTheme === key ? themes[key].primary : theme.neutralBg,
-                borderColor: activeTheme === key ? themes[key].primaryBorder : theme.neutralBorder,
-                color: activeTheme === key ? "#FFFFFF" : theme.neutralText,
-              }}
-            >
-              {themes[key].name.split(":")[0]}
-            </button>
-          ))}
+        
+        {/* Green Themes */}
+        <div className="mb-3">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: theme.mutedText }}>
+            绿色系
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {greenThemes.map((key) => (
+              <button
+                key={key}
+                onClick={() => setActiveTheme(key)}
+                className="flex flex-col items-center gap-1.5 rounded-xl border-2 border-b-4 px-2 py-2.5 transition-all"
+                style={{
+                  background: activeTheme === key ? themes[key].primary : theme.neutralBg,
+                  borderColor: activeTheme === key ? themes[key].primaryBorder : theme.neutralBorder,
+                }}
+              >
+                <div 
+                  className="h-6 w-6 rounded-full border-2"
+                  style={{ 
+                    background: themes[key].primary, 
+                    borderColor: themes[key].primaryBorder 
+                  }}
+                />
+                <span 
+                  className="text-[10px] font-black leading-tight"
+                  style={{ color: activeTheme === key ? "#FFFFFF" : theme.neutralText }}
+                >
+                  {themes[key].name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-        <p className="mt-3 text-center text-xs" style={{ color: theme.mutedText }}>
-          {theme.description}
-        </p>
+
+        {/* Blue Themes */}
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: theme.mutedText }}>
+            蓝色系
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {blueThemes.map((key) => (
+              <button
+                key={key}
+                onClick={() => setActiveTheme(key)}
+                className="flex flex-col items-center gap-1.5 rounded-xl border-2 border-b-4 px-2 py-2.5 transition-all"
+                style={{
+                  background: activeTheme === key ? themes[key].primary : theme.neutralBg,
+                  borderColor: activeTheme === key ? themes[key].primaryBorder : theme.neutralBorder,
+                }}
+              >
+                <div 
+                  className="h-6 w-6 rounded-full border-2"
+                  style={{ 
+                    background: themes[key].primary, 
+                    borderColor: themes[key].primaryBorder 
+                  }}
+                />
+                <span 
+                  className="text-[10px] font-black leading-tight"
+                  style={{ color: activeTheme === key ? "#FFFFFF" : theme.neutralText }}
+                >
+                  {themes[key].name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Current Theme Description */}
+        <div className="mt-4 rounded-xl border-2 p-3" style={{ background: theme.accentBg, borderColor: theme.accentBorder }}>
+          <p className="text-center text-sm font-bold" style={{ color: theme.primary }}>
+            {theme.name}
+          </p>
+          <p className="mt-1 text-center text-xs" style={{ color: theme.mutedText }}>
+            {theme.description}
+          </p>
+        </div>
       </div>
 
       {/* App Preview */}
