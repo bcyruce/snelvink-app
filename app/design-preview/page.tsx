@@ -47,7 +47,7 @@ const modules = [
   { name: "Ontvangst",  icon: Package },
 ];
 
-type LogoVariant = "A" | "B" | "C" | "D" | "E";
+type LogoVariant = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J";
 
 // Logo A：双层环形图案，几何抽象
 function LogoA({ size = 36 }: { size?: number }) {
@@ -193,6 +193,153 @@ function LogoE({ size = 36 }: { size?: number }) {
   );
 }
 
+// Logo F：棱镜折射，多棱层
+function LogoF({ size = 36 }: { size?: number }) {
+  return (
+    <div className="flex items-center" style={{ gap: size * 0.28 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size * 0.75, height: size }}>
+        <svg width={size * 0.75} height={size} viewBox="0 0 24 36">
+          {/* 棱镜形状 - 三角分层 */}
+          <path d="M12 2 L 20 12 L 18 24 L 6 24 L 4 12 Z" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <path d="M12 8 L 17 15 L 15 22 L 9 22 Z" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
+          <path d="M12 12 L 15 17 L 13 21 L 11 21 Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.55)" strokeWidth="2" />
+        </svg>
+      </div>
+      <div>
+        <div style={{ fontSize: size * 0.82, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.25, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
+          Layered Check
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Logo G：流动波纹，生物感
+function LogoG({ size = 36 }: { size?: number }) {
+  return (
+    <div className="flex items-center" style={{ gap: size * 0.3 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
+        <svg width={size} height={size} viewBox="0 0 40 40">
+          {/* 波纹涟漪 */}
+          <circle cx="20" cy="20" r="14" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+          <circle cx="20" cy="20" r="10" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" />
+          <circle cx="20" cy="20" r="6" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+          {/* 中心 V 字 */}
+          <path d="M18 18 L 20 22 L 22 18" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div>
+        <div style={{ fontSize: size * 0.78, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.09em", marginTop: 2 }}>
+          FLOW CONTROL
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Logo H：齿轮链条，工业专业
+function LogoH({ size = 36 }: { size?: number }) {
+  return (
+    <div className="flex items-center" style={{ gap: size * 0.28 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
+        <svg width={size} height={size} viewBox="0 0 40 40">
+          {/* 两个齿轮齿位 */}
+          <g>
+            <circle cx="15" cy="20" r="8" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+            <rect x="13" y="10" width="4" height="3" fill="rgba(255,255,255,0.3)" />
+            <rect x="13" y="27" width="4" height="3" fill="rgba(255,255,255,0.3)" />
+            <rect x="10" y="18" width="3" height="4" fill="rgba(255,255,255,0.3)" />
+            <rect x="27" y="18" width="3" height="4" fill="rgba(255,255,255,0.3)" />
+          </g>
+          <g>
+            <circle cx="25" cy="20" r="8" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
+            <rect x="23" y="10" width="4" height="3" fill="rgba(255,255,255,0.4)" />
+            <rect x="23" y="27" width="4" height="3" fill="rgba(255,255,255,0.4)" />
+            <rect x="20" y="18" width="3" height="4" fill="rgba(255,255,255,0.4)" />
+            <rect x="37" y="18" width="3" height="4" fill="rgba(255,255,255,0.4)" />
+          </g>
+          {/* 连接线 */}
+          <line x1="23" y1="20" x2="27" y2="20" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+        </svg>
+      </div>
+      <div>
+        <div style={{ fontSize: size * 0.8, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
+          Process Link
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Logo I：扫描线阵，数据感
+function LogoI({ size = 36 }: { size?: number }) {
+  return (
+    <div className="flex items-center" style={{ gap: size * 0.3 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
+        <svg width={size} height={size} viewBox="0 0 40 40">
+          {/* 方框 */}
+          <rect x="6" y="6" width="28" height="28" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" rx="3" />
+          {/* 扫描线 */}
+          <line x1="8" y1="10" x2="32" y2="10" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
+          <line x1="8" y1="16" x2="32" y2="16" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+          <line x1="8" y1="22" x2="32" y2="22" stroke="rgba(255,255,255,0.35)" strokeWidth="1.2" />
+          <line x1="8" y1="28" x2="32" y2="28" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+          {/* 中心亮点 */}
+          <circle cx="20" cy="22" r="3" fill="rgba(255,255,255,0.5)" />
+        </svg>
+      </div>
+      <div>
+        <div style={{ fontSize: size * 0.8, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.09em", marginTop: 2 }}>
+          SCAN SYSTEM
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Logo J：棱角盾牌，防御感
+function LogoJ({ size = 36 }: { size?: number }) {
+  return (
+    <div className="flex items-center" style={{ gap: size * 0.28 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size * 0.8, height: size }}>
+        <svg width={size * 0.8} height={size} viewBox="0 0 28 36">
+          {/* 棱角盾牌 */}
+          <path
+            d="M14 2 L 24 7 L 24 16 C 24 26, 14 33, 14 33 C 14 33, 4 26, 4 16 L 4 7 Z"
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1.2"
+          />
+          {/* 内层棱线 */}
+          <path d="M14 10 L 20 15 L 20 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M14 10 L 8 15 L 8 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M14 24 L 14 28" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div>
+        <div style={{ fontSize: size * 0.78, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
+          Fortress Guard
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BottomNav() {
   return (
     <div
@@ -249,6 +396,11 @@ const logoMeta: Record<LogoVariant, { label: string; desc: string }> = {
   C: { label: "六边形叶", desc: "六边形结构 · 三层叶片 · 生态专业感" },
   D: { label: "波形检查", desc: "折线+检查标 · 实时监测感 · 动态活力" },
   E: { label: "分层圆环", desc: "三层圆环 · 精准点阵 · 系统感最强" },
+  F: { label: "棱镜折射", desc: "三角分层 · 光学感 · 多维透视" },
+  G: { label: "波纹涟漪", desc: "涟漪扩散 · V字中心 · 生物质感" },
+  H: { label: "齿轮链条", desc: "双齿轮 · 工业链接 · 流程感强" },
+  I: { label: "扫描阵列", desc: "方框线阵 · 数据感 · 高科技" },
+  J: { label: "棱角盾牌", desc: "防御形态 · 棱线复杂 · 军事感" },
 };
 
 export default function DesignPreview() {
@@ -262,7 +414,7 @@ export default function DesignPreview() {
           Logo 与字体方案 — 松针绿主题
         </p>
         <div className="grid grid-cols-5 gap-1.5">
-          {(["A", "B", "C", "D", "E"] as LogoVariant[]).map((key) => (
+          {(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as LogoVariant[]).map((key) => (
             <button
               key={key}
               onClick={() => setActive(key)}
@@ -286,8 +438,7 @@ export default function DesignPreview() {
 
       {/* Logo 大图展示区 */}
       <div className="px-6 py-6">
-        <div
-          className="rounded-2xl flex items-center justify-center py-10 px-6"
+        <div className="rounded-2xl flex items-center justify-center py-10 px-6"
           style={{ background: pine.primary }}
         >
           {active === "A" && <LogoA size={44} />}
@@ -295,6 +446,11 @@ export default function DesignPreview() {
           {active === "C" && <LogoC size={44} />}
           {active === "D" && <LogoD size={44} />}
           {active === "E" && <LogoE size={44} />}
+          {active === "F" && <LogoF size={44} />}
+          {active === "G" && <LogoG size={44} />}
+          {active === "H" && <LogoH size={44} />}
+          {active === "I" && <LogoI size={44} />}
+          {active === "J" && <LogoJ size={44} />}
         </div>
         <p className="mt-2 text-center text-[10px] text-white/25 uppercase tracking-widest">大图预览</p>
       </div>
@@ -306,11 +462,17 @@ export default function DesignPreview() {
           <div className="px-5 pt-7 pb-6" style={{ background: pine.primary }}>
             <div className="flex items-end justify-between">
               <div>
-                {active === "A" && <LogoA size={34} />}
-                {active === "B" && <LogoB size={34} />}
-                {active === "C" && <LogoC size={34} />}
-                {active === "D" && <LogoD size={34} />}
-                {active === "E" && <LogoE size={34} />}
+            <div>
+              {active === "A" && <LogoA size={34} />}
+              {active === "B" && <LogoB size={34} />}
+              {active === "C" && <LogoC size={34} />}
+              {active === "D" && <LogoD size={34} />}
+              {active === "E" && <LogoE size={34} />}
+              {active === "F" && <LogoF size={34} />}
+              {active === "G" && <LogoG size={34} />}
+              {active === "H" && <LogoH size={34} />}
+              {active === "I" && <LogoI size={34} />}
+              {active === "J" && <LogoJ size={34} />}
               </div>
               <button
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black"
