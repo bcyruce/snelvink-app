@@ -334,7 +334,7 @@ function PhonePreview({
 export default function DesignPreview() {
   const [active, setActive] = useState<string>("steel");
   const t = themes[active];
-  const paletteColors = themeOrder.map(k => themes[k].primary);
+  const paletteColors = themeOrder.map(k => themes[k].dot);
 
   return (
     <div className="min-h-screen py-12 px-4" style={{ background: "#0D1210" }}>
