@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   ClipboardCheck, History, Settings, Thermometer, SprayCan,
-  Package, Plus, ChevronRight,
+  Package, Plus, Pencil,
 } from "lucide-react";
 
 const pine = {
@@ -19,8 +19,6 @@ const pine = {
   cardBorder:   "rgba(210,228,215,0.9)",
   navBg:        "rgba(245,248,246,0.95)",
   navBorder:    "rgba(210,228,215,0.6)",
-  dangerDark:   "#8B2E2E",
-  danger:       "#A63D3D",
 };
 
 const glass = {
@@ -35,13 +33,6 @@ const glass = {
     border: `2px solid ${pine.primaryDark}`,
     color: "#fff",
     boxShadow: `0 2px 0 ${pine.primaryDark}, 0 4px 12px ${pine.primary}30`,
-  } as React.CSSProperties,
-  btnNeutral: {
-    background: "rgba(255,255,255,0.85)",
-    border: `2px solid rgba(200,215,205,0.9)`,
-    color: pine.fg,
-    boxShadow: "0 2px 0 rgba(180,200,186,0.6)",
-    backdropFilter: "blur(8px)",
   } as React.CSSProperties,
   navItemActive: {
     background: pine.primary,
@@ -63,7 +54,6 @@ const modules = [
   { name: "Ontvangst",  icon: Package },
 ];
 
-// 共用底部导航
 function BottomNav() {
   return (
     <div
@@ -71,9 +61,9 @@ function BottomNav() {
       style={{ background: pine.navBg, borderColor: pine.navBorder, backdropFilter: "blur(16px)" }}
     >
       {[
-        { icon: ClipboardCheck, label: "Taken",       active: true  },
-        { icon: History,        label: "Geschiedenis", active: false },
-        { icon: Settings,       label: "Instellingen", active: false },
+        { icon: ClipboardCheck, label: "Taken",        active: true  },
+        { icon: History,        label: "Geschiedenis",  active: false },
+        { icon: Settings,       label: "Instellingen",  active: false },
       ].map((t, i) => (
         <button
           key={i}
@@ -88,204 +78,153 @@ function BottomNav() {
   );
 }
 
-// 共用深色 Header
-function DarkHeader({ edit = true, variant = "default" }: { edit?: boolean; variant?: "default" | "bottom" | "floating" }) {
-  return (
-    <>
-      <div className="px-5 pt-8 pb-10" style={{ background: pine.primary }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50">HACCP</span>
-            <h1 className="text-4xl font-black tracking-tight text-white mt-0.5">SnelVink</h1>
-          </div>
-          {edit && variant === "default" && (
-            <button
-              className="px-4 py-2.5 rounded-xl text-xs font-black"
-              style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.25)", color: "#fff" }}
-            >
-              Wijzigen
-            </button>
-          )}
-        </div>
-      </div>
-      {/* 方案：按钮在 Header 底部下方 */}
-      {edit && variant === "bottom" && (
-        <div className="px-5 pb-4 pt-2" style={{ background: pine.primary }}>
-          <button
-            className="w-full px-4 py-2.5 rounded-xl text-xs font-black"
-            style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.25)", color: "#fff" }}
-          >
-            Wijzigen
-          </button>
-        </div>
-      )}
-    </>
-  );
-}
+// ─── 三种 Header 变体 ───
 
-// ─────────────────────────────────────────
-// 子方案 A — 2列网格，紧凑卡片
-// 图标直接裸露，无背景框，卡片缩小
-// ─────────────────────────────────────────
-function VariantA() {
+// 变体1：Wijzigen 在标题右侧，pill 样式，带描边
+function HeaderV1() {
   return (
-    <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader variant="default" />
-      <div className="px-4 pt-8">
-        <div className="grid grid-cols-2 gap-3">
-          {modules.map((m, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl"
-              style={glass.card}
-            >
-              <m.icon className="h-8 w-8" strokeWidth={2} style={{ color: pine.primary }} />
-              <span className="text-sm font-black" style={{ color: pine.fg }}>{m.name}</span>
-            </div>
-          ))}
+    <div className="px-5 pt-7 pb-6" style={{ background: pine.primary }}>
+      <div className="flex items-end justify-between">
+        <div>
+          <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/40">HACCP</span>
+          <h1 className="text-3xl font-black tracking-tight text-white leading-none mt-1">SnelVink</h1>
         </div>
-        <button className="flex w-full min-h-14 items-center justify-center gap-2 rounded-xl text-sm font-black mt-3" style={glass.btnPrimary}>
-          <Plus className="h-5 w-5" strokeWidth={2.75} /> Toevoegen
+        <button
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black"
+          style={{
+            background: "transparent",
+            border: "1.5px solid rgba(255,255,255,0.35)",
+            color: "rgba(255,255,255,0.85)",
+            letterSpacing: "0.04em",
+          }}
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2.5} />
+          Wijzigen
         </button>
       </div>
-      <BottomNav />
     </div>
   );
 }
 
-// ─────────────────────────────────────────
-// 子方案 B — 3列网格，更小的卡片
-// 图标大，文字紧贴图标下方
-// ─────────────────────────────────────────
-function VariantB() {
-  const extModules = [
-    ...modules,
-    { name: "Frituur",  icon: Thermometer },
-    { name: "Levering", icon: Package },
-  ];
+// 变体2：Wijzigen 在标题下方作为小标签，带左侧竖线装饰
+function HeaderV2() {
   return (
-    <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader variant="bottom" />
-      <div className="px-4 pt-8">
-        <div className="grid grid-cols-3 gap-2.5">
-          {extModules.map((m, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl"
-              style={glass.card}
-            >
-              <m.icon className="h-7 w-7" strokeWidth={2} style={{ color: pine.primary }} />
-              <span className="text-xs font-black text-center leading-tight" style={{ color: pine.fg }}>{m.name}</span>
-            </div>
-          ))}
-          {/* Add tile */}
+    <div className="px-5 pt-7 pb-6" style={{ background: pine.primary }}>
+      <h1 className="text-3xl font-black tracking-tight text-white leading-none">SnelVink</h1>
+      <div className="flex items-center justify-between mt-3">
+        <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/40">HACCP Dashboard</span>
+        <button
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-black"
+          style={{
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderLeft: "3px solid rgba(255,255,255,0.6)",
+            color: "rgba(255,255,255,0.85)",
+          }}
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2.5} />
+          Wijzigen
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 变体3：极简，Wijzigen 是右侧的图标+文字对齐底部
+function HeaderV3() {
+  return (
+    <div className="px-5 pt-7 pb-6" style={{ background: pine.primary }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <div
-            className="flex flex-col items-center justify-center gap-2 py-5 rounded-2xl"
-            style={{ background: pine.primary, border: `1.5px solid ${pine.primaryDark}`, boxShadow: `0 2px 0 ${pine.primaryDark}` }}
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.2)" }}
           >
-            <Plus className="h-7 w-7 text-white" strokeWidth={2.5} />
-            <span className="text-xs font-black text-white">Nieuw</span>
+            <ClipboardCheck className="h-5 w-5 text-white" strokeWidth={2} />
+          </div>
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-white/40 block">HACCP</span>
+            <h1 className="text-2xl font-black tracking-tight text-white leading-none mt-0.5">SnelVink</h1>
           </div>
         </div>
+        <button
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black"
+          style={{
+            background: "rgba(255,255,255,0.12)",
+            border: "1.5px solid rgba(255,255,255,0.25)",
+            color: "rgba(255,255,255,0.9)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)",
+          }}
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2.5} />
+          Wijzigen
+        </button>
       </div>
-      <BottomNav />
     </div>
   );
 }
 
-// ─────────────────────────────────────────
-// 子方案 C — 单栏横向列表
-// 图标裸露，文字左对齐，副标题显示最后记录
-// ─────────────────────────────────────────
-function VariantC() {
+// ─── 模块网格（2列大字）共用 ───
+function ModuleGrid() {
   return (
-    <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader variant="default" />
-      <div className="px-4 pt-8 flex flex-col gap-2.5">
+    <div className="px-4 pt-7 pb-28">
+      <div className="grid grid-cols-2 gap-3">
         {modules.map((m, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 px-4 py-4 rounded-2xl"
+            className="flex flex-col items-center justify-center gap-3 py-7 rounded-2xl"
             style={glass.card}
           >
-            <m.icon className="h-7 w-7 shrink-0" strokeWidth={2} style={{ color: pine.primary }} />
-            <div className="flex-1 min-w-0">
-              <p className="font-black text-sm" style={{ color: pine.fg }}>{m.name}</p>
-              <p className="text-xs mt-0.5 truncate" style={{ color: pine.muted }}>Laatste: vandaag 09:00</p>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0" style={{ color: pine.muted }} />
+            <m.icon className="h-10 w-10" strokeWidth={1.75} style={{ color: pine.primary }} />
+            <span className="text-base font-black" style={{ color: pine.fg }}>{m.name}</span>
           </div>
         ))}
-        <button className="flex w-full min-h-14 items-center justify-center gap-2 rounded-xl text-sm font-black mt-1" style={glass.btnPrimary}>
-          <Plus className="h-5 w-5" strokeWidth={2.75} /> Toevoegen
-        </button>
-      </div>
-      <BottomNav />
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// 子方案 D — 2列网格 + 大图标 + 大文字
-// 卡片宽但矮，图标和文字都更大
-// ─────────────────────────────────────────
-function VariantD() {
-  return (
-    <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader variant="bottom" />
-      <div className="px-4 pt-8">
-        <div className="grid grid-cols-2 gap-3">
-          {modules.map((m, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center gap-3 py-6 rounded-2xl"
-              style={glass.card}
-            >
-              <m.icon className="h-10 w-10" strokeWidth={1.75} style={{ color: pine.primary }} />
-              <span className="text-base font-black" style={{ color: pine.fg }}>{m.name}</span>
-            </div>
-          ))}
+        {/* Toevoegen tile */}
+        <div
+          className="flex flex-col items-center justify-center gap-3 py-7 rounded-2xl"
+          style={{
+            background: "rgba(61,92,69,0.08)",
+            border: `1.5px dashed ${pine.cardBorder}`,
+          }}
+        >
+          <Plus className="h-10 w-10" strokeWidth={1.75} style={{ color: pine.muted }} />
+          <span className="text-base font-black" style={{ color: pine.muted }}>Nieuw</span>
         </div>
-        <button className="flex w-full min-h-14 items-center justify-center gap-2 rounded-xl text-sm font-black mt-3" style={glass.btnPrimary}>
-          <Plus className="h-5 w-5" strokeWidth={2.75} /> Toevoegen
-        </button>
       </div>
-      <BottomNav />
     </div>
   );
 }
 
-type Variant = "A" | "B" | "C" | "D";
+type Variant = "1" | "2" | "3";
 
 const meta: Record<Variant, { label: string; desc: string }> = {
-  A: { label: "2列 紧凑",   desc: "卡片缩小 · 图标裸露 · 平衡感强" },
-  B: { label: "3列 密集",   desc: "3列网格 · 可容纳更多模块 · 加号作为磁贴" },
-  C: { label: "单栏 列表",  desc: "横向布局 · 副标题显示最后记录时间" },
-  D: { label: "2列 大字",   desc: "图标更大 · 文字更大 · 触控友好" },
+  "1": { label: "Pill 描边",   desc: "圆角胶囊 · 透明底 · 白色描边" },
+  "2": { label: "竖线标签",    desc: "左侧高亮竖线 · 底部对齐文字" },
+  "3": { label: "图标 + 按钮", desc: "左侧品牌图标 · 右侧毛玻璃按钮" },
 };
 
 export default function DesignPreview() {
-  const [active, setActive] = useState<Variant>("A");
+  const [active, setActive] = useState<Variant>("1");
 
   return (
     <div className="min-h-screen" style={{ background: "#161B17", color: "#fff" }}>
-      {/* Top selector */}
+      {/* Selector */}
       <div className="sticky top-0 z-50 border-b border-white/10 bg-[#161B17]/95 backdrop-blur-sm px-4 pt-4 pb-3">
-        <p className="mb-2 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
-          方案 C 霜冰极简 · 松针绿 · 方案3 排版细化
+        <p className="mb-2.5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
+          Wijzigen 位置方案 — 2列大字排版 · 松针绿
         </p>
-        <div className="grid grid-cols-4 gap-2">
-          {(["A", "B", "C", "D"] as Variant[]).map((key) => (
+        <div className="grid grid-cols-3 gap-2">
+          {(["1", "2", "3"] as Variant[]).map((key) => (
             <button
               key={key}
               onClick={() => setActive(key)}
-              className="rounded-xl border py-3 px-1 text-center transition-all"
+              className="rounded-xl border py-3 px-2 text-center transition-all"
               style={{
                 background: active === key ? pine.primary : "rgba(255,255,255,0.05)",
                 borderColor: active === key ? pine.primaryDark : "rgba(255,255,255,0.1)",
               }}
             >
-              <span className="block text-[11px] font-black" style={{ color: active === key ? "#fff" : "rgba(255,255,255,0.55)" }}>
+              <span className="block text-[11px] font-black leading-tight" style={{ color: active === key ? "#fff" : "rgba(255,255,255,0.55)" }}>
                 {meta[key].label}
               </span>
             </button>
@@ -296,10 +235,13 @@ export default function DesignPreview() {
 
       {/* Phone preview */}
       <div className="px-4 py-6 mx-auto max-w-sm">
-        {active === "A" && <VariantA />}
-        {active === "B" && <VariantB />}
-        {active === "C" && <VariantC />}
-        {active === "D" && <VariantD />}
+        <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
+          {active === "1" && <HeaderV1 />}
+          {active === "2" && <HeaderV2 />}
+          {active === "3" && <HeaderV3 />}
+          <ModuleGrid />
+          <BottomNav />
+        </div>
       </div>
     </div>
   );
