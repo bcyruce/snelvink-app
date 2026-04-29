@@ -47,52 +47,21 @@ const modules = [
   { name: "Ontvangst",  icon: Package },
 ];
 
-type FontVariant = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
+type Variant = "1" | "2" | "3" | "4" | "5";
 
-// 字体方案 A：经典现代 — 大写超紧凑
-function TitleA() {
+const variantMeta: Record<Variant, { label: string; desc: string }> = {
+  "1": { label: "Header 右上角", desc: "深色背景内，标题右侧" },
+  "2": { label: "Header 底部行", desc: "深色背景内，标题下方独立一行" },
+  "3": { label: "交界处悬浮", desc: "深浅交界，半浮在分割线上" },
+  "4": { label: "浅色区右对齐", desc: "浅色背景，模块上方右侧" },
+  "5": { label: "浅色区左对齐", desc: "浅色背景，模块上方左侧，带说明文字" },
+};
+
+function TitleC() {
   return (
     <div>
       <div style={{
-        fontSize: 52,
-        fontWeight: 900,
-        color: "#fff",
-        letterSpacing: "-0.08em",
-        lineHeight: 1,
-        fontFamily: "'Arial Black', sans-serif",
-        textTransform: "uppercase",
-        textShadow: "0 2px 4px rgba(0,0,0,0.2)"
-      }}>
-        SnelVink
-      </div>
-    </div>
-  );
-}
-
-// 字体方案 B：优雅衬线 — 专业高端感
-function TitleB() {
-  return (
-    <div style={{
-      fontSize: 48,
-      fontWeight: 700,
-      color: "#fff",
-      letterSpacing: "-0.02em",
-      lineHeight: 1,
-      fontFamily: "'Georgia', serif",
-      fontStyle: "normal"
-    }}>
-      SnelVink
-    </div>
-  );
-}
-
-// 字体方案 C：几何现代 — 未来科技感
-function TitleC({ compact = false }: { compact?: boolean }) {
-  const size = compact ? 28 : 44;
-  return (
-    <div>
-      <div style={{
-        fontSize: size,
+        fontSize: 28,
         fontWeight: 800,
         color: "#fff",
         letterSpacing: "0.06em",
@@ -103,11 +72,11 @@ function TitleC({ compact = false }: { compact?: boolean }) {
         SNEL<span style={{ opacity: 0.55, marginLeft: "0.12em" }}>VINK</span>
       </div>
       <div style={{
-        fontSize: compact ? 9.5 : 12,
+        fontSize: 9.5,
         fontWeight: 600,
         color: "rgba(255,255,255,0.45)",
         letterSpacing: "0.15em",
-        marginTop: compact ? 3 : 5,
+        marginTop: 3,
         textTransform: "uppercase",
         whiteSpace: "nowrap",
       }}>
@@ -117,121 +86,35 @@ function TitleC({ compact = false }: { compact?: boolean }) {
   );
 }
 
-// 字体方案 D：粗体块状 — 有力冲击感
-function TitleD() {
-  return (
-    <div style={{
-      fontSize: 60,
-      fontWeight: 900,
-      color: "#fff",
-      letterSpacing: "-0.05em",
-      lineHeight: 0.9,
-      fontFamily: "'Impact', sans-serif",
-      textTransform: "uppercase"
-    }}>
-      SNELVINK
-    </div>
-  );
-}
+const wijzigenPill = (
+  <button
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black shrink-0"
+    style={{
+      background: "transparent",
+      border: "1.5px solid rgba(255,255,255,0.35)",
+      color: "rgba(255,255,255,0.85)",
+      letterSpacing: "0.04em",
+    }}
+  >
+    <Pencil className="h-3 w-3" strokeWidth={2.5} />
+    Wijzigen
+  </button>
+);
 
-// 字体方案 E：流畅圆润 — 友好易读
-function TitleE() {
-  return (
-    <div style={{
-      fontSize: 50,
-      fontWeight: 700,
-      color: "#fff",
-      letterSpacing: "-0.01em",
-      lineHeight: 1,
-      fontFamily: "'Segoe UI', sans-serif"
-    }}>
-      SnelVink
-    </div>
-  );
-}
-
-// 字体方案 F：混合大小 — 视觉层级
-function TitleF() {
-  return (
-    <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-      <div style={{
-        fontSize: 36,
-        fontWeight: 900,
-        color: "#fff",
-        letterSpacing: "-0.08em",
-        lineHeight: 1,
-        fontFamily: "'Arial Black', sans-serif",
-        textTransform: "uppercase"
-      }}>
-        Snel
-      </div>
-      <div style={{
-        fontSize: 48,
-        fontWeight: 900,
-        color: "rgba(255,255,255,0.7)",
-        letterSpacing: "-0.04em",
-        lineHeight: 1,
-        fontFamily: "'Arial Black', sans-serif",
-        textTransform: "uppercase"
-      }}>
-        Vink
-      </div>
-    </div>
-  );
-}
-
-// 字体方案 G：竖排强调 — 时尚现代
-function TitleG() {
-  return (
-    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-      <div style={{
-        width: 3,
-        height: 54,
-        background: "rgba(255,255,255,0.5)",
-        borderRadius: "2px"
-      }} />
-      <div style={{
-        fontSize: 48,
-        fontWeight: 900,
-        color: "#fff",
-        letterSpacing: "-0.03em",
-        lineHeight: 1,
-        fontFamily: "'Verdana', sans-serif"
-      }}>
-        SnelVink
-      </div>
-    </div>
-  );
-}
-
-// 字体方案 H：低对比斜体 — 优雅动感
-function TitleH() {
-  return (
-    <div style={{
-      fontSize: 52,
-      fontWeight: 700,
-      color: "#fff",
-      letterSpacing: "0.02em",
-      lineHeight: 1,
-      fontFamily: "'Georgia', serif",
-      fontStyle: "italic",
-      transform: "skewX(-8deg)"
-    }}>
-      SnelVink
-    </div>
-  );
-}
-
-const fontMeta: Record<FontVariant, { label: string; desc: string }> = {
-  A: { label: "经典现代", desc: "超紧凑 · 大写 · 有力冲击 · 专业工业感" },
-  B: { label: "优雅衬线", desc: "传统衬线 · 高端气质 · 成熟稳重 · 信任感" },
-  C: { label: "几何未来", desc: "宽字距 · 几何感 · 科技感强 · 国际范" },
-  D: { label: "粗体块状", desc: "超粗超紧凑 · 冲击力最强 · 记忆度高" },
-  E: { label: "流畅圆润", desc: "系统默认 · 高易读性 · 友好亲切 · 大众化" },
-  F: { label: "混合分层", desc: "两个尺寸 · 视觉层级 · 强调 Vink · 现代设计" },
-  G: { label: "竖线强调", desc: "左侧竖线 · 独特标志 · 设计感强 · 视觉焦点" },
-  H: { label: "斜体优雅", desc: "衬线+斜体 · 动感十足 · 高端时尚 · 现代优雅" },
-};
+const wijzigenLight = (
+  <button
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black"
+    style={{
+      background: "transparent",
+      border: `1.5px solid ${pine.cardBorder}`,
+      color: pine.primary,
+      letterSpacing: "0.04em",
+    }}
+  >
+    <Pencil className="h-3 w-3" strokeWidth={2.5} />
+    Wijzigen
+  </button>
+);
 
 function BottomNav() {
   return (
@@ -240,9 +123,9 @@ function BottomNav() {
       style={{ background: pine.navBg, borderColor: pine.navBorder, backdropFilter: "blur(16px)" }}
     >
       {[
-        { icon: ClipboardCheck, label: "Taken",        active: true  },
-        { icon: History,        label: "Geschiedenis",  active: false },
-        { icon: Settings,       label: "Instellingen",  active: false },
+        { icon: ClipboardCheck, label: "Taken",       active: true  },
+        { icon: History,        label: "Geschiedenis", active: false },
+        { icon: Settings,       label: "Instellingen", active: false },
       ].map((t, i) => (
         <button
           key={i}
@@ -259,7 +142,7 @@ function BottomNav() {
 
 function ModuleGrid() {
   return (
-    <div className="px-4 pt-7 pb-28">
+    <div className="px-4 pb-28">
       <div className="grid grid-cols-2 gap-3">
         {modules.map((m, i) => (
           <div
@@ -283,18 +166,117 @@ function ModuleGrid() {
   );
 }
 
+// 方案1: Wijzigen 在 Header 右上角（深色背景内，与标题同行）
+function Phone1() {
+  return (
+    <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 660, borderRadius: 28 }}>
+      <div className="px-5 pt-6 pb-5 flex items-center justify-between" style={{ background: pine.primary }}>
+        <TitleC />
+        {wijzigenPill}
+      </div>
+      <div className="pt-6" />
+      <ModuleGrid />
+      <BottomNav />
+    </div>
+  );
+}
+
+// 方案2: Wijzigen 在 Header 底部行（深色背景内，标题下方独立一行，右对齐）
+function Phone2() {
+  return (
+    <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 660, borderRadius: 28 }}>
+      <div className="px-5 pt-6 pb-4" style={{ background: pine.primary }}>
+        <TitleC />
+        <div className="flex justify-end mt-3">
+          {wijzigenPill}
+        </div>
+      </div>
+      <div className="pt-6" />
+      <ModuleGrid />
+      <BottomNav />
+    </div>
+  );
+}
+
+// 方案3: Wijzigen 悬浮在深浅交界处（绝对定位，横跨两个背景）
+function Phone3() {
+  return (
+    <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 660, borderRadius: 28 }}>
+      <div className="px-5 pt-6 pb-8" style={{ background: pine.primary }}>
+        <TitleC />
+      </div>
+      {/* 悬浮按钮 */}
+      <div className="absolute left-0 right-0 flex justify-end px-5" style={{ top: 80 }}>
+        <button
+          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-black"
+          style={{
+            background: "rgba(255,255,255,0.95)",
+            border: `1.5px solid ${pine.cardBorder}`,
+            color: pine.primary,
+            letterSpacing: "0.04em",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+          }}
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2.5} />
+          Wijzigen
+        </button>
+      </div>
+      <div className="pt-10" />
+      <ModuleGrid />
+      <BottomNav />
+    </div>
+  );
+}
+
+// 方案4: Wijzigen 在浅色区右对齐，模块上方，小尺寸
+function Phone4() {
+  return (
+    <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 660, borderRadius: 28 }}>
+      <div className="px-5 pt-6 pb-5" style={{ background: pine.primary }}>
+        <TitleC />
+      </div>
+      <div className="px-4 pt-4 pb-0 flex justify-end">
+        {wijzigenLight}
+      </div>
+      <div className="pt-2" />
+      <ModuleGrid />
+      <BottomNav />
+    </div>
+  );
+}
+
+// 方案5: Wijzigen 在浅色区左侧，带"模块"小标签同行
+function Phone5() {
+  return (
+    <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 660, borderRadius: 28 }}>
+      <div className="px-5 pt-6 pb-5" style={{ background: pine.primary }}>
+        <TitleC />
+      </div>
+      <div className="px-4 pt-4 pb-0 flex items-center justify-between">
+        <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: pine.muted }}>
+          Modules
+        </span>
+        {wijzigenLight}
+      </div>
+      <div className="pt-2" />
+      <ModuleGrid />
+      <BottomNav />
+    </div>
+  );
+}
+
 export default function DesignPreview() {
-  const [active, setActive] = useState<FontVariant>("A");
+  const [active, setActive] = useState<Variant>("1");
 
   return (
     <div className="min-h-screen" style={{ background: "#161B17", color: "#fff" }}>
       {/* Selector */}
       <div className="sticky top-0 z-50 border-b border-white/10 bg-[#161B17]/95 backdrop-blur-sm px-4 pt-4 pb-3">
         <p className="mb-2.5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
-          SnelVink 字体方案 — 松针绿主题
+          Wijzigen 位置方案 — 字体C · 松针绿主题
         </p>
-        <div className="grid grid-cols-4 gap-2">
-          {(["A", "B", "C", "D", "E", "F", "G", "H"] as FontVariant[]).map((key) => (
+        <div className="grid grid-cols-5 gap-2">
+          {(["1", "2", "3", "4", "5"] as Variant[]).map((key) => (
             <button
               key={key}
               onClick={() => setActive(key)}
@@ -304,71 +286,25 @@ export default function DesignPreview() {
                 borderColor: active === key ? pine.primaryDark : "rgba(255,255,255,0.1)",
               }}
             >
-              <span className="block text-[11px] font-black leading-tight" style={{ color: active === key ? "#fff" : "rgba(255,255,255,0.5)" }}>
+              <span className="block text-[13px] font-black" style={{ color: active === key ? "#fff" : "rgba(255,255,255,0.5)" }}>
                 {key}
               </span>
             </button>
           ))}
         </div>
-        <div className="mt-2 text-center">
-          <span className="text-[12px] font-black text-white/70">{fontMeta[active].label}</span>
-          <span className="ml-2 text-[11px] text-white/35">{fontMeta[active].desc}</span>
+        <div className="mt-2.5 text-center">
+          <span className="text-[12px] font-black" style={{ color: pine.bg }}>{variantMeta[active].label}</span>
+          <span className="ml-2 text-[11px] text-white/35">{variantMeta[active].desc}</span>
         </div>
       </div>
 
-      {/* 字体大图展示区 */}
-      <div className="px-6 py-12">
-        <div className="rounded-2xl flex items-center justify-center py-16 px-6"
-          style={{ background: pine.primary }}
-        >
-          {active === "A" && <TitleA />}
-          {active === "B" && <TitleB />}
-          {active === "C" && <TitleC />}
-          {active === "D" && <TitleD />}
-          {active === "E" && <TitleE />}
-          {active === "F" && <TitleF />}
-          {active === "G" && <TitleG />}
-          {active === "H" && <TitleH />}
-        </div>
-        <p className="mt-2 text-center text-[10px] text-white/25 uppercase tracking-widest">大图预览</p>
-      </div>
-
-      {/* Phone preview */}
-      <div className="px-4 pb-10 mx-auto max-w-sm">
-        <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-          {/* Header with selected font */}
-          <div className="px-5 pt-6 pb-5" style={{ background: pine.primary }}>
-            <div className="min-w-0">
-              {active === "A" && <TitleA />}
-              {active === "B" && <TitleB />}
-              {active === "C" && <TitleC compact />}
-              {active === "D" && <TitleD />}
-              {active === "E" && <TitleE />}
-              {active === "F" && <TitleF />}
-              {active === "G" && <TitleG />}
-              {active === "H" && <TitleH />}
-            </div>
-          </div>
-
-          {/* Wijzigen button in light section */}
-          <div className="px-4 pt-5 pb-0 flex justify-end">
-            <button
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-black"
-              style={{
-                background: "transparent",
-                border: `1.5px solid ${pine.cardBorder}`,
-                color: pine.primary,
-                letterSpacing: "0.04em",
-              }}
-            >
-              <Pencil className="h-3 w-3" strokeWidth={2.5} />
-              Wijzigen
-            </button>
-          </div>
-
-          <ModuleGrid />
-          <BottomNav />
-        </div>
+      {/* 手机预览 */}
+      <div className="px-4 py-10 mx-auto max-w-sm">
+        {active === "1" && <Phone1 />}
+        {active === "2" && <Phone2 />}
+        {active === "3" && <Phone3 />}
+        {active === "4" && <Phone4 />}
+        {active === "5" && <Phone5 />}
       </div>
     </div>
   );
