@@ -462,17 +462,16 @@ export default function DesignPreview() {
           <div className="px-5 pt-7 pb-6" style={{ background: pine.primary }}>
             <div className="flex items-end justify-between">
               <div>
-            <div>
-              {active === "A" && <LogoA size={34} />}
-              {active === "B" && <LogoB size={34} />}
-              {active === "C" && <LogoC size={34} />}
-              {active === "D" && <LogoD size={34} />}
-              {active === "E" && <LogoE size={34} />}
-              {active === "F" && <LogoF size={34} />}
-              {active === "G" && <LogoG size={34} />}
-              {active === "H" && <LogoH size={34} />}
-              {active === "I" && <LogoI size={34} />}
-              {active === "J" && <LogoJ size={34} />}
+                {active === "A" && <LogoA size={34} />}
+                {active === "B" && <LogoB size={34} />}
+                {active === "C" && <LogoC size={34} />}
+                {active === "D" && <LogoD size={34} />}
+                {active === "E" && <LogoE size={34} />}
+                {active === "F" && <LogoF size={34} />}
+                {active === "G" && <LogoG size={34} />}
+                {active === "H" && <LogoH size={34} />}
+                {active === "I" && <LogoI size={34} />}
+                {active === "J" && <LogoJ size={34} />}
               </div>
               <button
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black"
