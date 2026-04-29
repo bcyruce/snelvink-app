@@ -67,7 +67,7 @@ function LogoA({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.28, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em", marginTop: 1 }}>
-          QUALITY CHECK
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -102,7 +102,7 @@ function LogoB({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
-          Food Safety
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -133,7 +133,7 @@ function LogoC({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2 }}>
-          ORGANIC CONTROL
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -157,7 +157,7 @@ function LogoD({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em", marginTop: 2, textTransform: "uppercase" }}>
-          Real-time Check
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -186,7 +186,7 @@ function LogoE({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2 }}>
-          PRECISION SYSTEM
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -210,7 +210,7 @@ function LogoF({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.25, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
-          Layered Check
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -236,7 +236,7 @@ function LogoG({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.09em", marginTop: 2 }}>
-          FLOW CONTROL
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -273,7 +273,7 @@ function LogoH({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
-          Process Link
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -302,7 +302,7 @@ function LogoI({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.09em", marginTop: 2 }}>
-          SCAN SYSTEM
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
@@ -333,7 +333,7 @@ function LogoJ({ size = 36 }: { size?: number }) {
           SnelVink
         </div>
         <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
-          Fortress Guard
+          METEN · VINKEN · WETEN
         </div>
       </div>
     </div>
