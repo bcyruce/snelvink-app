@@ -338,30 +338,32 @@ export default function DesignPreview() {
         <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
           {/* Header with selected font */}
           <div className="px-5 pt-6 pb-5" style={{ background: pine.primary }}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                {active === "A" && <TitleA />}
-                {active === "B" && <TitleB />}
-                {active === "C" && <TitleC compact />}
-                {active === "D" && <TitleD />}
-                {active === "E" && <TitleE />}
-                {active === "F" && <TitleF />}
-                {active === "G" && <TitleG />}
-                {active === "H" && <TitleH />}
-              </div>
-              <button
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black shrink-0"
-                style={{
-                  background: "transparent",
-                  border: "1.5px solid rgba(255,255,255,0.35)",
-                  color: "rgba(255,255,255,0.85)",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                <Pencil className="h-3 w-3" strokeWidth={2.5} />
-                Wijzigen
-              </button>
+            <div className="min-w-0">
+              {active === "A" && <TitleA />}
+              {active === "B" && <TitleB />}
+              {active === "C" && <TitleC compact />}
+              {active === "D" && <TitleD />}
+              {active === "E" && <TitleE />}
+              {active === "F" && <TitleF />}
+              {active === "G" && <TitleG />}
+              {active === "H" && <TitleH />}
             </div>
+          </div>
+
+          {/* Wijzigen button in light section */}
+          <div className="px-4 pt-5 pb-0 flex justify-end">
+            <button
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[11px] font-black"
+              style={{
+                background: "transparent",
+                border: `1.5px solid ${pine.cardBorder}`,
+                color: pine.primary,
+                letterSpacing: "0.04em",
+              }}
+            >
+              <Pencil className="h-3 w-3" strokeWidth={2.5} />
+              Wijzigen
+            </button>
           </div>
 
           <ModuleGrid />
