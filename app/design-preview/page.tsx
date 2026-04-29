@@ -254,7 +254,7 @@ function Phone5() {
       </div>
       <div className="px-4 pt-4 pb-0 flex items-center justify-between">
         <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: pine.muted }}>
-          Modules
+          Taken
         </span>
         {wijzigenLight}
       </div>
