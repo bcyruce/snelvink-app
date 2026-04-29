@@ -122,7 +122,7 @@ export default function SortableModuleCard({
             tabIndex={isEditing ? 0 : -1}
             className={`${controlBaseClass} -left-2 -top-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
             style={{ 
-              ringColor: theme.bg,
+              boxShadow: `0 0 0 4px ${theme.bg}`,
             }}
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.75} aria-hidden />
@@ -136,7 +136,7 @@ export default function SortableModuleCard({
             aria-label={`Verplaats ${module.name}`}
             className={`${controlBaseClass} -right-2 -top-2 h-10 w-10 cursor-grab rounded-full ${controlVisibilityClass} active:cursor-grabbing`}
             style={{ 
-              ringColor: theme.bg,
+              boxShadow: `0 0 0 4px ${theme.bg}`,
             }}
             {...listeners}
             {...attributes}
@@ -155,7 +155,7 @@ export default function SortableModuleCard({
               tabIndex={isEditing ? 0 : -1}
               className={`${controlBaseClass} -right-2 -bottom-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
               style={{ 
-                ringColor: theme.bg,
+                boxShadow: `0 0 0 4px ${theme.bg}`,
               }}
             >
               <Pencil className="h-4 w-4" strokeWidth={2.75} aria-hidden />
