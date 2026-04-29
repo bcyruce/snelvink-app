@@ -357,20 +357,20 @@ export default function SchoonmaakCheck() {
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">
+      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
         Schoonmaak
       </h2>
 
       {/* Datum & tijd */}
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-gray-500">
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
           Datum &amp; tijd
         </span>
         <input
           type="datetime-local"
           value={recordedAtLocal}
           onChange={(e) => setRecordedAtLocal(e.target.value)}
-          className="h-20 w-full rounded-2xl border-2 border-gray-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-gray-900 shadow-sm outline-none focus:border-gray-900 sm:text-3xl"
+          className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
         />
       </label>
 
@@ -381,7 +381,7 @@ export default function SchoonmaakCheck() {
       ) : null}
 
       {!restaurantId ? (
-        <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-600">
+        <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
           Geen restaurant gekoppeld aan je account.
         </p>
       ) : null}
@@ -389,7 +389,7 @@ export default function SchoonmaakCheck() {
       {/* ===== Locatie sectie ===== */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Kies een locatie
           </h3>
           {selectedLocation ? (
@@ -406,11 +406,11 @@ export default function SchoonmaakCheck() {
         </div>
 
         {selectedLocation ? (
-          <p className="truncate rounded-2xl bg-gray-100 px-5 py-5 text-2xl font-black text-gray-900 shadow-sm">
+          <p className="truncate rounded-2xl bg-slate-100 px-5 py-5 text-2xl font-black text-slate-900 shadow-sm">
             {selectedLocation.name}
           </p>
         ) : loadingLocations ? (
-          <p className="text-center text-gray-500">Locaties laden…</p>
+          <p className="text-center text-slate-500">Locaties laden…</p>
         ) : (
           <div className="flex flex-col gap-3">
             {locations.map((loc) => (
@@ -428,7 +428,7 @@ export default function SchoonmaakCheck() {
               size="lg"
               variant="neutral"
               onClick={handleAddLocation}
-              className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-gray-300 text-xl normal-case"
+              className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
             >
               <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
               Locatie toevoegen
@@ -441,16 +441,16 @@ export default function SchoonmaakCheck() {
       {selectedLocation ? (
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
               Schoonmaaktaken
             </h3>
-            <span className="text-sm font-bold text-gray-500">
+            <span className="text-sm font-bold text-slate-500">
               {completedCount}/{tasks.length} voltooid
             </span>
           </div>
 
           {loadingTasks ? (
-            <p className="text-center text-gray-500">Taken laden…</p>
+            <p className="text-center text-slate-500">Taken laden…</p>
           ) : (
             <ul className="flex flex-col gap-3">
               {tasks.map((task) => {
@@ -470,7 +470,7 @@ export default function SchoonmaakCheck() {
                           "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
                           checked
                             ? "bg-white text-green-600"
-                            : "border-2 border-gray-300 bg-white text-gray-300",
+                            : "border-2 border-slate-300 bg-white text-slate-300",
                         ].join(" ")}
                         aria-hidden
                       >
@@ -499,7 +499,7 @@ export default function SchoonmaakCheck() {
             variant="neutral"
             onClick={handleAddTask}
             disabled={loadingTasks}
-            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-gray-300 text-xl normal-case"
+            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
           >
             <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
             Taak toevoegen
@@ -510,7 +510,7 @@ export default function SchoonmaakCheck() {
       {/* ===== Foto + opslaan ===== */}
       {selectedLocation && !loadingTasks ? (
         <section className="flex flex-col gap-4">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Foto&apos;s (optioneel)
           </h3>
 
@@ -528,7 +528,7 @@ export default function SchoonmaakCheck() {
             variant="neutral"
             onClick={handlePickPhotos}
             disabled={isSaving || photoSlotsLeft <= 0}
-            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-gray-300 text-xl normal-case"
+            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-slate-300 text-xl normal-case"
           >
             <Camera className="h-7 w-7" aria-hidden />
             {photoSlotsLeft <= 0
@@ -545,7 +545,7 @@ export default function SchoonmaakCheck() {
                   <img
                     src={url}
                     alt={`Foto ${i + 1}`}
-                    className="h-28 w-full rounded-xl border border-gray-200 object-cover shadow-sm"
+                    className="h-28 w-full rounded-xl border border-slate-200 object-cover shadow-sm"
                   />
                   <SupercellButton
                     size="icon"
@@ -580,7 +580,7 @@ export default function SchoonmaakCheck() {
           </SupercellButton>
 
           {completedCount === 0 ? (
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-slate-500">
               Vink minstens één taak aan om op te slaan.
             </p>
           ) : null}

@@ -223,9 +223,7 @@ function HomeContent() {
             <h1 className="mt-1 text-5xl font-black tracking-tight text-slate-900 sm:text-6xl">
               SnelVink
             </h1>
-            <p className="mt-2 text-base font-bold text-slate-500 sm:text-lg">
-              De keuken is open.
-            </p>
+            
           </div>
 
           {activeTab === "tasks" ? (
