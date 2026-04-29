@@ -1,11 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { HTMLMotionProps } from "framer-motion";
 import { forwardRef } from "react";
-import type {
-  ButtonHTMLAttributes,
-  ReactNode,
-} from "react";
+import type { ReactNode } from "react";
 
 type SupercellButtonVariant = "primary" | "danger" | "success" | "neutral";
 type SupercellButtonSize = "sm" | "md" | "lg" | "icon";
@@ -17,8 +15,7 @@ type SupercellButtonProps = {
   variant?: SupercellButtonVariant;
   size?: SupercellButtonSize;
   textCase?: SupercellButtonTextCase;
-  onClick?: (...args: any[]) => void;
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
+} & Omit<HTMLMotionProps<"button">, "children" | "className">;
 
 const variantClasses: Record<SupercellButtonVariant, string> = {
   primary:
