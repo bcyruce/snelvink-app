@@ -87,18 +87,32 @@ function TitleB() {
 }
 
 // 字体方案 C：几何现代 — 未来科技感
-function TitleC() {
+function TitleC({ compact = false }: { compact?: boolean }) {
+  const size = compact ? 28 : 44;
   return (
-    <div style={{
-      fontSize: 54,
-      fontWeight: 800,
-      color: "#fff",
-      letterSpacing: "0.04em",
-      lineHeight: 1,
-      fontFamily: "'Trebuchet MS', sans-serif",
-      textTransform: "uppercase"
-    }}>
-      SNEL VINK
+    <div>
+      <div style={{
+        fontSize: size,
+        fontWeight: 800,
+        color: "#fff",
+        letterSpacing: "0.06em",
+        lineHeight: 1,
+        fontFamily: "'Trebuchet MS', sans-serif",
+        textTransform: "uppercase",
+      }}>
+        SNEL<span style={{ opacity: 0.55, marginLeft: "0.12em" }}>VINK</span>
+      </div>
+      <div style={{
+        fontSize: compact ? 9.5 : 12,
+        fontWeight: 600,
+        color: "rgba(255,255,255,0.45)",
+        letterSpacing: "0.15em",
+        marginTop: compact ? 3 : 5,
+        textTransform: "uppercase",
+        whiteSpace: "nowrap",
+      }}>
+        Meten · Vinken · Weten
+      </div>
     </div>
   );
 }
@@ -323,12 +337,12 @@ export default function DesignPreview() {
       <div className="px-4 pb-10 mx-auto max-w-sm">
         <div className="relative overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
           {/* Header with selected font */}
-          <div className="px-5 pt-7 pb-6" style={{ background: pine.primary }}>
-            <div className="flex items-end justify-between">
-              <div>
+          <div className="px-5 pt-6 pb-5" style={{ background: pine.primary }}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 {active === "A" && <TitleA />}
                 {active === "B" && <TitleB />}
-                {active === "C" && <TitleC />}
+                {active === "C" && <TitleC compact />}
                 {active === "D" && <TitleD />}
                 {active === "E" && <TitleE />}
                 {active === "F" && <TitleF />}
@@ -336,13 +350,12 @@ export default function DesignPreview() {
                 {active === "H" && <TitleH />}
               </div>
               <button
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black shrink-0"
                 style={{
                   background: "transparent",
                   border: "1.5px solid rgba(255,255,255,0.35)",
                   color: "rgba(255,255,255,0.85)",
                   letterSpacing: "0.04em",
-                  flexShrink: 0,
                 }}
               >
                 <Pencil className="h-3 w-3" strokeWidth={2.5} />
