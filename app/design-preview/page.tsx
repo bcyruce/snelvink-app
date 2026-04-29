@@ -118,7 +118,7 @@ function VariantA() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
       <DarkHeader />
-      <div className="px-4 -mt-5">
+      <div className="px-4 pt-8">
         <div className="grid grid-cols-2 gap-3">
           {modules.map((m, i) => (
             <div
@@ -153,7 +153,7 @@ function VariantB() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
       <DarkHeader />
-      <div className="px-4 -mt-5">
+      <div className="px-4 pt-8">
         <div className="grid grid-cols-3 gap-2.5">
           {extModules.map((m, i) => (
             <div
@@ -188,7 +188,7 @@ function VariantC() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
       <DarkHeader />
-      <div className="px-4 -mt-5 flex flex-col gap-2.5">
+      <div className="px-4 pt-8 flex flex-col gap-2.5">
         {modules.map((m, i) => (
           <div
             key={i}
@@ -220,7 +220,7 @@ function VariantD() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
       <DarkHeader />
-      <div className="px-4 -mt-5">
+      <div className="px-4 pt-8">
         <div className="grid grid-cols-2 gap-3">
           {modules.map((m, i) => (
             <div
