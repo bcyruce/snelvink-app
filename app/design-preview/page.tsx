@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   ClipboardCheck, History, Settings, Thermometer, SprayCan,
-  Package, Plus, Pencil, CheckSquare, Zap, Check,
+  Package, Plus, Pencil, CheckSquare, Zap, Check, Leaf, Shield
 } from "lucide-react";
 
 const pine = {
@@ -47,170 +47,147 @@ const modules = [
   { name: "Ontvangst",  icon: Package },
 ];
 
-// ─── Logo 变体定义 ───
 type LogoVariant = "A" | "B" | "C" | "D" | "E";
 
-// Logo A：纯文字 checkmark，简洁
+// Logo A：双层环形图案，几何抽象
 function LogoA({ size = 36 }: { size?: number }) {
   return (
-    <div className="flex items-center" style={{ gap: size * 0.25 }}>
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size * 0.28,
-          background: "rgba(255,255,255,0.18)",
-          border: "1.5px solid rgba(255,255,255,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Check
-          style={{ width: size * 0.55, height: size * 0.55, color: "#fff", strokeWidth: 3 }}
-        />
+    <div className="flex items-center" style={{ gap: size * 0.3 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
+        {/* 外环 */}
+        <svg width={size} height={size} style={{ position: "absolute" }}>
+          <circle cx={size/2} cy={size/2} r={size/2 - 2} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <circle cx={size/2} cy={size/2} r={size/2 - 5} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeDasharray={`${size * 0.4} ${size * 0.3}`} />
+          {/* 中心点 */}
+          <circle cx={size/2} cy={size/2} r="3" fill="rgba(255,255,255,0.6)" />
+        </svg>
       </div>
       <div>
-        <div style={{ fontSize: size * 0.32, fontWeight: 900, color: "rgba(255,255,255,0.45)", letterSpacing: "0.25em", lineHeight: 1, textTransform: "uppercase" }}>HACCP</div>
-        <div style={{ fontSize: size * 0.72, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1, marginTop: 2 }}>SnelVink</div>
-      </div>
-    </div>
-  );
-}
-
-// Logo B：双字母 SV 图标，几何感
-function LogoB({ size = 36 }: { size?: number }) {
-  return (
-    <div className="flex items-center" style={{ gap: size * 0.25 }}>
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size * 0.22,
-          background: "rgba(255,255,255,0.2)",
-          border: "1.5px solid rgba(255,255,255,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontSize: size * 0.42, fontWeight: 900, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1 }}>SV</span>
-      </div>
-      <div>
-        <div style={{ fontSize: size * 0.28, fontWeight: 800, color: "rgba(255,255,255,0.45)", letterSpacing: "0.22em", lineHeight: 1, textTransform: "uppercase" }}>HACCP</div>
-        <div
-          style={{
-            fontSize: size * 0.68,
-            fontWeight: 900,
-            color: "#fff",
-            letterSpacing: "-0.04em",
-            lineHeight: 1,
-            marginTop: 2,
-            fontStyle: "italic",
-          }}
-        >
+        <div style={{ fontSize: size * 0.85, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em", lineHeight: 0.95 }}>
           SnelVink
         </div>
+        <div style={{ fontSize: size * 0.28, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em", marginTop: 1 }}>
+          QUALITY CHECK
+        </div>
       </div>
     </div>
   );
 }
 
-// Logo C：竖线分隔，字体细长
-function LogoC({ size = 36 }: { size?: number }) {
+// Logo B：竖排盾牌 + S 字，品牌感强
+function LogoB({ size = 36 }: { size?: number }) {
   return (
     <div className="flex items-center" style={{ gap: size * 0.28 }}>
-      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.12)",
-            border: "1.5px solid rgba(255,255,255,0.25)",
-          }}
-        />
-        <div style={{
-          position: "absolute", inset: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Zap style={{ width: size * 0.5, height: size * 0.5, color: "#fff", fill: "rgba(255,255,255,0.9)" }} />
-        </div>
+      <div style={{ position: "relative", flexShrink: 0, width: size * 0.8, height: size }}>
+        <svg width={size * 0.8} height={size} viewBox="0 0 28 36" style={{ position: "absolute" }}>
+          {/* 盾牌 */}
+          <path
+            d="M14 1 C14 1, 6 5, 6 12 C6 22, 14 31, 14 31 C14 31, 22 22, 22 12 C22 5, 14 1, 14 1"
+            fill="none"
+            stroke="rgba(255,255,255,0.3)"
+            strokeWidth="1.5"
+          />
+          {/* 内部 S 曲线 */}
+          <path
+            d="M14 8 Q 18 11, 18 15 Q 18 19, 14 22"
+            fill="none"
+            stroke="rgba(255,255,255,0.6)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
       </div>
-      <div style={{ display: "flex", alignItems: "stretch", gap: size * 0.2 }}>
-        <div style={{ width: 1.5, background: "rgba(255,255,255,0.3)", borderRadius: 2, alignSelf: "stretch" }} />
-        <div>
-          <div style={{ fontSize: size * 0.28, fontWeight: 800, color: "rgba(255,255,255,0.5)", letterSpacing: "0.22em", lineHeight: 1, textTransform: "uppercase" }}>HACCP</div>
-          <div style={{ fontSize: size * 0.68, fontWeight: 900, color: "#fff", letterSpacing: "0.01em", lineHeight: 1.1, marginTop: 2 }}>SnelVink</div>
+      <div>
+        <div style={{ fontSize: size * 0.8, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2, textTransform: "uppercase" }}>
+          Food Safety
         </div>
       </div>
     </div>
   );
 }
 
-// Logo D：圆形纯符号 logo，极简
+// Logo C：叶片六边形组合，生态感
+function LogoC({ size = 36 }: { size?: number }) {
+  return (
+    <div className="flex items-center" style={{ gap: size * 0.3 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
+        <svg width={size} height={size} viewBox="0 0 40 40">
+          {/* 中心六边形 */}
+          <polygon
+            points="20,8 30,14 30,26 20,32 10,26 10,14"
+            fill="none"
+            stroke="rgba(255,255,255,0.25)"
+            strokeWidth="1.2"
+          />
+          {/* 三个递进叶片 */}
+          <path d="M20 15 Q 25 18 25 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M20 12 Q 28 16 28 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M20 18 Q 22 22 20 26" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div>
+        <div style={{ fontSize: size * 0.8, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2 }}>
+          ORGANIC CONTROL
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Logo D：折线检查波形，动态感
 function LogoD({ size = 36 }: { size?: number }) {
   return (
-    <div className="flex items-center" style={{ gap: size * 0.25 }}>
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.15)",
-          border: "2px solid rgba(255,255,255,0.35)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)",
-        }}
-      >
-        <ClipboardCheck style={{ width: size * 0.52, height: size * 0.52, color: "#fff", strokeWidth: 2 }} />
+    <div className="flex items-center" style={{ gap: size * 0.28 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size * 0.85, height: size * 0.7, display: "flex", alignItems: "center" }}>
+        <svg width={size * 0.85} height={size * 0.7} viewBox="0 0 36 24">
+          {/* 波形背景 */}
+          <path d="M2 12 Q 8 4, 14 12 T 26 12 L 34 8" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+          {/* 检查标记 */}
+          <path d="M2 14 L 8 20 L 16 8" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
       <div>
-        <div style={{ fontSize: size * 0.72, fontWeight: 900, color: "#fff", letterSpacing: "0.06em", lineHeight: 1, textTransform: "uppercase" }}>SNELVINK</div>
-        <div style={{ fontSize: size * 0.28, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.18em", lineHeight: 1, marginTop: 3, textTransform: "uppercase" }}>HACCP Dashboard</div>
+        <div style={{ fontSize: size * 0.82, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.45)", letterSpacing: "0.08em", marginTop: 2, textTransform: "uppercase" }}>
+          Real-time Check
+        </div>
       </div>
     </div>
   );
 }
 
-// Logo E：方块截断风格，大胆现代
+// Logo E：分层立体圆形，现代感
 function LogoE({ size = 36 }: { size?: number }) {
   return (
-    <div className="flex items-center" style={{ gap: size * 0.22 }}>
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size * 0.2,
-          background: pine.primaryDark,
-          border: "1.5px solid rgba(255,255,255,0.15)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{
-          position: "absolute",
-          top: -size * 0.2,
-          right: -size * 0.2,
-          width: size * 0.7,
-          height: size * 0.7,
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.07)",
-        }} />
-        <span style={{ fontSize: size * 0.52, fontWeight: 900, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1, position: "relative" }}>SV</span>
+    <div className="flex items-center" style={{ gap: size * 0.3 }}>
+      <div style={{ position: "relative", flexShrink: 0, width: size, height: size }}>
+        {/* 外层圆 */}
+        <svg width={size} height={size} style={{ position: "absolute" }}>
+          {/* 三层圆环 */}
+          <circle cx={size/2} cy={size/2} r={size/2 - 2} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+          <circle cx={size/2} cy={size/2} r={size/2 - 8} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+          <circle cx={size/2} cy={size/2} r={size/2 - 14} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+          {/* 中心点阵 */}
+          <circle cx={size/2 - 3} cy={size/2 - 3} r="1.5" fill="rgba(255,255,255,0.6)" />
+          <circle cx={size/2 + 3} cy={size/2 - 3} r="1.5" fill="rgba(255,255,255,0.4)" />
+          <circle cx={size/2} cy={size/2 + 4} r="1.5" fill="rgba(255,255,255,0.5)" />
+        </svg>
       </div>
       <div>
-        <div style={{ fontSize: size * 0.75, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em", lineHeight: 0.95 }}>Snel<span style={{ color: "rgba(255,255,255,0.5)" }}>Vink</span></div>
-        <div style={{ fontSize: size * 0.26, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "0.2em", marginTop: 3, textTransform: "uppercase" }}>HACCP</div>
+        <div style={{ fontSize: size * 0.8, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", lineHeight: 1 }}>
+          SnelVink
+        </div>
+        <div style={{ fontSize: size * 0.26, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.1em", marginTop: 2 }}>
+          PRECISION SYSTEM
+        </div>
       </div>
     </div>
   );
@@ -267,11 +244,11 @@ function ModuleGrid() {
 }
 
 const logoMeta: Record<LogoVariant, { label: string; desc: string }> = {
-  A: { label: "Check 图标", desc: "圆角方块 + 对勾 · 分层HACCP标签 · 无衬线粗体" },
-  B: { label: "SV 斜体",    desc: "SV缩写方块 + 斜体粗体字 · 有力动感" },
-  C: { label: "竖线+闪电",  desc: "圆形闪电图标 + 竖线分隔 · 干净利落" },
-  D: { label: "圆形剪贴板", desc: "圆形图标 + 全大写宽字距 · 极简权威" },
-  E: { label: "双色分字",   desc: "SV深色方块 + Snel/Vink双色 · 大胆现代" },
+  A: { label: "圆形虚线", desc: "双层环形几何 · 简约抽象 · 现代科技感" },
+  B: { label: "盾牌 S 曲", desc: "盾牌+S波线 · 品牌保护象征 · 优雅动感" },
+  C: { label: "六边形叶", desc: "六边形结构 · 三层叶片 · 生态专业感" },
+  D: { label: "波形检查", desc: "折线+检查标 · 实时监测感 · 动态活力" },
+  E: { label: "分层圆环", desc: "三层圆环 · 精准点阵 · 系统感最强" },
 };
 
 export default function DesignPreview() {
