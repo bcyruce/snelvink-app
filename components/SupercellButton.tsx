@@ -19,13 +19,13 @@ type SupercellButtonProps = {
 
 const variantClasses: Record<SupercellButtonVariant, string> = {
   primary:
-    "bg-gradient-to-b from-blue-400 to-blue-500 border-blue-700 text-white hover:from-blue-300 hover:to-blue-500 focus-visible:ring-blue-400/50",
+    "bg-blue-500 border-blue-700 text-white hover:bg-blue-400 focus-visible:ring-blue-400/50",
   danger:
-    "bg-gradient-to-b from-red-400 to-red-500 border-red-700 text-white hover:from-red-300 hover:to-red-500 focus-visible:ring-red-400/50",
+    "bg-red-500 border-red-700 text-white hover:bg-red-400 focus-visible:ring-red-400/50",
   success:
-    "bg-gradient-to-b from-green-400 to-green-500 border-green-700 text-white hover:from-green-300 hover:to-green-500 focus-visible:ring-green-400/50",
+    "bg-green-500 border-green-700 text-white hover:bg-green-400 focus-visible:ring-green-400/50",
   neutral:
-    "bg-gradient-to-b from-slate-400 to-slate-500 border-slate-700 text-white hover:from-slate-300 hover:to-slate-500 focus-visible:ring-slate-400/50",
+    "bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-300/60",
 };
 
 const sizeClasses: Record<SupercellButtonSize, string> = {
@@ -62,10 +62,10 @@ const SupercellButton = forwardRef<HTMLButtonElement, SupercellButtonProps>(
         onClick={onClick}
         disabled={disabled}
         whileHover={disabled ? undefined : { scale: 1.02 }}
-        whileTap={disabled ? undefined : { scale: 0.95 }}
+        whileTap={disabled ? undefined : { y: 5, scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className={[
-          "rounded-2xl border border-b-[6px] font-black shadow-[0_6px_0_rgba(15,23,42,0.12)] outline-none focus-visible:ring-4 transition-colors",
+          "rounded-2xl border-b-[5px] font-black outline-none focus-visible:ring-4 transition-colors",
           variantClasses[variant],
           sizeClasses[size],
           textCaseClasses[textCase],
