@@ -149,14 +149,14 @@ function ThemePicker({
                 key={key}
                 onClick={() => { onSelect(key); onClose(); }}
                 title={th.label}
-                style={{
-                  width: 28, height: 28, borderRadius: "50%",
-                  background: th.dot,
-                  border: isActive
-                    ? "2.5px solid rgba(255,255,255,0.9)"
-                    : "2.5px solid rgba(255,255,255,0.15)",
-                  cursor: "pointer",
-                  boxShadow: isActive ? `0 0 0 2px ${th.dot}55` : "none",
+                  style={{
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: th.primary,
+                    border: isActive
+                      ? "2.5px solid rgba(255,255,255,0.9)"
+                      : "2.5px solid rgba(255,255,255,0.15)",
+                    cursor: "pointer",
+                    boxShadow: isActive ? `0 0 0 2px ${th.primary}55` : "none",
                   transition: "border 0.15s, box-shadow 0.15s, transform 0.1s",
                   transform: isActive ? "scale(1.15)" : "scale(1)",
                   flexShrink: 0,
@@ -223,55 +223,53 @@ function PhonePreview({
         {/* Header */}
         <div className="px-5 pt-6 pb-5" style={{ background: t.primary }}>
           <div className="flex items-center justify-between">
-            {/* 标题 + 调色盘图标 */}
-            <div className="flex items-center gap-3">
-              <div>
-                <div style={{
-                  fontSize: 28, fontWeight: 800, color: "#fff",
-                  letterSpacing: "0.06em", lineHeight: 1,
-                  fontFamily: "'Trebuchet MS', sans-serif",
-                  textTransform: "uppercase",
-                }}>
-                  SNEL<span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
-                </div>
-                <div style={{
-                  fontSize: 9.5, fontWeight: 600, color: "rgba(255,255,255,0.4)",
-                  letterSpacing: "0.15em", marginTop: 3,
-                  textTransform: "uppercase", whiteSpace: "nowrap",
-                }}>
-                  Meten · Vinken · Weten
-                </div>
+            {/* 标题 */}
+            <div>
+              <div style={{
+                fontSize: 34, fontWeight: 800, color: "#fff",
+                letterSpacing: "0.06em", lineHeight: 1,
+                fontFamily: "'Trebuchet MS', sans-serif",
+                textTransform: "uppercase",
+              }}>
+                SNEL<span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
               </div>
-
-              {/* 调色盘按钮 — 无边框，自然融入 */}
-              <div style={{ position: "relative" }}>
-                <button
-                  onClick={() => setPickerOpen(v => !v)}
-                  style={{
-                    padding: 4,
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: pickerOpen ? 1 : 0.75,
-                    transition: "opacity 0.15s",
-                  }}
-                  aria-label="Thema wijzigen"
-                >
-                  <PaletteIcon colors={paletteColors} size={22} />
-                </button>
-
-                {pickerOpen && (
-                  <ThemePicker
-                    active={active}
-                    onSelect={onSelect}
-                    onClose={() => setPickerOpen(false)}
-                    paletteColors={paletteColors}
-                  />
-                )}
+              <div style={{
+                fontSize: 9.5, fontWeight: 600, color: "rgba(255,255,255,0.4)",
+                letterSpacing: "0.15em", marginTop: 3,
+                textTransform: "uppercase", whiteSpace: "nowrap",
+              }}>
+                Meten · Vinken · Weten
               </div>
+            </div>
+
+            {/* 调色盘按钮 — 靠右，无边框 */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setPickerOpen(v => !v)}
+                style={{
+                  padding: 4,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: pickerOpen ? 1 : 0.75,
+                  transition: "opacity 0.15s",
+                }}
+                aria-label="Thema wijzigen"
+              >
+                <PaletteIcon colors={paletteColors} size={24} />
+              </button>
+
+              {pickerOpen && (
+                <ThemePicker
+                  active={active}
+                  onSelect={onSelect}
+                  onClose={() => setPickerOpen(false)}
+                  paletteColors={paletteColors}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -336,7 +334,7 @@ function PhonePreview({
 export default function DesignPreview() {
   const [active, setActive] = useState<string>("steel");
   const t = themes[active];
-  const paletteColors = themeOrder.map(k => themes[k].dot);
+  const paletteColors = themeOrder.map(k => themes[k].primary);
 
   return (
     <div className="min-h-screen py-12 px-4" style={{ background: "#0D1210" }}>
