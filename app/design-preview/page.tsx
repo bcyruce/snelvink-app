@@ -36,6 +36,14 @@ type Theme = {
 };
 
 const themes: Record<string, Theme> = {
+  pine: {
+    name: "pine", label: "松叶绿", temp: "cool", dot: "#22C55E",
+    primary: "#2D5C3C", primaryDark: "#1E4029",
+    bg: "#F5F3EF", bgGrad: "linear-gradient(170deg,#F5F3EF 0%,#EBE9E3 50%,#E2DFD5 100%)",
+    fg: "#1A2520", muted: "#5A6E62",
+    cardBg: "rgba(255,255,255,0.80)", cardBorder: "rgba(200,215,205,0.9)",
+    navBg: "rgba(248,246,242,0.95)", navBorder: "rgba(200,215,205,0.6)",
+  },
   steel: {
     name: "steel", label: "钢青蓝", temp: "cool", dot: "#38BDF8",
     primary: "#3E6273", primaryDark: "#2D4D5D",
@@ -86,8 +94,8 @@ const themes: Record<string, Theme> = {
   },
 };
 
-// 冷色在前，暖色在后
-const themeOrder = ["steel", "militaryblue", "tin", "plum", "warmgray", "beige"];
+// 松叶绿默认，然后冷色在前，暖色在后
+const themeOrder = ["pine", "steel", "militaryblue", "tin", "plum", "warmgray", "beige"];
 
 const modules = [
   { name: "Koel Temp",  icon: Thermometer },
@@ -120,7 +128,7 @@ function ThemePicker({
       style={{
         position: "absolute",
         top: "calc(100% + 10px)",
-        left: 0,
+        right: 0,
         zIndex: 200,
         background: "rgba(18,22,20,0.97)",
         border: "1px solid rgba(255,255,255,0.1)",
@@ -275,7 +283,7 @@ function PhonePreview({
         </div>
 
         {/* Taken + Wijzigen */}
-        <div className="px-4 pt-4 pb-0 flex items-center justify-between" style={{ background: t.bgGrad }}>
+        <div className="px-4 pt-4 pb-0 flex items-center justify-between" style={{ background: t.bg }}>
           <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: t.muted }}>
             Taken
           </span>
@@ -294,7 +302,7 @@ function PhonePreview({
         </div>
 
         {/* 模块网格 */}
-        <div className="pt-3 px-4 pb-28" style={{ background: t.bgGrad }}>
+        <div className="pt-3 px-4 pb-28" style={{ background: t.bg }}>
           <div className="grid grid-cols-2 gap-3">
             {modules.map((m, i) => (
               <div
@@ -332,7 +340,7 @@ function PhonePreview({
 
 // ─── 页面 ───────────────────────────────────────────────────────
 export default function DesignPreview() {
-  const [active, setActive] = useState<string>("steel");
+  const [active, setActive] = useState<string>("pine");
   const t = themes[active];
   const paletteColors = themeOrder.map(k => themes[k].dot);
 
