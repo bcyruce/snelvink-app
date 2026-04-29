@@ -6,10 +6,34 @@ import {
   Package, Plus, Pencil
 } from "lucide-react";
 
+// ─── 调色盘图标（扁平化 SVG）────────────────────────────────────
+function PaletteIcon({ colors, size = 24 }: { colors: string[]; size?: number }) {
+  // 6色调色盘：3个大色块 + 3个小圆点
+  const slices = [
+    { d: "M12 12 L12 2 A10 10 0 0 1 20.66 7 Z",  fill: colors[0] },
+    { d: "M12 12 L20.66 7 A10 10 0 0 1 20.66 17 Z", fill: colors[1] },
+    { d: "M12 12 L20.66 17 A10 10 0 0 1 12 22 Z", fill: colors[2] },
+    { d: "M12 12 L12 22 A10 10 0 0 1 3.34 17 Z", fill: colors[3] },
+    { d: "M12 12 L3.34 17 A10 10 0 0 1 3.34 7 Z",  fill: colors[4] },
+    { d: "M12 12 L3.34 7 A10 10 0 0 1 12 2 Z",   fill: colors[5] },
+  ];
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {slices.map((s, i) => (
+        <path key={i} d={s.d} fill={s.fill} />
+      ))}
+      {/* 中心白圆 */}
+      <circle cx="12" cy="12" r="4" fill="white" />
+    </svg>
+  );
+}
+
 // ─── 主题色系统 ────────────────────────────────────────────────
 type Theme = {
   name: string;
   label: string;
+  temp: "cool" | "warm";
+  dot: string;
   primary: string;
   primaryDark: string;
   bg: string;
@@ -20,101 +44,111 @@ type Theme = {
   cardBorder: string;
   navBg: string;
   navBorder: string;
-  dot: string;
 };
 
+// 按冷暖排列：冷色在前（钢青蓝、军绿蓝、锡灰），暖色在后（暮色紫灰、暖灰石、米色）
 const themes: Record<string, Theme> = {
-  pine: {
-    name: "pine",
-    label: "松针绿",
-    dot: "#3D5C45",
-    primary:      "#3D5C45",
-    primaryDark:  "#2D4A35",
-    bg:           "#EEF3EF",
-    bgGrad:       "linear-gradient(170deg, #EEF3EF 0%, #E5EDE7 50%, #DCE8DF 100%)",
-    fg:           "#1A2B1E",
-    muted:        "#5A7060",
-    cardBg:       "rgba(255,255,255,0.75)",
-    cardBorder:   "rgba(210,228,215,0.9)",
-    navBg:        "rgba(245,248,246,0.95)",
-    navBorder:    "rgba(210,228,215,0.6)",
+  // ── 冷色系 ──
+  steel: {
+    name: "steel",
+    label: "钢青蓝",
+    temp: "cool",
+    dot: "#3E6273",
+    primary:     "#3E6273",
+    primaryDark: "#2D4D5D",
+    bg:          "#EDF3F5",
+    bgGrad:      "linear-gradient(170deg, #EDF3F5 0%, #E2EDF1 50%, #D5E6EB 100%)",
+    fg:          "#162028",
+    muted:       "#527080",
+    cardBg:      "rgba(255,255,255,0.78)",
+    cardBorder:  "rgba(190,218,228,0.9)",
+    navBg:       "rgba(242,249,252,0.95)",
+    navBorder:   "rgba(190,218,228,0.6)",
   },
-  navy: {
-    name: "navy",
-    label: "深海蓝",
-    dot: "#1E3A5F",
-    primary:      "#1E3A5F",
-    primaryDark:  "#152C4A",
-    bg:           "#EEF1F6",
-    bgGrad:       "linear-gradient(170deg, #EEF1F6 0%, #E5EBF4 50%, #D8E3F0 100%)",
-    fg:           "#0F1E31",
-    muted:        "#4A6080",
-    cardBg:       "rgba(255,255,255,0.75)",
-    cardBorder:   "rgba(200,216,238,0.9)",
-    navBg:        "rgba(244,247,252,0.95)",
-    navBorder:    "rgba(200,216,238,0.6)",
+  militaryblue: {
+    name: "militaryblue",
+    label: "军绿蓝",
+    temp: "cool",
+    dot: "#3A5248",
+    primary:     "#3A5248",
+    primaryDark: "#2A3E36",
+    bg:          "#EBF2EE",
+    bgGrad:      "linear-gradient(170deg, #EBF2EE 0%, #E0EAE5 50%, #D3E3DB 100%)",
+    fg:          "#141E1A",
+    muted:       "#4E6B60",
+    cardBg:      "rgba(255,255,255,0.78)",
+    cardBorder:  "rgba(185,215,202,0.9)",
+    navBg:       "rgba(241,248,244,0.95)",
+    navBorder:   "rgba(185,215,202,0.6)",
   },
-  slate: {
-    name: "slate",
-    label: "钢灰蓝",
-    dot: "#3D5266",
-    primary:      "#3D5266",
-    primaryDark:  "#2D3F50",
-    bg:           "#EFF1F4",
-    bgGrad:       "linear-gradient(170deg, #EFF1F4 0%, #E6E9EE 50%, #DDE2E9 100%)",
-    fg:           "#1A2330",
-    muted:        "#5A6B7A",
-    cardBg:       "rgba(255,255,255,0.75)",
-    cardBorder:   "rgba(200,212,224,0.9)",
-    navBg:        "rgba(244,246,249,0.95)",
-    navBorder:    "rgba(200,212,224,0.6)",
+  tin: {
+    name: "tin",
+    label: "锡灰",
+    temp: "cool",
+    dot: "#525E68",
+    primary:     "#525E68",
+    primaryDark: "#3E4850",
+    bg:          "#EEEEF0",
+    bgGrad:      "linear-gradient(170deg, #EEEEF0 0%, #E5E7EA 50%, #DBDDE1 100%)",
+    fg:          "#1A1E22",
+    muted:       "#6A737C",
+    cardBg:      "rgba(255,255,255,0.80)",
+    cardBorder:  "rgba(200,204,210,0.9)",
+    navBg:       "rgba(245,245,247,0.95)",
+    navBorder:   "rgba(200,204,210,0.6)",
   },
-  earth: {
-    name: "earth",
-    label: "陶土棕",
-    dot: "#6B4535",
-    primary:      "#6B4535",
-    primaryDark:  "#563628",
-    bg:           "#F4EFEC",
-    bgGrad:       "linear-gradient(170deg, #F4EFEC 0%, #EDE6E1 50%, #E6DDD7 100%)",
-    fg:           "#2E1C14",
-    muted:        "#7A5A4A",
-    cardBg:       "rgba(255,255,255,0.75)",
-    cardBorder:   "rgba(228,210,200,0.9)",
-    navBg:        "rgba(250,246,244,0.95)",
-    navBorder:    "rgba(228,210,200,0.6)",
-  },
-  charcoal: {
-    name: "charcoal",
-    label: "炭黑",
-    dot: "#2C2C2C",
-    primary:      "#2C2C2C",
-    primaryDark:  "#1A1A1A",
-    bg:           "#F0F0F0",
-    bgGrad:       "linear-gradient(170deg, #F2F2F2 0%, #EBEBEB 50%, #E4E4E4 100%)",
-    fg:           "#111111",
-    muted:        "#666666",
-    cardBg:       "rgba(255,255,255,0.80)",
-    cardBorder:   "rgba(200,200,200,0.9)",
-    navBg:        "rgba(246,246,246,0.95)",
-    navBorder:    "rgba(200,200,200,0.6)",
-  },
+  // ── 暖色系 ──
   plum: {
     name: "plum",
-    label: "暮色紫",
-    dot: "#4A3560",
-    primary:      "#4A3560",
-    primaryDark:  "#38284A",
-    bg:           "#F0EEF5",
-    bgGrad:       "linear-gradient(170deg, #F0EEF5 0%, #E8E5F0 50%, #E0DCEA 100%)",
-    fg:           "#1E1530",
-    muted:        "#6A5880",
-    cardBg:       "rgba(255,255,255,0.75)",
-    cardBorder:   "rgba(210,200,230,0.9)",
-    navBg:        "rgba(246,244,250,0.95)",
-    navBorder:    "rgba(210,200,230,0.6)",
+    label: "暮色紫灰",
+    temp: "warm",
+    dot: "#4E4060",
+    primary:     "#4E4060",
+    primaryDark: "#3A2F4A",
+    bg:          "#F0EEF5",
+    bgGrad:      "linear-gradient(170deg, #F0EEF5 0%, #E8E4F0 50%, #DFD9EC 100%)",
+    fg:          "#1C1628",
+    muted:       "#6B5E80",
+    cardBg:      "rgba(255,255,255,0.78)",
+    cardBorder:  "rgba(210,200,232,0.9)",
+    navBg:       "rgba(247,245,252,0.95)",
+    navBorder:   "rgba(210,200,232,0.6)",
+  },
+  warmgray: {
+    name: "warmgray",
+    label: "暖灰石",
+    temp: "warm",
+    dot: "#5E5248",
+    primary:     "#5E5248",
+    primaryDark: "#483F37",
+    bg:          "#F2EFEB",
+    bgGrad:      "linear-gradient(170deg, #F2EFEB 0%, #EAE5DF 50%, #E2D9D1 100%)",
+    fg:          "#211A14",
+    muted:       "#7A6E64",
+    cardBg:      "rgba(255,255,255,0.80)",
+    cardBorder:  "rgba(220,210,198,0.9)",
+    navBg:       "rgba(250,247,243,0.95)",
+    navBorder:   "rgba(220,210,198,0.6)",
+  },
+  beige: {
+    name: "beige",
+    label: "米色",
+    temp: "warm",
+    dot: "#7A6848",
+    primary:     "#7A6848",
+    primaryDark: "#5E5038",
+    bg:          "#F5F0E8",
+    bgGrad:      "linear-gradient(170deg, #F5F0E8 0%, #EDE5D5 50%, #E5DAC5 100%)",
+    fg:          "#2A2016",
+    muted:       "#8A7860",
+    cardBg:      "rgba(255,255,255,0.80)",
+    cardBorder:  "rgba(228,214,190,0.9)",
+    navBg:       "rgba(252,248,240,0.95)",
+    navBorder:   "rgba(228,214,190,0.6)",
   },
 };
+
+const themeOrder = ["steel", "militaryblue", "tin", "plum", "warmgray", "beige"];
 
 const modules = [
   { name: "Koel Temp",  icon: Thermometer },
@@ -159,9 +193,9 @@ function BottomNav({ t }: { t: Theme }) {
       style={{ background: t.navBg, borderColor: t.navBorder, backdropFilter: "blur(16px)" }}
     >
       {[
-        { icon: ClipboardCheck, label: "Taken",       active: true  },
-        { icon: History,        label: "Geschiedenis", active: false },
-        { icon: Settings,       label: "Instellingen", active: false },
+        { icon: ClipboardCheck, label: "Taken",        active: true  },
+        { icon: History,        label: "Geschiedenis",  active: false },
+        { icon: Settings,       label: "Instellingen",  active: false },
       ].map((tab, i) => (
         <button
           key={i}
@@ -222,16 +256,11 @@ function ModuleGrid({ t }: { t: Theme }) {
 function PhonePreview({ t }: { t: Theme }) {
   return (
     <div className="relative overflow-hidden" style={{ background: t.bgGrad, minHeight: 660, borderRadius: 28 }}>
-      {/* Header */}
       <div className="px-5 pt-6 pb-5" style={{ background: t.primary }}>
         <TitleC />
       </div>
-      {/* 浅色区标签行 */}
       <div className="px-4 pt-4 pb-0 flex items-center justify-between">
-        <span
-          className="text-[11px] font-black uppercase tracking-widest"
-          style={{ color: t.muted }}
-        >
+        <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: t.muted }}>
           Taken
         </span>
         <button
@@ -255,45 +284,99 @@ function PhonePreview({ t }: { t: Theme }) {
 }
 
 export default function DesignPreview() {
-  const [active, setActive] = useState<string>("pine");
+  const [active, setActive] = useState<string>("steel");
   const t = themes[active];
+
+  const paletteColors = themeOrder.map(k => themes[k].dot);
 
   return (
     <div className="min-h-screen" style={{ background: "#161B17", color: "#fff" }}>
+
       {/* 顶部选择器 */}
       <div className="sticky top-0 z-50 border-b border-white/10 bg-[#161B17]/95 backdrop-blur-sm px-4 pt-4 pb-3">
-        <p className="mb-2.5 text-center text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
-          主题色方案 — 点击切换
-        </p>
-        <div className="grid grid-cols-6 gap-2">
-          {Object.values(themes).map((theme) => (
-            <button
-              key={theme.name}
-              onClick={() => setActive(theme.name)}
-              className="flex flex-col items-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all"
-              style={{
-                background: active === theme.name ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
-                borderColor: active === theme.name ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.08)",
-              }}
-            >
-              {/* 色点 */}
-              <div
-                className="rounded-full"
-                style={{
-                  width: 20,
-                  height: 20,
-                  background: theme.dot,
-                  border: active === theme.name ? "2px solid rgba(255,255,255,0.6)" : "2px solid transparent",
-                }}
-              />
-              <span
-                className="text-[9px] font-black leading-none"
-                style={{ color: active === theme.name ? "#fff" : "rgba(255,255,255,0.4)" }}
-              >
-                {theme.label}
-              </span>
-            </button>
-          ))}
+
+        {/* 标题行：调色盘图标 + 说明 */}
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <PaletteIcon colors={paletteColors} size={20} />
+          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white/40">
+            主题色方案
+          </span>
+        </div>
+
+        {/* 冷暖分组 */}
+        <div className="flex gap-2">
+          {/* 冷色组 */}
+          <div className="flex-1">
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-1.5 text-center">冷色</div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {themeOrder.filter(k => themes[k].temp === "cool").map((key) => {
+                const th = themes[key];
+                const isActive = active === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActive(key)}
+                    className="flex flex-col items-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all"
+                    style={{
+                      background: isActive ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
+                      borderColor: isActive ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <div
+                      className="rounded-full"
+                      style={{
+                        width: 18,
+                        height: 18,
+                        background: th.dot,
+                        border: isActive ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent",
+                      }}
+                    />
+                    <span className="text-[8px] font-black leading-tight text-center" style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.35)" }}>
+                      {th.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 分割线 */}
+          <div className="w-px bg-white/10 self-stretch" />
+
+          {/* 暖色组 */}
+          <div className="flex-1">
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25 mb-1.5 text-center">暖色</div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {themeOrder.filter(k => themes[k].temp === "warm").map((key) => {
+                const th = themes[key];
+                const isActive = active === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActive(key)}
+                    className="flex flex-col items-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all"
+                    style={{
+                      background: isActive ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
+                      borderColor: isActive ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <div
+                      className="rounded-full"
+                      style={{
+                        width: 18,
+                        height: 18,
+                        background: th.dot,
+                        border: isActive ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent",
+                      }}
+                    />
+                    <span className="text-[8px] font-black leading-tight text-center" style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.35)" }}>
+                      {th.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
