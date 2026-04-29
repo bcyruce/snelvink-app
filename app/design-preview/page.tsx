@@ -89,24 +89,37 @@ function BottomNav() {
 }
 
 // 共用深色 Header
-function DarkHeader({ edit = true }: { edit?: boolean }) {
+function DarkHeader({ edit = true, variant = "default" }: { edit?: boolean; variant?: "default" | "bottom" | "floating" }) {
   return (
-    <div className="px-5 pt-8 pb-10" style={{ background: pine.primary }}>
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50">HACCP</span>
-          <h1 className="text-4xl font-black tracking-tight text-white mt-0.5">SnelVink</h1>
+    <>
+      <div className="px-5 pt-8 pb-10" style={{ background: pine.primary }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50">HACCP</span>
+            <h1 className="text-4xl font-black tracking-tight text-white mt-0.5">SnelVink</h1>
+          </div>
+          {edit && variant === "default" && (
+            <button
+              className="px-4 py-2.5 rounded-xl text-xs font-black"
+              style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.25)", color: "#fff" }}
+            >
+              Wijzigen
+            </button>
+          )}
         </div>
-        {edit && (
+      </div>
+      {/* 方案：按钮在 Header 底部下方 */}
+      {edit && variant === "bottom" && (
+        <div className="px-5 pb-4 pt-2" style={{ background: pine.primary }}>
           <button
-            className="px-4 py-2.5 rounded-xl text-xs font-black"
+            className="w-full px-4 py-2.5 rounded-xl text-xs font-black"
             style={{ background: "rgba(255,255,255,0.15)", border: "1.5px solid rgba(255,255,255,0.25)", color: "#fff" }}
           >
             Wijzigen
           </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -117,7 +130,7 @@ function DarkHeader({ edit = true }: { edit?: boolean }) {
 function VariantA() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader />
+      <DarkHeader variant="default" />
       <div className="px-4 pt-8">
         <div className="grid grid-cols-2 gap-3">
           {modules.map((m, i) => (
@@ -152,7 +165,7 @@ function VariantB() {
   ];
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader />
+      <DarkHeader variant="bottom" />
       <div className="px-4 pt-8">
         <div className="grid grid-cols-3 gap-2.5">
           {extModules.map((m, i) => (
@@ -187,7 +200,7 @@ function VariantB() {
 function VariantC() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader />
+      <DarkHeader variant="default" />
       <div className="px-4 pt-8 flex flex-col gap-2.5">
         {modules.map((m, i) => (
           <div
@@ -219,7 +232,7 @@ function VariantC() {
 function VariantD() {
   return (
     <div className="relative pb-24 overflow-hidden" style={{ background: pine.bgGrad, minHeight: 680, borderRadius: 28 }}>
-      <DarkHeader />
+      <DarkHeader variant="bottom" />
       <div className="px-4 pt-8">
         <div className="grid grid-cols-2 gap-3">
           {modules.map((m, i) => (
