@@ -10,6 +10,8 @@ import { useCallback, useEffect, useState } from "react";
 type Product = {
   id: string;
   name: string;
+  accept_reasons: string[] | null;
+  reject_reasons: string[] | null;
 };
 
 function ProductEditContent() {
@@ -26,7 +28,14 @@ function ProductEditContent() {
   // Form state
   const [name, setName] = useState("");
   const [acceptReasons, setAcceptReasons] = useState<string[]>(["Anders"]);
-  const [rejectReasons, setRejectReasons] = useState<string[]>(["Anders"]);
+  const [rejectReasons, setRejectReasons] = useState<string[]>([
+    "Temperatuur te hoog",
+    "Verpakking beschadigd",
+    "THT/TGT verstreken",
+    "Verkeerd product",
+    "Kwaliteit onvoldoende",
+    "Anders",
+  ]);
   const [showAcceptReasons, setShowAcceptReasons] = useState(false);
   const [showRejectReasons, setShowRejectReasons] = useState(false);
   const [newAcceptReason, setNewAcceptReason] = useState("");
@@ -38,7 +47,7 @@ function ProductEditContent() {
 
       const { data, error } = await supabase
         .from("haccp_products")
-        .select("id, name")
+        .select("id, name, accept_reasons, reject_reasons")
         .eq("id", productId)
         .single();
 
@@ -51,6 +60,23 @@ function ProductEditContent() {
 
       setProduct(data);
       setName(data.name);
+      setAcceptReasons(
+        data.accept_reasons && data.accept_reasons.length > 0
+          ? data.accept_reasons
+          : ["Anders"],
+      );
+      setRejectReasons(
+        data.reject_reasons && data.reject_reasons.length > 0
+          ? data.reject_reasons
+          : [
+              "Temperatuur te hoog",
+              "Verpakking beschadigd",
+              "THT/TGT verstreken",
+              "Verkeerd product",
+              "Kwaliteit onvoldoende",
+              "Anders",
+            ],
+      );
       setLoading(false);
     }
 
@@ -68,11 +94,11 @@ function ProductEditContent() {
     setErrorMessage(null);
 
     // Ensure "Anders" is always included
-    const finalAcceptReasons = acceptReasons.includes("Anders") 
-      ? acceptReasons 
+    const finalAcceptReasons = acceptReasons.includes("Anders")
+      ? acceptReasons
       : [...acceptReasons, "Anders"];
-    const finalRejectReasons = rejectReasons.includes("Anders") 
-      ? rejectReasons 
+    const finalRejectReasons = rejectReasons.includes("Anders")
+      ? rejectReasons
       : [...rejectReasons, "Anders"];
 
     const { error } = await supabase
@@ -86,7 +112,7 @@ function ProductEditContent() {
 
     if (error) {
       console.error("Save failed:", error);
-      setErrorMessage("Opslaan mislukt.");
+      setErrorMessage("Opslaan mislukt: " + (error.message ?? "Onbekende fout."));
       setSaving(false);
       return;
     }
@@ -97,26 +123,34 @@ function ProductEditContent() {
   const addAcceptReason = () => {
     const trimmed = newAcceptReason.trim();
     if (trimmed && !acceptReasons.includes(trimmed)) {
-      setAcceptReasons([...acceptReasons.filter(r => r !== "Anders"), trimmed, "Anders"]);
+      setAcceptReasons([
+        ...acceptReasons.filter((r) => r !== "Anders"),
+        trimmed,
+        "Anders",
+      ]);
       setNewAcceptReason("");
     }
   };
 
   const removeAcceptReason = (reason: string) => {
-    if (reason === "Anders") return; // Don't allow removing "Anders"
+    if (reason === "Anders") return;
     setAcceptReasons(acceptReasons.filter((r) => r !== reason));
   };
 
   const addRejectReason = () => {
     const trimmed = newRejectReason.trim();
     if (trimmed && !rejectReasons.includes(trimmed)) {
-      setRejectReasons([...rejectReasons.filter(r => r !== "Anders"), trimmed, "Anders"]);
+      setRejectReasons([
+        ...rejectReasons.filter((r) => r !== "Anders"),
+        trimmed,
+        "Anders",
+      ]);
       setNewRejectReason("");
     }
   };
 
   const removeRejectReason = (reason: string) => {
-    if (reason === "Anders") return; // Don't allow removing "Anders"
+    if (reason === "Anders") return;
     setRejectReasons(rejectReasons.filter((r) => r !== reason));
   };
 
@@ -184,7 +218,6 @@ function ProductEditContent() {
               Redenen per status
             </span>
             <div className="grid grid-cols-2 gap-3">
-              {/* Accept button */}
               <button
                 type="button"
                 onClick={() => {
@@ -202,7 +235,6 @@ function ProductEditContent() {
                 <span className="text-sm font-bold">Goedgekeurd</span>
               </button>
 
-              {/* Reject button */}
               <button
                 type="button"
                 onClick={() => {
@@ -229,10 +261,11 @@ function ProductEditContent() {
                 Redenen voor goedkeuring
               </h3>
               <p className="mb-4 text-sm text-emerald-700">
-                Kies de mogelijke redenen die medewerkers kunnen selecteren bij goedkeuring.
+                Kies de mogelijke redenen die medewerkers kunnen selecteren bij
+                goedkeuring.
               </p>
-              
-              <ul className="flex flex-col gap-2 mb-4">
+
+              <ul className="mb-4 flex flex-col gap-2">
                 {acceptReasons.map((reason) => (
                   <li
                     key={reason}
@@ -259,7 +292,9 @@ function ProductEditContent() {
                   type="text"
                   value={newAcceptReason}
                   onChange={(e) => setNewAcceptReason(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAcceptReason())}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addAcceptReason())
+                  }
                   placeholder="Nieuwe reden..."
                   className="min-h-[48px] flex-1 rounded-xl border-2 border-emerald-300 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:border-emerald-500"
                 />
@@ -283,10 +318,11 @@ function ProductEditContent() {
                 Redenen voor afkeuring
               </h3>
               <p className="mb-4 text-sm text-red-700">
-                Kies de mogelijke redenen die medewerkers kunnen selecteren bij afkeuring.
+                Kies de mogelijke redenen die medewerkers kunnen selecteren bij
+                afkeuring.
               </p>
-              
-              <ul className="flex flex-col gap-2 mb-4">
+
+              <ul className="mb-4 flex flex-col gap-2">
                 {rejectReasons.map((reason) => (
                   <li
                     key={reason}
@@ -313,7 +349,9 @@ function ProductEditContent() {
                   type="text"
                   value={newRejectReason}
                   onChange={(e) => setNewRejectReason(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addRejectReason())}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addRejectReason())
+                  }
                   placeholder="Nieuwe reden..."
                   className="min-h-[48px] flex-1 rounded-xl border-2 border-red-300 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:border-red-500"
                 />
