@@ -34,6 +34,7 @@ type Props = {
   defaultTemperature: number;
   /** Naam voor het automatisch aangemaakte eerste apparaat. */
   firstEquipmentName: string;
+  mode?: "record" | "manage";
 };
 
 const MAX_PHOTOS = 5;
@@ -69,6 +70,7 @@ export default function HaccpTemperatureModule({
   title,
   defaultTemperature,
   firstEquipmentName,
+  mode = "record",
 }: Props) {
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -78,7 +80,7 @@ export default function HaccpTemperatureModule({
   const [view, setView] = useState<"list" | "record">("list");
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(true);
-  const [isManaging, setIsManaging] = useState(false);
+  const [isManaging, setIsManaging] = useState(mode === "manage");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const ensuredDefaultRef = useRef(false);
 
@@ -400,8 +402,9 @@ export default function HaccpTemperatureModule({
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      {view === "list" ? (
+      {view === "list" || mode === "manage" ? (
         <ListView
+          mode={mode}
           title={title}
           equipments={equipments}
           loading={loadingEquipments}
@@ -448,6 +451,7 @@ export default function HaccpTemperatureModule({
 // LIST VIEW
 // =========================================================================
 type ListViewProps = {
+  mode: "record" | "manage";
   title: string;
   equipments: Equipment[];
   loading: boolean;
@@ -462,6 +466,7 @@ type ListViewProps = {
 };
 
 function ListView({
+  mode,
   title,
   equipments,
   loading,
@@ -474,21 +479,25 @@ function ListView({
   errorMessage,
   restaurantReady,
 }: ListViewProps) {
+  const forceManage = mode === "manage";
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {title}
         </h2>
-        <SupercellButton
-          size="lg"
-          variant={isManaging ? "success" : "neutral"}
-          onClick={onToggleManaging}
-          aria-pressed={isManaging}
-          className="min-h-[64px] text-xl"
-        >
-          {isManaging ? "Klaar" : "Wijzigen"}
-        </SupercellButton>
+        {forceManage ? null : (
+          <SupercellButton
+            size="lg"
+            variant={isManaging ? "success" : "neutral"}
+            onClick={onToggleManaging}
+            aria-pressed={isManaging}
+            className="min-h-[64px] text-xl"
+          >
+            {isManaging ? "Klaar" : "Wijzigen"}
+          </SupercellButton>
+        )}
       </div>
 
       {!restaurantReady ? (
@@ -509,7 +518,7 @@ function ListView({
         <ul className="flex flex-col gap-3">
           {equipments.map((eq) => (
             <li key={eq.id}>
-              {isManaging ? (
+              {isManaging || forceManage ? (
                 <div className="flex min-h-[80px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
                   <span className="flex-1 truncate text-xl font-bold text-slate-900">
                     {eq.name}
@@ -519,7 +528,7 @@ function ListView({
                     variant="neutral"
                     onClick={() => onRename(eq)}
                     aria-label={`Hernoem ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center"
+                    className="flex h-16 w-16 items-center justify-center p-2"
                   >
                     <Pencil className="h-5 w-5" aria-hidden />
                   </SupercellButton>
@@ -528,7 +537,7 @@ function ListView({
                     variant="danger"
                     onClick={() => onDelete(eq)}
                     aria-label={`Verwijder ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center"
+                    className="flex h-16 w-16 items-center justify-center p-2"
                   >
                     <Trash2 className="h-5 w-5" aria-hidden />
                   </SupercellButton>

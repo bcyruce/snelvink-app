@@ -37,7 +37,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 const VALID_TABS: readonly MenuTab[] = [
-  "vandaag",
+  "registreren",
   "taken",
   "geschiedenis",
   "personeel",
@@ -65,6 +65,17 @@ function HomeContent() {
     const t = searchParams.get("tab");
     return isMenuTab(t) ? t : "taken";
   })();
+  const handleMenuChange = useCallback(
+    (tab: MenuTab) => {
+      if (tab === "registreren") {
+        router.push("/registreren");
+        return;
+      }
+      setActiveTab(tab);
+    },
+    [router],
+  );
+
 
   const [activeTab, setActiveTab] = useState<MenuTab>(initialTab);
   const [modules, setModules] = useState<TaskModule[]>(DEFAULT_MODULES);
@@ -451,7 +462,7 @@ function HomeContent() {
         editingModule={editingModule}
       />
 
-      <FloatingMenu active={activeTab} onChange={setActiveTab} />
+      <FloatingMenu active={activeTab} onChange={handleMenuChange} />
     </>
   );
 }

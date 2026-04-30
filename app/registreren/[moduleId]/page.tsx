@@ -1,8 +1,9 @@
 "use client";
 
 import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
-import HaccpTemperatureModule from "@/components/HaccpTemperatureModule";
 import SupercellButton from "@/components/SupercellButton";
+import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
+import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
@@ -12,39 +13,21 @@ import { notFound, useParams, useRouter } from "next/navigation";
 import { useEffect, type ComponentType } from "react";
 
 const MODULE_COMPONENTS: Record<string, ComponentType> = {
-  koeling: () => (
-    <HaccpTemperatureModule
-      moduleType="koeling"
-      title="Koeling"
-      defaultTemperature={7}
-      firstEquipmentName="Koelkast 1"
-      mode="manage"
-    />
-  ),
+  koeling: KoelingCheck,
   ontvangst: OntvangstCheck,
   schoonmaak: SchoonmaakCheck,
-  kerntemperatuur: () => (
-    <HaccpTemperatureModule
-      moduleType="kerntemperatuur"
-      title="Kerntemperatuur"
-      defaultTemperature={75}
-      firstEquipmentName="Kernsonde 1"
-      mode="manage"
-    />
-  ),
+  kerntemperatuur: KerntemperatuurCheck,
 };
 
-function ModuleContent() {
+function RegistrerenModuleContent() {
   const router = useRouter();
   const params = useParams<{ moduleId: string }>();
   const moduleId = params?.moduleId ?? "";
   const { user, isLoading } = useUser();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [isLoading, user, router]);
+    if (!isLoading && !user) router.push("/login");
+  }, [isLoading, router, user]);
 
   if (isLoading || !user) {
     return (
@@ -57,9 +40,7 @@ function ModuleContent() {
   }
 
   const ModuleComponent = MODULE_COMPONENTS[moduleId];
-  if (!ModuleComponent) {
-    notFound();
-  }
+  if (!ModuleComponent) notFound();
 
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") router.push("/registreren");
@@ -75,7 +56,7 @@ function ModuleContent() {
           type="button"
           size="lg"
           variant="neutral"
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/registreren")}
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
@@ -85,15 +66,15 @@ function ModuleContent() {
         <ModuleComponent />
       </section>
 
-      <FloatingMenu active="taken" onChange={handleMenuNav} />
+      <FloatingMenu active="registreren" onChange={handleMenuNav} />
     </>
   );
 }
 
-export default function TakenModulePage() {
+export default function RegistrerenModulePage() {
   return (
     <UserProvider>
-      <ModuleContent />
+      <RegistrerenModuleContent />
     </UserProvider>
   );
 }
