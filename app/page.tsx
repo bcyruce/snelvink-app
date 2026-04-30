@@ -1,7 +1,7 @@
 "use client";
 
 import AddModuleModal from "@/components/AddModuleModal";
-import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
+import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import HistoryList from "@/components/HistoryList";
 import SettingsTab from "@/components/SettingsTab";
 import SortableModuleCard from "@/components/SortableModuleCard";
@@ -32,13 +32,21 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Users, User, Store, Construction } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
-const VALID_TABS: readonly BottomNavTab[] = ["tasks", "history", "settings"];
+const VALID_TABS: readonly MenuTab[] = [
+  "vandaag",
+  "taken",
+  "geschiedenis",
+  "personeel",
+  "profiel",
+  "restaurant",
+  "instellingen",
+];
 
-function isBottomNavTab(value: string | null): value is BottomNavTab {
+function isMenuTab(value: string | null): value is MenuTab {
   return value !== null && (VALID_TABS as readonly string[]).includes(value);
 }
 
@@ -53,12 +61,12 @@ function HomeContent() {
   const { user, isLoading } = useUser();
   const { theme } = useTheme();
 
-  const initialTab: BottomNavTab = (() => {
+  const initialTab: MenuTab = (() => {
     const t = searchParams.get("tab");
-    return isBottomNavTab(t) ? t : "tasks";
+    return isMenuTab(t) ? t : "taken";
   })();
 
-  const [activeTab, setActiveTab] = useState<BottomNavTab>(initialTab);
+  const [activeTab, setActiveTab] = useState<MenuTab>(initialTab);
   const [modules, setModules] = useState<TaskModule[]>(DEFAULT_MODULES);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -257,7 +265,7 @@ function HomeContent() {
         onClick={handleBackgroundClick}
       >
         {/* Taken + Wijzigen 行 */}
-        {activeTab === "tasks" && (
+        {activeTab === "taken" && (
           <div className="flex items-center justify-between pt-4 pb-3">
             <span 
               className="text-[11px] font-black uppercase tracking-widest"
@@ -282,7 +290,7 @@ function HomeContent() {
         )}
 
         <div key={activeTab} className="tab-panel-enter">
-          {activeTab === "tasks" ? (
+          {activeTab === "taken" ? (
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -310,7 +318,7 @@ function HomeContent() {
             </DndContext>
           ) : null}
 
-          {activeTab === "tasks" && isEditing ? (
+          {activeTab === "taken" && isEditing ? (
             <div onClick={(event) => event.stopPropagation()}>
               <button
                 type="button"
@@ -328,15 +336,96 @@ function HomeContent() {
             </div>
           ) : null}
 
-          {activeTab === "history" ? (
+          {activeTab === "geschiedenis" ? (
             <div onClick={stopEditingExit} className="pt-4">
               <HistoryList />
             </div>
           ) : null}
 
-          {activeTab === "settings" ? (
+          {activeTab === "instellingen" ? (
             <div onClick={stopEditingExit} className="pt-4">
               <SettingsTab />
+            </div>
+          ) : null}
+
+          {/* Personeelsbeheer placeholder */}
+          {activeTab === "personeel" ? (
+            <div onClick={stopEditingExit} className="pt-4">
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div
+                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
+                  style={{ background: `${theme.primary}15` }}
+                >
+                  <Users className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
+                </div>
+                <h2 className="text-xl font-black" style={{ color: theme.fg }}>
+                  Personeelsbeheer
+                </h2>
+                <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
+                  Beheer je teamleden en hun toegangsrechten
+                </p>
+                <div
+                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
+                  style={{ background: `${theme.primary}15`, color: theme.primary }}
+                >
+                  <Construction className="h-4 w-4" strokeWidth={2.5} />
+                  Binnenkort beschikbaar
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Mijn profiel placeholder */}
+          {activeTab === "profiel" ? (
+            <div onClick={stopEditingExit} className="pt-4">
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div
+                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
+                  style={{ background: `${theme.primary}15` }}
+                >
+                  <User className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
+                </div>
+                <h2 className="text-xl font-black" style={{ color: theme.fg }}>
+                  Mijn profiel
+                </h2>
+                <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
+                  Bekijk en bewerk je persoonlijke gegevens
+                </p>
+                <div
+                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
+                  style={{ background: `${theme.primary}15`, color: theme.primary }}
+                >
+                  <Construction className="h-4 w-4" strokeWidth={2.5} />
+                  Binnenkort beschikbaar
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Mijn restaurant placeholder */}
+          {activeTab === "restaurant" ? (
+            <div onClick={stopEditingExit} className="pt-4">
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div
+                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
+                  style={{ background: `${theme.primary}15` }}
+                >
+                  <Store className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
+                </div>
+                <h2 className="text-xl font-black" style={{ color: theme.fg }}>
+                  Mijn restaurant
+                </h2>
+                <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
+                  Beheer je restaurantgegevens en instellingen
+                </p>
+                <div
+                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
+                  style={{ background: `${theme.primary}15`, color: theme.primary }}
+                >
+                  <Construction className="h-4 w-4" strokeWidth={2.5} />
+                  Binnenkort beschikbaar
+                </div>
+              </div>
             </div>
           ) : null}
         </div>
@@ -362,7 +451,7 @@ function HomeContent() {
         editingModule={editingModule}
       />
 
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <FloatingMenu active={activeTab} onChange={setActiveTab} />
     </>
   );
 }

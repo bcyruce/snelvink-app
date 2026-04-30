@@ -1,6 +1,6 @@
 "use client";
 
-import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
+import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import SupercellButton from "@/components/SupercellButton";
 import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
 import KoelingCheck from "@/components/KoelingCheck";
@@ -46,8 +46,8 @@ function ModuleContent() {
     notFound();
   }
 
-  const handleBottomNav = (tab: BottomNavTab) => {
-    if (tab === "tasks") router.push("/");
+  const handleMenuNav = (tab: MenuTab) => {
+    if (tab === "taken") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
 
@@ -69,7 +69,7 @@ function ModuleContent() {
         <ModuleComponent />
       </section>
 
-      <BottomNav active="tasks" onChange={handleBottomNav} />
+      <FloatingMenu active="taken" onChange={handleMenuNav} />
     </>
   );
 }

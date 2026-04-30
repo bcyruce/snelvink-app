@@ -1,6 +1,6 @@
 "use client";
 
-import BottomNav, { type BottomNavTab } from "@/components/BottomNav";
+import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import SupercellButton from "@/components/SupercellButton";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
@@ -555,8 +555,8 @@ function CustomModuleContent() {
     );
   }
 
-  const handleBottomNav = (tab: BottomNavTab) => {
-    if (tab === "tasks") router.push("/");
+  const handleMenuNav = (tab: MenuTab) => {
+    if (tab === "taken") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
 
@@ -1030,7 +1030,7 @@ function CustomModuleContent() {
         </div>
       ) : null}
 
-      <BottomNav active="tasks" onChange={handleBottomNav} />
+      <FloatingMenu active="taken" onChange={handleMenuNav} />
     </>
   );
 }
