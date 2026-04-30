@@ -26,6 +26,8 @@ type BooleanInputConfig = {
   id: string;
   name: string;
   hasRemark: boolean;
+  acceptedReasons?: string[];
+  rejectedReasons?: string[];
 };
 
 type ListItemConfig = {
@@ -129,9 +131,10 @@ function parseListSettings(settings: unknown): ListSettings {
  */
 function parseHasPhoto(settings: unknown): boolean {
   if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
-    return false;
+    return true;
   }
-  return (settings as { hasPhoto?: unknown }).hasPhoto === true;
+  const value = (settings as { hasPhoto?: unknown }).hasPhoto;
+  return value === undefined ? true : value === true;
 }
 
 function normalizeModuleType(value: unknown): CustomModuleType {
@@ -175,7 +178,11 @@ function CustomModuleContent() {
   const [booleanValues, setBooleanValues] = useState<
     Record<string, BooleanValue | null>
   >({});
+  const [booleanReasons, setBooleanReasons] = useState<Record<string, string[]>>({});
+  const [booleanCustomReason, setBooleanCustomReason] = useState<Record<string, string>>({});
   const [listChecked, setListChecked] = useState<Record<string, boolean>>({});
+  const [listCustomItem, setListCustomItem] = useState("");
+  const [generalRemark, setGeneralRemark] = useState("");
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [listRemark, setListRemark] = useState("");
   const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>(
@@ -271,6 +278,12 @@ function CustomModuleContent() {
         setBooleanValues(
           Object.fromEntries(booleanSettings.map((setting) => [setting.id, null])),
         );
+        setBooleanReasons(
+          Object.fromEntries(booleanSettings.map((setting) => [setting.id, []])),
+        );
+        setBooleanCustomReason(
+          Object.fromEntries(booleanSettings.map((setting) => [setting.id, ""])),
+        );
         setEnabledFields(
           Object.fromEntries(booleanSettings.map((setting) => [setting.id, true])),
         );
@@ -287,9 +300,11 @@ function CustomModuleContent() {
           Object.fromEntries(listSettings.items.map((item) => [item.id, false])),
         );
         setListRemark("");
+        setListCustomItem("");
         setEnabledFields({});
         setRemarks({});
       }
+      setGeneralRemark("");
       setIsModuleLoading(false);
     }
 
@@ -435,12 +450,23 @@ function CustomModuleContent() {
       logValues = selectedSettings.map((setting) => ({
         field_id: setting.id,
         name: setting.name,
-        value:
-          booleanValues[setting.id] === "goedgekeurd"
-            ? "Goedgekeurd"
-            : booleanValues[setting.id] === "afgekeurd"
-              ? "Afgekeurd"
-              : "Niet gekozen",
+        value: (() => {
+          const base =
+            booleanValues[setting.id] === "goedgekeurd"
+              ? "Goedgekeurd"
+              : booleanValues[setting.id] === "afgekeurd"
+                ? "Afgekeurd"
+                : "Niet gekozen";
+          const reasons = [...(booleanReasons[setting.id] ?? [])];
+          const customReason = (booleanCustomReason[setting.id] ?? "").trim();
+          if (
+            customReason &&
+            (reasons.includes("其他") || reasons.includes("Anders"))
+          ) {
+            reasons.push(customReason);
+          }
+          return reasons.length > 0 ? `${base} (${reasons.join(", ")})` : base;
+        })(),
         unit: "",
         remark: setting.hasRemark ? remarks[setting.id] ?? "" : null,
       }));
@@ -464,6 +490,15 @@ function CustomModuleContent() {
         unit: "",
         remark: listConfig.hasRemark ? listRemark : null,
       }));
+      if (listCustomItem.trim()) {
+        logValues.push({
+          field_id: "list-custom",
+          name: "其他",
+          value: listCustomItem.trim(),
+          unit: "",
+          remark: null,
+        });
+      }
     }
 
     if (!logValues) return;
@@ -504,6 +539,7 @@ function CustomModuleContent() {
       module_type: module.moduleType,
       recorded_at: recordedAt,
       values: logValues,
+      remark: generalRemark.trim() || null,
       photo_urls: uploadedPhotoUrls,
     };
 
@@ -762,6 +798,14 @@ function CustomModuleContent() {
                   (fieldSettings as BooleanInputConfig[]).map((setting) => {
                     const enabled = enabledFields[setting.id] ?? true;
                     const selected = booleanValues[setting.id];
+                    const reasonOptions =
+                      selected === "goedgekeurd"
+                        ? (setting.acceptedReasons ?? ["Goedgekeurd", "其他"])
+                        : selected === "afgekeurd"
+                          ? (setting.rejectedReasons ?? ["Afgekeurd", "其他"])
+                          : [];
+                    const selectedReasons = booleanReasons[setting.id] ?? [];
+                    const useCustomReason = selectedReasons.includes("其他") || selectedReasons.includes("Anders");
 
                     return (
                       <div
@@ -823,6 +867,49 @@ function CustomModuleContent() {
                             Afgekeurd
                           </SupercellButton>
                         </div>
+
+                        {reasonOptions.length > 0 ? (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {reasonOptions.map((reason) => {
+                              const active = selectedReasons.includes(reason);
+                              return (
+                                <SupercellButton
+                                  key={`${setting.id}-${reason}`}
+                                  size="sm"
+                                  variant={active ? "primary" : "neutral"}
+                                  disabled={!enabled}
+                                  onClick={() =>
+                                    setBooleanReasons((current) => {
+                                      const next = new Set(current[setting.id] ?? []);
+                                      if (next.has(reason)) next.delete(reason);
+                                      else next.add(reason);
+                                      return { ...current, [setting.id]: Array.from(next) };
+                                    })
+                                  }
+                                  className="text-sm normal-case"
+                                >
+                                  {reason}
+                                </SupercellButton>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+
+                        {useCustomReason ? (
+                          <input
+                            type="text"
+                            value={booleanCustomReason[setting.id] ?? ""}
+                            disabled={!enabled}
+                            onChange={(event) =>
+                              setBooleanCustomReason((current) => ({
+                                ...current,
+                                [setting.id]: event.target.value,
+                              }))
+                            }
+                            placeholder="Eigen reden..."
+                            className="mt-3 min-h-[56px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
+                          />
+                        ) : null}
 
                         {setting.hasRemark ? (
                           <textarea
@@ -888,6 +975,13 @@ function CustomModuleContent() {
                         className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
                       />
                     ) : null}
+                    <input
+                      type="text"
+                      value={listCustomItem}
+                      onChange={(event) => setListCustomItem(event.target.value)}
+                      placeholder="其他... (eigen item)"
+                      className="mt-4 min-h-[56px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                    />
                   </div>
                 ) : null}
               </>
@@ -978,6 +1072,14 @@ function CustomModuleContent() {
                 ) : null}
               </section>
             ) : null}
+
+            <textarea
+              value={generalRemark}
+              onChange={(event) => setGeneralRemark(event.target.value)}
+              placeholder="Opmerking toevoegen..."
+              rows={3}
+              className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+            />
           </div>
         ) : (
           <div className="mt-4 flex flex-col items-center justify-center gap-5 rounded-3xl border border-slate-100 bg-white px-6 py-16 text-center shadow-sm">

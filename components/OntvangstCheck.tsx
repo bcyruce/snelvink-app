@@ -62,6 +62,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [reason, setReason] = useState<string | null>(null);
+  const [remark, setRemark] = useState("");
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -271,6 +272,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
           product_name: selectedProduct.name,
           status,
           reason: status === "afgekeurd" ? reason : null,
+          note: remark.trim() || null,
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
@@ -282,7 +284,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         return;
       }
 
-      router.push("/");
+      router.push("/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
       setErrorMessage("Onverwachte fout. Probeer opnieuw.");
@@ -407,15 +409,11 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
                 </SupercellButton>
               ))}
 
-              <SupercellButton
-                size="lg"
-                variant="neutral"
-                onClick={handleAddProduct}
-                className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-              >
-                <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-                Product toevoegen
-              </SupercellButton>
+              {products.length === 0 ? (
+                <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-center text-base font-semibold text-slate-600">
+                  Geen producten beschikbaar. Voeg producten toe in Taken beheren.
+                </p>
+              ) : null}
             </div>
           )}
         </Section>
@@ -557,6 +555,14 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
               ))}
             </div>
           ) : null}
+
+          <textarea
+            value={remark}
+            onChange={(event) => setRemark(event.target.value)}
+            placeholder="Opmerking toevoegen..."
+            rows={3}
+            className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+          />
 
           <SupercellButton
             size="lg"

@@ -25,6 +25,8 @@ type BooleanInputConfig = {
   id: string;
   name: string;
   hasRemark: boolean;
+  acceptedReasons?: string[];
+  rejectedReasons?: string[];
 };
 
 type ListItemConfig = {
@@ -80,8 +82,12 @@ function parseList(settings: unknown): ListSettings {
     return { items: [], hasRemark: false, hasPhoto: false };
   }
   const src = settings as Partial<ListSettings>;
+  const parsedItems = Array.isArray(src.items) ? src.items : [];
+  const ensuredItems = parsedItems.some((item) => item.name === "其他" || item.name === "Anders")
+    ? parsedItems
+    : [...parsedItems, { id: "list-other", name: "其他" }];
   return {
-    items: Array.isArray(src.items) ? src.items : [],
+    items: ensuredItems,
     hasRemark: src.hasRemark === true,
     hasPhoto: src.hasPhoto === true,
   };
@@ -107,6 +113,17 @@ function getSeedName(moduleType: ModuleType, index: number): string {
   if (moduleType === "temperature") return `Veld ${index}`;
   if (moduleType === "boolean") return `Controle ${index}`;
   return `Item ${index}`;
+}
+
+function parseReasonInput(raw: string, fallback: string[]): string[] {
+  const values = raw
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  const withOther = values.includes("其他") || values.includes("Anders")
+    ? values
+    : [...values, "其他"];
+  return withOther.length > 0 ? withOther : fallback;
 }
 
 function CustomModuleManageContent() {
@@ -195,7 +212,7 @@ function CustomModuleManageContent() {
     [module],
   );
 
-  const handleRenameRow = useCallback(
+  const handleEditRow = useCallback(
     async (row: RowItem) => {
       if (!module) return;
       const input = window.prompt("Nieuwe naam", row.name);
@@ -215,11 +232,59 @@ function CustomModuleManageContent() {
         return;
       }
 
-      const current = module.settings as Array<NumberInputConfig | BooleanInputConfig>;
-      const next = current.map((item) =>
-        item.id === row.id ? { ...item, name } : item,
+      if (module.moduleType === "temperature") {
+        const current = module.settings as NumberInputConfig[];
+        const target = current.find((item) => item.id === row.id);
+        if (!target) return;
+        const defaultRaw = window.prompt("Standaardwaarde", String(target.defaultValue));
+        if (defaultRaw === null) return;
+        const unitRaw = window.prompt("Eenheid", target.unit);
+        if (unitRaw === null) return;
+        const stepRaw = window.prompt("Stapgrootte (+/-)", String(target.step));
+        if (stepRaw === null) return;
+
+        const defaultValue = Number.parseFloat(defaultRaw);
+        const step = Number.parseFloat(stepRaw);
+        const next = current.map((item) =>
+          item.id === row.id
+            ? {
+                ...item,
+                name,
+                defaultValue: Number.isFinite(defaultValue) ? defaultValue : item.defaultValue,
+                unit: unitRaw.trim() || item.unit,
+                step: Number.isFinite(step) && step > 0 ? step : item.step,
+              }
+            : item,
+        );
+        await saveSettings(next);
+        return;
+      }
+
+      const current = module.settings as BooleanInputConfig[];
+      const target = current.find((item) => item.id === row.id);
+      if (!target) return;
+      const acceptedRaw = window.prompt(
+        "Acceptatie-redenen (komma gescheiden, incl. 其他/Anders)",
+        (target.acceptedReasons ?? ["Goedgekeurd", "其他"]).join(", "),
       );
-      await saveSettings(next as NumberInputConfig[] | BooleanInputConfig[]);
+      if (acceptedRaw === null) return;
+      const rejectedRaw = window.prompt(
+        "Afkeur-redenen (komma gescheiden, incl. 其他/Anders)",
+        (target.rejectedReasons ?? ["Afgekeurd", "其他"]).join(", "),
+      );
+      if (rejectedRaw === null) return;
+
+      const next = current.map((item) =>
+        item.id === row.id
+          ? {
+              ...item,
+              name,
+              acceptedReasons: parseReasonInput(acceptedRaw, ["Goedgekeurd", "其他"]),
+              rejectedReasons: parseReasonInput(rejectedRaw, ["Afgekeurd", "其他"]),
+            }
+          : item,
+      );
+      await saveSettings(next);
     },
     [module, saveSettings],
   );
@@ -254,10 +319,7 @@ function CustomModuleManageContent() {
       const current = module.settings as ListSettings;
       const next: ListSettings = {
         ...current,
-        items: [
-          ...current.items,
-          { id: createId("list"), name: getSeedName("list", current.items.length + 1) },
-        ],
+        items: [...current.items, { id: createId("list"), name: getSeedName("list", current.items.length + 1) }],
       };
       await saveSettings(next);
       return;
@@ -271,6 +333,8 @@ function CustomModuleManageContent() {
           id: createId("boolean"),
           name: getSeedName("boolean", current.length + 1),
           hasRemark: false,
+          acceptedReasons: ["Goedgekeurd", "其他"],
+          rejectedReasons: ["Afgekeurd", "其他"],
         },
       ];
       await saveSettings(next);
@@ -373,7 +437,7 @@ function CustomModuleManageContent() {
                     <SupercellButton
                       size="icon"
                       variant="neutral"
-                      onClick={() => void handleRenameRow(row)}
+                      onClick={() => void handleEditRow(row)}
                       aria-label={`Hernoem ${row.name}`}
                       className="flex h-16 w-16 items-center justify-center p-2"
                     >

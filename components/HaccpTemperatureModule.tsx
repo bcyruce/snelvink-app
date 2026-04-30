@@ -487,17 +487,6 @@ function ListView({
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {title}
         </h2>
-        {forceManage ? null : (
-          <SupercellButton
-            size="lg"
-            variant={isManaging ? "success" : "neutral"}
-            onClick={onToggleManaging}
-            aria-pressed={isManaging}
-            className="min-h-[64px] text-xl"
-          >
-            {isManaging ? "Klaar" : "Wijzigen"}
-          </SupercellButton>
-        )}
       </div>
 
       {!restaurantReady ? (
@@ -567,16 +556,18 @@ function ListView({
         </ul>
       )}
 
-      <SupercellButton
-        size="lg"
-        variant="neutral"
-        onClick={onAdd}
-        disabled={!restaurantReady}
-        className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-      >
-        <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-        Apparaat toevoegen
-      </SupercellButton>
+      {forceManage ? (
+        <SupercellButton
+          size="lg"
+          variant="neutral"
+          onClick={onAdd}
+          disabled={!restaurantReady}
+          className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+        >
+          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+          Apparaat toevoegen
+        </SupercellButton>
+      ) : null}
     </div>
   );
 }

@@ -64,6 +64,7 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [remark, setRemark] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -389,6 +390,7 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
           equipment_id: null,
           location_name: selectedLocation.name,
           completed_tasks: completed,
+          note: remark.trim() || null,
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
@@ -400,7 +402,7 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
         return;
       }
 
-      router.push("/");
+      router.push("/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
       setErrorMessage("Onverwachte fout. Probeer opnieuw.");
@@ -523,15 +525,17 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
                 </SupercellButton>
               )
             ))}
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              onClick={handleAddLocation}
-              className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
-            >
-              <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-              Locatie toevoegen
-            </SupercellButton>
+            {mode === "manage" ? (
+              <SupercellButton
+                size="lg"
+                variant="neutral"
+                onClick={handleAddLocation}
+                className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
+              >
+                <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+                Locatie toevoegen
+              </SupercellButton>
+            ) : null}
           </div>
         )}
       </section>
@@ -597,31 +601,35 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
                         <Pencil className="h-5 w-5" aria-hidden />
                       </SupercellButton>
                     ) : null}
-                    <SupercellButton
-                      size="icon"
-                      variant="danger"
-                      onClick={() => handleDeleteTask(task)}
-                      aria-label={`Taak "${task.name}" verwijderen`}
-                      className="flex h-20 w-16 shrink-0 items-center justify-center"
-                    >
-                      <Trash2 className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-                    </SupercellButton>
+                    {mode === "manage" ? (
+                      <SupercellButton
+                        size="icon"
+                        variant="danger"
+                        onClick={() => handleDeleteTask(task)}
+                        aria-label={`Taak "${task.name}" verwijderen`}
+                        className="flex h-20 w-16 shrink-0 items-center justify-center"
+                      >
+                        <Trash2 className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+                      </SupercellButton>
+                    ) : null}
                   </li>
                 );
               })}
             </ul>
           )}
 
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            onClick={handleAddTask}
-            disabled={loadingTasks}
-            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
-          >
-            <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            Taak toevoegen
-          </SupercellButton>
+          {mode === "manage" ? (
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              onClick={handleAddTask}
+              disabled={loadingTasks}
+              className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
+            >
+              <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+              Taak toevoegen
+            </SupercellButton>
+          ) : null}
         </section>
       ) : null}
 
@@ -678,6 +686,14 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
               ))}
             </div>
           ) : null}
+
+          <textarea
+            value={remark}
+            onChange={(event) => setRemark(event.target.value)}
+            placeholder="Opmerking toevoegen..."
+            rows={3}
+            className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+          />
 
           <SupercellButton
             size="lg"
