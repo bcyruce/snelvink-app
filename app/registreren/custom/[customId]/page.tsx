@@ -556,7 +556,8 @@ function CustomModuleContent() {
   }
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "taken") router.push("/");
+    if (tab === "registreren") router.push("/registreren");
+    else if (tab === "taken") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
 
@@ -1030,7 +1031,7 @@ function CustomModuleContent() {
         </div>
       ) : null}
 
-      <FloatingMenu active="taken" onChange={handleMenuNav} />
+      <FloatingMenu active="registreren" onChange={handleMenuNav} />
     </>
   );
 }

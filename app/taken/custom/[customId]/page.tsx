@@ -555,8 +555,9 @@ function CustomModuleContent() {
     );
   }
 
-  const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "taken") router.push("/");
+const handleMenuNav = (tab: MenuTab) => {
+    if (tab === "registreren") router.push("/registreren");
+    else if (tab === "taken") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
 

@@ -5,6 +5,7 @@ import {
   Menu,
   X,
   ClipboardCheck,
+  ClipboardPen,
   History,
   Users,
   User,
@@ -16,6 +17,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type MenuTab =
+  | "registreren"
   | "vandaag"
   | "taken"
   | "geschiedenis"
@@ -32,7 +34,7 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "vandaag", label: "Vandaag", Icon: Calendar, disabled: true },
+  { id: "registreren", label: "Registreren", Icon: ClipboardPen },
   { id: "taken", label: "Taken", Icon: ClipboardCheck },
   { id: "geschiedenis", label: "Geschiedenis", Icon: History },
   { id: "personeel", label: "Personeelsbeheer", Icon: Users },

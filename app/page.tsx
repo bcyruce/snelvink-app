@@ -451,7 +451,16 @@ function HomeContent() {
         editingModule={editingModule}
       />
 
-      <FloatingMenu active={activeTab} onChange={setActiveTab} />
+      <FloatingMenu
+        active={activeTab}
+        onChange={(tab) => {
+          if (tab === "registreren") {
+            router.push("/registreren");
+          } else {
+            setActiveTab(tab);
+          }
+        }}
+      />
     </>
   );
 }

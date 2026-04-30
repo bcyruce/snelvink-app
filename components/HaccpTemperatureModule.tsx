@@ -78,7 +78,6 @@ export default function HaccpTemperatureModule({
   const [view, setView] = useState<"list" | "record">("list");
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(true);
-  const [isManaging, setIsManaging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const ensuredDefaultRef = useRef(false);
 
@@ -405,8 +404,6 @@ export default function HaccpTemperatureModule({
           title={title}
           equipments={equipments}
           loading={loadingEquipments}
-          isManaging={isManaging}
-          onToggleManaging={() => setIsManaging((v) => !v)}
           onPick={enterRecord}
           onAdd={handleAddEquipment}
           onRename={handleRenameEquipment}
@@ -451,8 +448,6 @@ type ListViewProps = {
   title: string;
   equipments: Equipment[];
   loading: boolean;
-  isManaging: boolean;
-  onToggleManaging: () => void;
   onPick: (eq: Equipment) => void;
   onAdd: () => void;
   onRename: (eq: Equipment) => void;
@@ -465,8 +460,6 @@ function ListView({
   title,
   equipments,
   loading,
-  isManaging,
-  onToggleManaging,
   onPick,
   onAdd,
   onRename,
@@ -476,20 +469,9 @@ function ListView({
 }: ListViewProps) {
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          {title}
-        </h2>
-        <SupercellButton
-          size="lg"
-          variant={isManaging ? "success" : "neutral"}
-          onClick={onToggleManaging}
-          aria-pressed={isManaging}
-          className="min-h-[64px] text-xl"
-        >
-          {isManaging ? "Klaar" : "Wijzigen"}
-        </SupercellButton>
-      </div>
+      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+        {title}
+      </h2>
 
       {!restaurantReady ? (
         <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
@@ -509,50 +491,50 @@ function ListView({
         <ul className="flex flex-col gap-3">
           {equipments.map((eq) => (
             <li key={eq.id}>
-              {isManaging ? (
-                <div className="flex min-h-[80px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-                  <span className="flex-1 truncate text-xl font-bold text-slate-900">
-                    {eq.name}
-                  </span>
-                  <SupercellButton
-                    size="icon"
-                    variant="neutral"
-                    onClick={() => onRename(eq)}
-                    aria-label={`Hernoem ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center"
-                  >
-                    <Pencil className="h-5 w-5" aria-hidden />
-                  </SupercellButton>
-                  <SupercellButton
-                    size="icon"
-                    variant="danger"
-                    onClick={() => onDelete(eq)}
-                    aria-label={`Verwijder ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center"
-                  >
-                    <Trash2 className="h-5 w-5" aria-hidden />
-                  </SupercellButton>
-                </div>
-              ) : (
-                <SupercellButton
-                  size="lg"
-                  variant="neutral"
+              <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+                {/* Left: clickable area for recording */}
+                <button
+                  type="button"
                   onClick={() => onPick(eq)}
-                  className="flex min-h-[88px] w-full items-center justify-between gap-3 py-6 text-left text-2xl normal-case"
+                  className="flex flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
                 >
-                  <span className="flex-1 truncate">{eq.name}</span>
-                  <span className="text-base font-bold text-slate-500">
-                    {typeof eq.last_temp === "number"
-                      ? `${eq.last_temp.toFixed(1)} °C`
-                      : "—"}
-                  </span>
+                  <div className="flex flex-1 flex-col gap-1">
+                    <span className="text-xl font-bold text-slate-900 truncate">
+                      {eq.name}
+                    </span>
+                    <span className="text-sm font-medium text-slate-500">
+                      {typeof eq.last_temp === "number"
+                        ? `Laatste: ${eq.last_temp.toFixed(1)} °C`
+                        : "Nog geen meting"}
+                    </span>
+                  </div>
                   <ChevronRight
-                    className="h-7 w-7 text-slate-500"
+                    className="h-6 w-6 text-slate-400 shrink-0"
                     strokeWidth={2.5}
                     aria-hidden
                   />
-                </SupercellButton>
-              )}
+                </button>
+
+                {/* Right: edit and delete buttons */}
+                <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                  <button
+                    type="button"
+                    onClick={() => onRename(eq)}
+                    aria-label={`Hernoem ${eq.name}`}
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                  >
+                    <Pencil className="h-5 w-5" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(eq)}
+                    aria-label={`Verwijder ${eq.name}`}
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                  >
+                    <Trash2 className="h-5 w-5" aria-hidden />
+                  </button>
+                </div>
+              </div>
             </li>
           ))}
         </ul>

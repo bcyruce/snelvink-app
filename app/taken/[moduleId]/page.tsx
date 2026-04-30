@@ -9,8 +9,8 @@ import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { ArrowLeft } from "lucide-react";
-import { notFound, useParams, useRouter } from "next/navigation";
-import { useEffect, type ComponentType } from "react";
+import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, type ComponentType } from "react";
 
 const MODULE_COMPONENTS: Record<string, ComponentType> = {
   koeling: KoelingCheck,
@@ -22,8 +22,14 @@ const MODULE_COMPONENTS: Record<string, ComponentType> = {
 function ModuleContent() {
   const router = useRouter();
   const params = useParams<{ moduleId: string }>();
+  const searchParams = useSearchParams();
   const moduleId = params?.moduleId ?? "";
   const { user, isLoading } = useUser();
+
+  // Determine where to go back based on source parameter
+  const source = searchParams.get("source");
+  const backPath = source === "registreren" ? "/registreren" : "/";
+  const activeMenu = source === "registreren" ? "registreren" : "taken";
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -47,7 +53,8 @@ function ModuleContent() {
   }
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "taken") router.push("/");
+    if (tab === "registreren") router.push("/registreren");
+    else if (tab === "taken") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
 
@@ -59,7 +66,7 @@ function ModuleContent() {
           type="button"
           size="lg"
           variant="neutral"
-          onClick={() => router.push("/")}
+          onClick={() => router.push(backPath)}
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
@@ -69,15 +76,27 @@ function ModuleContent() {
         <ModuleComponent />
       </section>
 
-      <FloatingMenu active="taken" onChange={handleMenuNav} />
+      <FloatingMenu active={activeMenu as "registreren" | "taken"} onChange={handleMenuNav} />
     </>
+  );
+}
+
+function ModuleLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <p className="text-center text-lg font-semibold text-gray-600">
+        SnelVink laden...
+      </p>
+    </div>
   );
 }
 
 export default function TakenModulePage() {
   return (
     <UserProvider>
-      <ModuleContent />
+      <Suspense fallback={<ModuleLoading />}>
+        <ModuleContent />
+      </Suspense>
     </UserProvider>
   );
 }
