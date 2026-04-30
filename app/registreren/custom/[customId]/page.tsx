@@ -526,7 +526,7 @@ function CustomModuleContent() {
 
     setToastMessage("Registratie opgeslagen");
     window.setTimeout(() => {
-      router.push("/taken");
+      router.push("/registreren");
     }, 650);
   }, [
     module,
@@ -583,7 +583,7 @@ function CustomModuleContent() {
       <section className="px-6 pb-36 pt-8 sm:px-10 sm:pb-40 sm:pt-12">
         <SupercellButton
           variant="neutral"
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/registreren")}
           size="lg"
           className="mb-6 flex min-h-[72px] w-full items-center justify-center gap-3 text-2xl"
         >

@@ -26,11 +26,11 @@ export default function RecordSelectionModal({
 
   const handleSelectModule = (module: TaskModule) => {
     onClose();
-    // Navigate to the module's recording page with source=registreren
+    // Navigate to the module's recording page
     if (module.isCustom) {
-      router.push(`/registreren/custom/${module.id}?source=registreren`);
+      router.push(`/registreren/custom/${module.id}`);
     } else {
-      router.push(`/taken/${module.id}?source=registreren`);
+      router.push(`/registreren/${module.id}`);
     }
   };
 

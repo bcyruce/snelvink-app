@@ -31,7 +31,11 @@ function buildRecordedAt(local: string): string {
   return parsed.toISOString();
 }
 
-export default function SchoonmaakCheck() {
+type Props = {
+  mode?: "manage" | "record";
+};
+
+export default function SchoonmaakCheck({ mode = "record" }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -109,9 +113,57 @@ export default function SchoonmaakCheck() {
     if (data) {
       const next = data as Location;
       setLocations((prev) => [...prev, next]);
-      setSelectedLocation(next);
+      if (mode === "record") {
+        setSelectedLocation(next);
+      }
     }
-  }, [restaurantId]);
+  }, [restaurantId, mode]);
+
+  const handleRenameLocation = useCallback(
+    async (location: Location) => {
+      const proposed = window.prompt("Nieuwe naam voor de locatie", location.name);
+      if (!proposed) return;
+      const name = proposed.trim();
+      if (!name || name === location.name) return;
+
+      const { error } = await supabase
+        .from("haccp_locations")
+        .update({ name })
+        .eq("id", location.id);
+
+      if (error) {
+        console.error("Hernoemen mislukt:", error);
+        setErrorMessage("Hernoemen mislukt.");
+        return;
+      }
+      setLocations((prev) =>
+        prev.map((l) => (l.id === location.id ? { ...l, name } : l)),
+      );
+    },
+    [],
+  );
+
+  const handleDeleteLocation = useCallback(
+    async (location: Location) => {
+      const ok = window.confirm(
+        `"${location.name}" verwijderen? Alle taken in deze locatie worden ook verwijderd.`,
+      );
+      if (!ok) return;
+
+      const { error } = await supabase
+        .from("haccp_locations")
+        .delete()
+        .eq("id", location.id);
+
+      if (error) {
+        console.error("Verwijderen mislukt:", error);
+        setErrorMessage("Verwijderen mislukt.");
+        return;
+      }
+      setLocations((prev) => prev.filter((l) => l.id !== location.id));
+    },
+    [],
+  );
 
   // ---------- tasks ----------
   const loadTasks = useCallback(
@@ -210,6 +262,30 @@ export default function SchoonmaakCheck() {
     }
     if (data) setTasks((prev) => [...prev, data as CleaningTask]);
   }, [restaurantId, selectedLocation]);
+
+  const handleRenameTask = useCallback(
+    async (task: CleaningTask) => {
+      const proposed = window.prompt("Nieuwe naam voor de taak", task.name);
+      if (!proposed) return;
+      const name = proposed.trim();
+      if (!name || name === task.name) return;
+
+      const { error } = await supabase
+        .from("haccp_cleaning_tasks")
+        .update({ name })
+        .eq("id", task.id);
+
+      if (error) {
+        console.error("Hernoemen mislukt:", error);
+        setErrorMessage("Hernoemen mislukt.");
+        return;
+      }
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, name } : t)),
+      );
+    },
+    [],
+  );
 
   const handleDeleteTask = useCallback(async (task: CleaningTask) => {
     const ok = window.confirm(
@@ -348,6 +424,150 @@ export default function SchoonmaakCheck() {
   // =========================================================================
   const photoSlotsLeft = MAX_PHOTOS - photoFiles.length;
 
+  // =========================================================================
+  // MANAGE MODE: Only show location and task list with edit/delete buttons
+  // =========================================================================
+  if (mode === "manage") {
+    return (
+      <div className="mt-2 flex flex-col gap-6">
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          Schoonmaak
+        </h2>
+
+        {errorMessage ? (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        {!restaurantId ? (
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
+            Geen restaurant gekoppeld aan je account.
+          </p>
+        ) : null}
+
+        {/* ===== Locaties beheer ===== */}
+        <section className="flex flex-col gap-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+            Locaties
+          </h3>
+
+          {loadingLocations ? (
+            <p className="text-center text-slate-500">Locaties laden…</p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {locations.map((loc) => (
+                <li key={loc.id}>
+                  <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+                    {/* Clickable to expand tasks */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLocation(selectedLocation?.id === loc.id ? null : loc)}
+                      className="flex flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
+                    >
+                      <div className="flex flex-1 flex-col gap-1">
+                        <span className="text-xl font-bold text-slate-900 truncate">
+                          {loc.name}
+                        </span>
+                        <span className="text-sm font-medium text-slate-500">
+                          {selectedLocation?.id === loc.id ? "Klik om in te klappen" : "Klik om taken te zien"}
+                        </span>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                      <button
+                        type="button"
+                        onClick={() => handleRenameLocation(loc)}
+                        aria-label={`Hernoem ${loc.name}`}
+                        className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                      >
+                        <Pencil className="h-5 w-5" aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteLocation(loc)}
+                        aria-label={`Verwijder ${loc.name}`}
+                        className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                      >
+                        <Trash2 className="h-5 w-5" aria-hidden />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tasks for selected location */}
+                  {selectedLocation?.id === loc.id ? (
+                    <div className="mt-3 ml-4 flex flex-col gap-3 border-l-2 border-slate-200 pl-4">
+                      <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400">
+                        Schoonmaaktaken
+                      </h4>
+                      {loadingTasks ? (
+                        <p className="text-center text-slate-500">Taken laden…</p>
+                      ) : (
+                        <ul className="flex flex-col gap-2">
+                          {tasks.map((task) => (
+                            <li key={task.id}>
+                              <div className="flex min-h-[64px] items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-sm">
+                                <span className="flex-1 text-lg font-semibold text-slate-900 truncate">
+                                  {task.name}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRenameTask(task)}
+                                    aria-label={`Hernoem ${task.name}`}
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                                  >
+                                    <Pencil className="h-4 w-4" aria-hidden />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTask(task)}
+                                    aria-label={`Verwijder ${task.name}`}
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                                  >
+                                    <Trash2 className="h-4 w-4" aria-hidden />
+                                  </button>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <SupercellButton
+                        size="lg"
+                        variant="neutral"
+                        onClick={handleAddTask}
+                        disabled={loadingTasks}
+                        className="flex h-16 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-lg normal-case"
+                      >
+                        <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                        Taak toevoegen
+                      </SupercellButton>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <SupercellButton
+            size="lg"
+            variant="neutral"
+            onClick={handleAddLocation}
+            disabled={!restaurantId}
+            className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+          >
+            <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+            Locatie toevoegen
+          </SupercellButton>
+        </section>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // RECORD MODE: Full recording flow
+  // =========================================================================
   return (
     <div className="mt-2 flex flex-col gap-6">
       <UpgradePromptModal

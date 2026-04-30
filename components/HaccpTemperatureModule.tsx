@@ -34,6 +34,8 @@ type Props = {
   defaultTemperature: number;
   /** Naam voor het automatisch aangemaakte eerste apparaat. */
   firstEquipmentName: string;
+  /** Mode: "manage" shows only equipment list with edit/delete, "record" allows recording. Default: "record" */
+  mode?: "manage" | "record";
 };
 
 const MAX_PHOTOS = 5;
@@ -69,6 +71,7 @@ export default function HaccpTemperatureModule({
   title,
   defaultTemperature,
   firstEquipmentName,
+  mode = "record",
 }: Props) {
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -399,11 +402,12 @@ export default function HaccpTemperatureModule({
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      {view === "list" ? (
+      {view === "list" || mode === "manage" ? (
         <ListView
           title={title}
           equipments={equipments}
           loading={loadingEquipments}
+          mode={mode}
           onPick={enterRecord}
           onAdd={handleAddEquipment}
           onRename={handleRenameEquipment}
@@ -448,6 +452,7 @@ type ListViewProps = {
   title: string;
   equipments: Equipment[];
   loading: boolean;
+  mode: "manage" | "record";
   onPick: (eq: Equipment) => void;
   onAdd: () => void;
   onRename: (eq: Equipment) => void;
@@ -460,6 +465,7 @@ function ListView({
   title,
   equipments,
   loading,
+  mode,
   onPick,
   onAdd,
   onRename,
@@ -492,12 +498,31 @@ function ListView({
           {equipments.map((eq) => (
             <li key={eq.id}>
               <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-                {/* Left: clickable area for recording */}
-                <button
-                  type="button"
-                  onClick={() => onPick(eq)}
-                  className="flex flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
-                >
+                {/* Left: clickable area for recording (only in record mode) */}
+                {mode === "record" ? (
+                  <button
+                    type="button"
+                    onClick={() => onPick(eq)}
+                    className="flex flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
+                  >
+                    <div className="flex flex-1 flex-col gap-1">
+                      <span className="text-xl font-bold text-slate-900 truncate">
+                        {eq.name}
+                      </span>
+                      <span className="text-sm font-medium text-slate-500">
+                        {typeof eq.last_temp === "number"
+                          ? `Laatste: ${eq.last_temp.toFixed(1)} °C`
+                          : "Nog geen meting"}
+                      </span>
+                    </div>
+                    <ChevronRight
+                      className="h-6 w-6 text-slate-400 shrink-0"
+                      strokeWidth={2.5}
+                      aria-hidden
+                    />
+                  </button>
+                ) : (
+                  /* Manage mode: just display name, no click to record */
                   <div className="flex flex-1 flex-col gap-1">
                     <span className="text-xl font-bold text-slate-900 truncate">
                       {eq.name}
@@ -508,12 +533,7 @@ function ListView({
                         : "Nog geen meting"}
                     </span>
                   </div>
-                  <ChevronRight
-                    className="h-6 w-6 text-slate-400 shrink-0"
-                    strokeWidth={2.5}
-                    aria-hidden
-                  />
-                </button>
+                )}
 
                 {/* Right: edit and delete buttons */}
                 <div className="flex items-center gap-2 border-l border-slate-100 pl-3">

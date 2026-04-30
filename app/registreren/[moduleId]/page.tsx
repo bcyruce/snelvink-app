@@ -9,10 +9,10 @@ import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { ArrowLeft } from "lucide-react";
-import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, type ComponentType } from "react";
 
-// Components with mode prop for manage/record distinction
+// Components with mode prop - always use "record" mode for registreren
 const MODULE_COMPONENTS: Record<string, ComponentType<{ mode?: "manage" | "record" }>> = {
   koeling: KoelingCheck,
   ontvangst: OntvangstCheck,
@@ -23,14 +23,8 @@ const MODULE_COMPONENTS: Record<string, ComponentType<{ mode?: "manage" | "recor
 function ModuleContent() {
   const router = useRouter();
   const params = useParams<{ moduleId: string }>();
-  const searchParams = useSearchParams();
   const moduleId = params?.moduleId ?? "";
   const { user, isLoading } = useUser();
-
-  // Determine where to go back based on source parameter
-  const source = searchParams.get("source");
-  const backPath = source === "registreren" ? "/registreren" : "/";
-  const activeMenu = source === "registreren" ? "registreren" : "taken";
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -53,9 +47,6 @@ function ModuleContent() {
     notFound();
   }
 
-  // Determine mode: if coming from registreren, use record mode; otherwise use manage mode
-  const componentMode = source === "registreren" ? "record" : "manage";
-
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") router.push("/registreren");
     else if (tab === "taken") router.push("/");
@@ -70,17 +61,18 @@ function ModuleContent() {
           type="button"
           size="lg"
           variant="neutral"
-          onClick={() => router.push(backPath)}
+          onClick={() => router.push("/registreren")}
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
           Terug
         </SupercellButton>
 
-        <ModuleComponent mode={componentMode} />
+        {/* Always use record mode for registreren pages */}
+        <ModuleComponent mode="record" />
       </section>
 
-      <FloatingMenu active={activeMenu as "registreren" | "taken"} onChange={handleMenuNav} />
+      <FloatingMenu active="registreren" onChange={handleMenuNav} />
     </>
   );
 }
@@ -95,7 +87,7 @@ function ModuleLoading() {
   );
 }
 
-export default function TakenModulePage() {
+export default function RegistrerenModulePage() {
   return (
     <UserProvider>
       <Suspense fallback={<ModuleLoading />}>

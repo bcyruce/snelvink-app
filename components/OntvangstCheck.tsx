@@ -5,7 +5,7 @@ import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import { Camera, Check, Pencil, Plus, X } from "lucide-react";
+import { Camera, Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -42,7 +42,11 @@ function buildRecordedAt(local: string): string {
   return parsed.toISOString();
 }
 
-export default function OntvangstCheck() {
+type Props = {
+  mode?: "manage" | "record";
+};
+
+export default function OntvangstCheck({ mode = "record" }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -114,9 +118,57 @@ export default function OntvangstCheck() {
     if (data) {
       const next = data as Product;
       setProducts((prev) => [...prev, next]);
-      setSelectedProduct(next);
+      if (mode === "record") {
+        setSelectedProduct(next);
+      }
     }
-  }, [restaurantId]);
+  }, [restaurantId, mode]);
+
+  const handleRenameProduct = useCallback(
+    async (product: Product) => {
+      const proposed = window.prompt("Nieuwe naam voor het product", product.name);
+      if (!proposed) return;
+      const name = proposed.trim();
+      if (!name || name === product.name) return;
+
+      const { error } = await supabase
+        .from("haccp_products")
+        .update({ name })
+        .eq("id", product.id);
+
+      if (error) {
+        console.error("Hernoemen mislukt:", error);
+        setErrorMessage("Hernoemen mislukt.");
+        return;
+      }
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, name } : p)),
+      );
+    },
+    [],
+  );
+
+  const handleDeleteProduct = useCallback(
+    async (product: Product) => {
+      const ok = window.confirm(
+        `"${product.name}" verwijderen? De historie blijft bewaard.`,
+      );
+      if (!ok) return;
+
+      const { error } = await supabase
+        .from("haccp_products")
+        .delete()
+        .eq("id", product.id);
+
+      if (error) {
+        console.error("Verwijderen mislukt:", error);
+        setErrorMessage("Verwijderen mislukt.");
+        return;
+      }
+      setProducts((prev) => prev.filter((p) => p.id !== product.id));
+    },
+    [],
+  );
 
   // ---------- photo handling ----------
   useEffect(() => {
@@ -250,6 +302,81 @@ export default function OntvangstCheck() {
   // =========================================================================
   const photoSlotsLeft = MAX_PHOTOS - photoFiles.length;
 
+  // =========================================================================
+  // MANAGE MODE: Only show product list with edit/delete buttons
+  // =========================================================================
+  if (mode === "manage") {
+    return (
+      <div className="mt-2 flex flex-col gap-6">
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          Ontvangst
+        </h2>
+
+        {errorMessage ? (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        {!restaurantId ? (
+          <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
+            Geen restaurant gekoppeld aan je account.
+          </p>
+        ) : null}
+
+        {loadingProducts ? (
+          <p className="text-center text-slate-500">Producten laden…</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {products.map((p) => (
+              <li key={p.id}>
+                <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+                  <div className="flex flex-1 flex-col gap-1">
+                    <span className="text-xl font-bold text-slate-900 truncate">
+                      {p.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                    <button
+                      type="button"
+                      onClick={() => handleRenameProduct(p)}
+                      aria-label={`Hernoem ${p.name}`}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                    >
+                      <Pencil className="h-5 w-5" aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProduct(p)}
+                      aria-label={`Verwijder ${p.name}`}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                    >
+                      <Trash2 className="h-5 w-5" aria-hidden />
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <SupercellButton
+          size="lg"
+          variant="neutral"
+          onClick={handleAddProduct}
+          disabled={!restaurantId}
+          className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+        >
+          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+          Product toevoegen
+        </SupercellButton>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // RECORD MODE: Full recording flow
+  // =========================================================================
   return (
     <div className="mt-2 flex flex-col gap-6">
       <UpgradePromptModal

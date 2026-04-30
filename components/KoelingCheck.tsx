@@ -2,13 +2,18 @@
 
 import HaccpTemperatureModule from "@/components/HaccpTemperatureModule";
 
-export default function KoelingCheck() {
+type Props = {
+  mode?: "manage" | "record";
+};
+
+export default function KoelingCheck({ mode = "record" }: Props) {
   return (
     <HaccpTemperatureModule
       moduleType="koeling"
       title="Koeling"
       defaultTemperature={7}
       firstEquipmentName="Koelkast 1"
+      mode={mode}
     />
   );
 }
