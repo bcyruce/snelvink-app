@@ -92,6 +92,7 @@ export default function HaccpTemperatureModule({
     formatLocalDateTime(new Date()),
   );
   const [temperature, setTemperature] = useState<number>(defaultTemperature);
+  const [opmerking, setOpmerking] = useState("");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -183,30 +184,6 @@ export default function HaccpTemperatureModule({
     if (data) setEquipments((prev) => [...prev, data as Equipment]);
   }, [restaurantId, moduleType, equipments.length, firstEquipmentName]);
 
-  const handleRenameEquipment = useCallback(
-    async (eq: Equipment) => {
-      const proposed = window.prompt("Nieuwe naam voor het apparaat", eq.name);
-      if (!proposed) return;
-      const name = proposed.trim();
-      if (!name || name === eq.name) return;
-
-      const { error } = await supabase
-        .from("haccp_equipments")
-        .update({ name })
-        .eq("id", eq.id);
-
-      if (error) {
-        console.error("Hernoemen mislukt:", error);
-        setErrorMessage("Hernoemen mislukt.");
-        return;
-      }
-      setEquipments((prev) =>
-        prev.map((p) => (p.id === eq.id ? { ...p, name } : p)),
-      );
-    },
-    [],
-  );
-
   const handleDeleteEquipment = useCallback(
     async (eq: Equipment) => {
       const ok = window.confirm(
@@ -237,6 +214,7 @@ export default function HaccpTemperatureModule({
       setTemperature(
         typeof eq.last_temp === "number" ? eq.last_temp : defaultTemperature,
       );
+      setOpmerking("");
       setPhotoFiles([]);
       setPhotoPreviews((prev) => {
         prev.forEach((u) => URL.revokeObjectURL(u));
@@ -356,6 +334,7 @@ export default function HaccpTemperatureModule({
           temperature,
           recorded_at: recordedAt,
           image_urls: uploadedUrls,
+          opmerking: opmerking.trim() || null,
         });
 
       if (insertError) {
@@ -408,9 +387,9 @@ export default function HaccpTemperatureModule({
           equipments={equipments}
           loading={loadingEquipments}
           mode={mode}
+          moduleType={moduleType}
           onPick={enterRecord}
           onAdd={handleAddEquipment}
-          onRename={handleRenameEquipment}
           onDelete={handleDeleteEquipment}
           errorMessage={errorMessage}
           restaurantReady={!!restaurantId}
@@ -428,6 +407,8 @@ export default function HaccpTemperatureModule({
           decOnePress={decOnePress}
           decTenthPress={decTenthPress}
           onSetTemperature={setTemperature}
+          opmerking={opmerking}
+          onOpmerkingChange={setOpmerking}
           photoFiles={photoFiles}
           photoPreviews={photoPreviews}
           onPickPhotos={handlePickPhotos}
@@ -436,7 +417,6 @@ export default function HaccpTemperatureModule({
           photoInputRef={photoInputRef}
           isSaving={isSaving}
           canSave={canSave}
-          onCancel={exitRecord}
           onSave={handleSave}
           errorMessage={errorMessage}
         />
@@ -453,9 +433,9 @@ type ListViewProps = {
   equipments: Equipment[];
   loading: boolean;
   mode: "manage" | "record";
+  moduleType: ModuleType;
   onPick: (eq: Equipment) => void;
   onAdd: () => void;
-  onRename: (eq: Equipment) => void;
   onDelete: (eq: Equipment) => void;
   errorMessage: string | null;
   restaurantReady: boolean;
@@ -466,9 +446,9 @@ function ListView({
   equipments,
   loading,
   mode,
+  moduleType,
   onPick,
   onAdd,
-  onRename,
   onDelete,
   errorMessage,
   restaurantReady,
@@ -498,7 +478,7 @@ function ListView({
           {equipments.map((eq) => (
             <li key={eq.id}>
               <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-                {/* Left: clickable area for recording (only in record mode) */}
+                {/* Record mode: click to record */}
                 {mode === "record" ? (
                   <button
                     type="button"
@@ -522,7 +502,7 @@ function ListView({
                     />
                   </button>
                 ) : (
-                  /* Manage mode: just display name, no click to record */
+                  /* Manage mode: display name with edit/delete buttons */
                   <div className="flex flex-1 flex-col gap-1">
                     <span className="text-xl font-bold text-slate-900 truncate">
                       {eq.name}
@@ -535,41 +515,45 @@ function ListView({
                   </div>
                 )}
 
-                {/* Right: edit and delete buttons */}
-                <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
-                  <button
-                    type="button"
-                    onClick={() => onRename(eq)}
-                    aria-label={`Hernoem ${eq.name}`}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
-                  >
-                    <Pencil className="h-5 w-5" aria-hidden />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(eq)}
-                    aria-label={`Verwijder ${eq.name}`}
-                    className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
-                  >
-                    <Trash2 className="h-5 w-5" aria-hidden />
-                  </button>
-                </div>
+                {/* Right: edit and delete buttons - only in manage mode */}
+                {mode === "manage" ? (
+                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                    <a
+                      href={`/taken/${moduleType}/edit/${eq.id}`}
+                      aria-label={`Bewerk ${eq.name}`}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                    >
+                      <Pencil className="h-5 w-5" aria-hidden />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(eq)}
+                      aria-label={`Verwijder ${eq.name}`}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                    >
+                      <Trash2 className="h-5 w-5" aria-hidden />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </li>
           ))}
         </ul>
       )}
 
-      <SupercellButton
-        size="lg"
-        variant="neutral"
-        onClick={onAdd}
-        disabled={!restaurantReady}
-        className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-      >
-        <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-        Apparaat toevoegen
-      </SupercellButton>
+      {/* Add button only in manage mode */}
+      {mode === "manage" ? (
+        <SupercellButton
+          size="lg"
+          variant="neutral"
+          onClick={onAdd}
+          disabled={!restaurantReady}
+          className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+        >
+          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+          Apparaat toevoegen
+        </SupercellButton>
+      ) : null}
     </div>
   );
 }
@@ -589,6 +573,8 @@ type RecordViewProps = {
   decOnePress: ReturnType<typeof useLongPress>;
   decTenthPress: ReturnType<typeof useLongPress>;
   onSetTemperature: (v: number) => void;
+  opmerking: string;
+  onOpmerkingChange: (v: string) => void;
   photoFiles: File[];
   photoPreviews: string[];
   onPickPhotos: () => void;
@@ -597,7 +583,6 @@ type RecordViewProps = {
   photoInputRef: React.RefObject<HTMLInputElement | null>;
   isSaving: boolean;
   canSave: boolean;
-  onCancel: () => void;
   onSave: () => void;
   errorMessage: string | null;
 };
@@ -614,6 +599,8 @@ function RecordView({
   decOnePress,
   decTenthPress,
   onSetTemperature,
+  opmerking,
+  onOpmerkingChange,
   photoFiles,
   photoPreviews,
   onPickPhotos,
@@ -622,7 +609,6 @@ function RecordView({
   photoInputRef,
   isSaving,
   canSave,
-  onCancel,
   onSave,
   errorMessage,
 }: RecordViewProps) {
@@ -667,19 +653,9 @@ function RecordView({
         />
       </label>
 
-      <div className="flex items-center justify-between gap-3">
-        <SupercellButton
-          size="sm"
-          variant="neutral"
-          onClick={onCancel}
-          className="min-h-[64px] text-base normal-case"
-        >
-          ← Terug naar lijst
-        </SupercellButton>
-        <h3 className="flex-1 truncate text-right text-2xl font-extrabold text-slate-900">
-          {equipment?.name ?? title}
-        </h3>
-      </div>
+      <h3 className="text-center text-2xl font-extrabold text-slate-900">
+        {equipment?.name ?? title}
+      </h3>
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -774,6 +750,20 @@ function RecordView({
         Houd een knop ingedrukt om snel aan te passen. Tik op het getal om
         handmatig in te voeren.
       </p>
+
+      {/* Opmerking */}
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+          Opmerking (optioneel)
+        </span>
+        <textarea
+          value={opmerking}
+          onChange={(e) => onOpmerkingChange(e.target.value)}
+          placeholder="Voeg een opmerking toe..."
+          rows={3}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+        />
+      </label>
 
       {/* Foto-knop */}
       <input

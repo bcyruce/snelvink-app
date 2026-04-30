@@ -57,6 +57,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
   const [checkedTaskIds, setCheckedTaskIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [opmerking, setOpmerking] = useState("");
   // voorkomt dat we voor één locatie meerdere keren de defaults seeden
   const seededLocationRef = useRef<Set<string>>(new Set());
 
@@ -118,30 +119,6 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
       }
     }
   }, [restaurantId, mode]);
-
-  const handleRenameLocation = useCallback(
-    async (location: Location) => {
-      const proposed = window.prompt("Nieuwe naam voor de locatie", location.name);
-      if (!proposed) return;
-      const name = proposed.trim();
-      if (!name || name === location.name) return;
-
-      const { error } = await supabase
-        .from("haccp_locations")
-        .update({ name })
-        .eq("id", location.id);
-
-      if (error) {
-        console.error("Hernoemen mislukt:", error);
-        setErrorMessage("Hernoemen mislukt.");
-        return;
-      }
-      setLocations((prev) =>
-        prev.map((l) => (l.id === location.id ? { ...l, name } : l)),
-      );
-    },
-    [],
-  );
 
   const handleDeleteLocation = useCallback(
     async (location: Location) => {
@@ -238,83 +215,11 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
     });
   };
 
-  const handleAddTask = useCallback(async () => {
-    if (!restaurantId || !selectedLocation) return;
-    const input = window.prompt("Naam van de nieuwe schoonmaaktaak");
-    if (!input) return;
-    const name = input.trim();
-    if (!name) return;
-
-    const { data, error } = await supabase
-      .from("haccp_cleaning_tasks")
-      .insert({
-        restaurant_id: restaurantId,
-        location_id: selectedLocation.id,
-        name,
-      })
-      .select("id, name")
-      .single();
-
-    if (error) {
-      console.error("Taak toevoegen mislukt:", error);
-      setErrorMessage("Taak toevoegen mislukt.");
-      return;
-    }
-    if (data) setTasks((prev) => [...prev, data as CleaningTask]);
-  }, [restaurantId, selectedLocation]);
-
-  const handleRenameTask = useCallback(
-    async (task: CleaningTask) => {
-      const proposed = window.prompt("Nieuwe naam voor de taak", task.name);
-      if (!proposed) return;
-      const name = proposed.trim();
-      if (!name || name === task.name) return;
-
-      const { error } = await supabase
-        .from("haccp_cleaning_tasks")
-        .update({ name })
-        .eq("id", task.id);
-
-      if (error) {
-        console.error("Hernoemen mislukt:", error);
-        setErrorMessage("Hernoemen mislukt.");
-        return;
-      }
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, name } : t)),
-      );
-    },
-    [],
-  );
-
-  const handleDeleteTask = useCallback(async (task: CleaningTask) => {
-    const ok = window.confirm(
-      `"${task.name}" definitief uit deze locatie verwijderen?`,
-    );
-    if (!ok) return;
-
-    const { error } = await supabase
-      .from("haccp_cleaning_tasks")
-      .delete()
-      .eq("id", task.id);
-
-    if (error) {
-      console.error("Taak verwijderen mislukt:", error);
-      setErrorMessage("Taak verwijderen mislukt.");
-      return;
-    }
-    setTasks((prev) => prev.filter((p) => p.id !== task.id));
-    setCheckedTaskIds((prev) => {
-      const next = new Set(prev);
-      next.delete(task.id);
-      return next;
-    });
-  }, []);
-
   // ---------- reset helpers ----------
   const resetLocation = () => {
     setSelectedLocation(null);
     setCheckedTaskIds(new Set());
+    setOpmerking("");
   };
 
   // ---------- photos ----------
@@ -402,6 +307,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
+          opmerking: opmerking.trim() || null,
         });
 
       if (insertError) {
@@ -459,30 +365,19 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
               {locations.map((loc) => (
                 <li key={loc.id}>
                   <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-                    {/* Clickable to expand tasks */}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedLocation(selectedLocation?.id === loc.id ? null : loc)}
-                      className="flex flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
-                    >
-                      <div className="flex flex-1 flex-col gap-1">
-                        <span className="text-xl font-bold text-slate-900 truncate">
-                          {loc.name}
-                        </span>
-                        <span className="text-sm font-medium text-slate-500">
-                          {selectedLocation?.id === loc.id ? "Klik om in te klappen" : "Klik om taken te zien"}
-                        </span>
-                      </div>
-                    </button>
+                    <div className="flex flex-1 flex-col gap-1">
+                      <span className="text-xl font-bold text-slate-900 truncate">
+                        {loc.name}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
-                      <button
-                        type="button"
-                        onClick={() => handleRenameLocation(loc)}
-                        aria-label={`Hernoem ${loc.name}`}
+                      <a
+                        href={`/taken/schoonmaak/edit/${loc.id}`}
+                        aria-label={`Bewerk ${loc.name}`}
                         className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                       >
                         <Pencil className="h-5 w-5" aria-hidden />
-                      </button>
+                      </a>
                       <button
                         type="button"
                         onClick={() => handleDeleteLocation(loc)}
@@ -493,58 +388,6 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
                       </button>
                     </div>
                   </div>
-
-                  {/* Tasks for selected location */}
-                  {selectedLocation?.id === loc.id ? (
-                    <div className="mt-3 ml-4 flex flex-col gap-3 border-l-2 border-slate-200 pl-4">
-                      <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400">
-                        Schoonmaaktaken
-                      </h4>
-                      {loadingTasks ? (
-                        <p className="text-center text-slate-500">Taken laden…</p>
-                      ) : (
-                        <ul className="flex flex-col gap-2">
-                          {tasks.map((task) => (
-                            <li key={task.id}>
-                              <div className="flex min-h-[64px] items-center gap-3 rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-sm">
-                                <span className="flex-1 text-lg font-semibold text-slate-900 truncate">
-                                  {task.name}
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRenameTask(task)}
-                                    aria-label={`Hernoem ${task.name}`}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
-                                  >
-                                    <Pencil className="h-4 w-4" aria-hidden />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteTask(task)}
-                                    aria-label={`Verwijder ${task.name}`}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
-                                  >
-                                    <Trash2 className="h-4 w-4" aria-hidden />
-                                  </button>
-                                </div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <SupercellButton
-                        size="lg"
-                        variant="neutral"
-                        onClick={handleAddTask}
-                        disabled={loadingTasks}
-                        className="flex h-16 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-lg normal-case"
-                      >
-                        <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-                        Taak toevoegen
-                      </SupercellButton>
-                    </div>
-                  ) : null}
                 </li>
               ))}
             </ul>
@@ -580,19 +423,6 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
       <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
         Schoonmaak
       </h2>
-
-      {/* Datum & tijd */}
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Datum &amp; tijd
-        </span>
-        <input
-          type="datetime-local"
-          value={recordedAtLocal}
-          onChange={(e) => setRecordedAtLocal(e.target.value)}
-          className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
-        />
-      </label>
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -657,6 +487,21 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
         )}
       </section>
 
+      {/* ===== Datum/tijd (alleen na locatie selectie) ===== */}
+      {selectedLocation ? (
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+            Datum &amp; tijd
+          </span>
+          <input
+            type="datetime-local"
+            value={recordedAtLocal}
+            onChange={(e) => setRecordedAtLocal(e.target.value)}
+            className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
+          />
+        </label>
+      ) : null}
+
       {/* ===== Taken sectie ===== */}
       {selectedLocation ? (
         <section className="flex flex-col gap-3">
@@ -676,13 +521,13 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
               {tasks.map((task) => {
                 const checked = checkedTaskIds.has(task.id);
                 return (
-                  <li key={task.id} className="flex items-stretch gap-2">
+                  <li key={task.id}>
                     <SupercellButton
                       size="lg"
                       variant={checked ? "success" : "neutral"}
                       onClick={() => toggleTask(task.id)}
                       aria-pressed={checked}
-                      className="flex h-20 flex-1 items-center justify-between gap-3 px-5 text-left text-xl normal-case"
+                      className="flex h-20 w-full items-center justify-between gap-3 px-5 text-left text-xl normal-case"
                     >
                       <span className="flex-1 truncate">{task.name}</span>
                       <span
@@ -699,37 +544,31 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
                         ) : null}
                       </span>
                     </SupercellButton>
-                    <SupercellButton
-                      size="icon"
-                      variant="danger"
-                      onClick={() => handleDeleteTask(task)}
-                      aria-label={`Taak "${task.name}" verwijderen`}
-                      className="flex h-20 w-16 shrink-0 items-center justify-center"
-                    >
-                      <Trash2 className="h-6 w-6" strokeWidth={2.25} aria-hidden />
-                    </SupercellButton>
                   </li>
                 );
               })}
             </ul>
           )}
-
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            onClick={handleAddTask}
-            disabled={loadingTasks}
-            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
-          >
-            <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            Taak toevoegen
-          </SupercellButton>
         </section>
       ) : null}
 
-      {/* ===== Foto + opslaan ===== */}
+      {/* ===== Opmerking + Foto + opslaan ===== */}
       {selectedLocation && !loadingTasks ? (
         <section className="flex flex-col gap-4">
+          {/* Opmerking */}
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+              Opmerking (optioneel)
+            </span>
+            <textarea
+              value={opmerking}
+              onChange={(e) => setOpmerking(e.target.value)}
+              placeholder="Voeg een opmerking toe..."
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+            />
+          </label>
+
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Foto&apos;s (optioneel)
           </h3>

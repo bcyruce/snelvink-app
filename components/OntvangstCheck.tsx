@@ -62,6 +62,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [reason, setReason] = useState<string | null>(null);
+  const [opmerking, setOpmerking] = useState("");
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -123,30 +124,6 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
       }
     }
   }, [restaurantId, mode]);
-
-  const handleRenameProduct = useCallback(
-    async (product: Product) => {
-      const proposed = window.prompt("Nieuwe naam voor het product", product.name);
-      if (!proposed) return;
-      const name = proposed.trim();
-      if (!name || name === product.name) return;
-
-      const { error } = await supabase
-        .from("haccp_products")
-        .update({ name })
-        .eq("id", product.id);
-
-      if (error) {
-        console.error("Hernoemen mislukt:", error);
-        setErrorMessage("Hernoemen mislukt.");
-        return;
-      }
-      setProducts((prev) =>
-        prev.map((p) => (p.id === product.id ? { ...p, name } : p)),
-      );
-    },
-    [],
-  );
 
   const handleDeleteProduct = useCallback(
     async (product: Product) => {
@@ -214,6 +191,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
     setSelectedProduct(null);
     setStatus(null);
     setReason(null);
+    setOpmerking("");
   };
   const resetStatus = () => {
     setStatus(null);
@@ -280,6 +258,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
+          opmerking: opmerking.trim() || null,
         });
 
       if (insertError) {
@@ -336,15 +315,14 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                       {p.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
-                    <button
-                      type="button"
-                      onClick={() => handleRenameProduct(p)}
-                      aria-label={`Hernoem ${p.name}`}
+<div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                    <a
+                      href={`/taken/ontvangst/edit/${p.id}`}
+                      aria-label={`Bewerk ${p.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                     >
                       <Pencil className="h-5 w-5" aria-hidden />
-                    </button>
+                    </a>
                     <button
                       type="button"
                       onClick={() => handleDeleteProduct(p)}
@@ -389,19 +367,6 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
       <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
         Ontvangst
       </h2>
-
-      {/* Datum & tijd van ontvangst */}
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Datum &amp; tijd van ontvangst
-        </span>
-        <input
-          type="datetime-local"
-          value={recordedAtLocal}
-          onChange={(e) => setRecordedAtLocal(e.target.value)}
-          className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
-        />
-      </label>
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -450,6 +415,21 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
           </div>
         )}
       </Section>
+
+      {/* ===== Datum/tijd (alleen na product selectie) ===== */}
+      {selectedProduct ? (
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+            Datum &amp; tijd van ontvangst
+          </span>
+          <input
+            type="datetime-local"
+            value={recordedAtLocal}
+            onChange={(e) => setRecordedAtLocal(e.target.value)}
+            className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
+          />
+        </label>
+      ) : null}
 
       {/* ===== Beoordeling sectie ===== */}
       {selectedProduct ? (
@@ -534,9 +514,23 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         </Section>
       ) : null}
 
-      {/* ===== Foto + opslaan ===== */}
+      {/* ===== Opmerking + Foto + opslaan ===== */}
       {currentStep === "foto" ? (
         <div className="flex flex-col gap-4">
+          {/* Opmerking */}
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+              Opmerking (optioneel)
+            </span>
+            <textarea
+              value={opmerking}
+              onChange={(e) => setOpmerking(e.target.value)}
+              placeholder="Voeg een opmerking toe..."
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+            />
+          </label>
+
           <h3 className="text-xl font-black uppercase tracking-wide text-slate-500">
             Foto&apos;s (optioneel)
           </h3>

@@ -9,36 +9,11 @@ import {
 } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Trash2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
 type AddModuleTab = "standard" | "custom";
 type ModuleType = "number" | "boolean" | "list";
-
-type NumberInputConfig = {
-  id: string;
-  name: string;
-  step: number;
-  defaultValue: number;
-  unit: string;
-  hasRemark: boolean;
-};
-
-type BooleanInputConfig = {
-  id: string;
-  name: string;
-  hasRemark: boolean;
-};
-
-type ListItemConfig = {
-  id: string;
-  name: string;
-};
-
-type ListSettings = {
-  items: ListItemConfig[];
-  hasRemark: boolean;
-};
 
 type AddModuleModalProps = {
   open: boolean;
@@ -50,41 +25,10 @@ type AddModuleModalProps = {
   editingModule?: TaskModule | null;
 };
 
-function createNumberInput(index: number): NumberInputConfig {
-  return {
-    id: `number-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: `Getalveld ${index}`,
-    step: 1,
-    defaultValue: 0,
-    unit: "°C",
-    hasRemark: false,
-  };
-}
-
-function createBooleanInput(index: number): BooleanInputConfig {
-  return {
-    id: `boolean-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: `Controle ${index}`,
-    hasRemark: false,
-  };
-}
-
-function createListItem(index: number): ListItemConfig {
-  return {
-    id: `list-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    name: `Item ${index}`,
-  };
-}
-
 function moduleTypeToDatabaseValue(type: ModuleType): string {
   if (type === "boolean") return "boolean";
   if (type === "list") return "list";
   return "temperature";
-}
-
-function formatStep(step: number): string {
-  if (!Number.isFinite(step)) return "0";
-  return Number.isInteger(step) ? String(step) : String(step).replace(".", ",");
 }
 
 export default function AddModuleModal({
@@ -101,10 +45,6 @@ export default function AddModuleModal({
   const [name, setName] = useState("");
   const [iconKey, setIconKey] = useState<string>(AVAILABLE_ICONS[0]);
   const [moduleType, setModuleType] = useState<ModuleType>("number");
-  const [numberInputs, setNumberInputs] = useState<NumberInputConfig[]>([]);
-  const [booleanInputs, setBooleanInputs] = useState<BooleanInputConfig[]>([]);
-  const [listItems, setListItems] = useState<ListItemConfig[]>([]);
-  const [listHasRemark, setListHasRemark] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -116,10 +56,6 @@ export default function AddModuleModal({
       setName(editingModule?.name ?? "");
       setIconKey(editingModule?.icon ?? AVAILABLE_ICONS[0]);
       setModuleType("number");
-      setNumberInputs([createNumberInput(1)]);
-      setBooleanInputs([createBooleanInput(1)]);
-      setListItems([createListItem(1)]);
-      setListHasRemark(false);
       setErrorMessage(null);
       setIsSaving(false);
       if (isEditing) {
@@ -141,10 +77,6 @@ export default function AddModuleModal({
     setName("");
     setIconKey(AVAILABLE_ICONS[0]);
     setModuleType("number");
-    setNumberInputs([createNumberInput(1)]);
-    setBooleanInputs([createBooleanInput(1)]);
-    setListItems([createListItem(1)]);
-    setListHasRemark(false);
     setErrorMessage(null);
   }, []);
 
@@ -176,44 +108,8 @@ export default function AddModuleModal({
       setIsSaving(true);
       setErrorMessage(null);
 
-      const trimmedNumberInputs = numberInputs
-        .map((input) => ({ ...input, name: input.name.trim() }))
-        .filter((input) => input.name.length > 0);
-      const trimmedBooleanInputs = booleanInputs
-        .map((input) => ({ ...input, name: input.name.trim() }))
-        .filter((input) => input.name.length > 0);
-      const trimmedListItems = listItems
-        .map((item) => ({ ...item, name: item.name.trim() }))
-        .filter((item) => item.name.length > 0);
-
-      if (moduleType === "number" && trimmedNumberInputs.length === 0) {
-        setErrorMessage("Voeg minstens één veld toe.");
-        setIsSaving(false);
-        return;
-      }
-      if (moduleType === "boolean" && trimmedBooleanInputs.length === 0) {
-        setErrorMessage("Voeg minstens één veld toe.");
-        setIsSaving(false);
-        return;
-      }
-      if (moduleType === "list" && trimmedListItems.length === 0) {
-        setErrorMessage("Voeg minstens één item toe.");
-        setIsSaving(false);
-        return;
-      }
-
-      // Settings worden opgeslagen als object zodat we naast de configuratie
-      // ook flags kwijt kunnen. Het lezen kan nog steeds
-      // overweg met de oude (array-)vorm.
-      const settings =
-        moduleType === "boolean"
-          ? { inputs: trimmedBooleanInputs }
-          : moduleType === "list"
-            ? {
-                items: trimmedListItems,
-                hasRemark: listHasRemark,
-              }
-            : { inputs: trimmedNumberInputs };
+      // Settings is empty - items will be added in the management screen
+      const settings = {};
 
       try {
         const { data, error } = await supabase
@@ -262,10 +158,6 @@ export default function AddModuleModal({
       editingModule,
       name,
       iconKey,
-      numberInputs,
-      booleanInputs,
-      listItems,
-      listHasRemark,
       moduleType,
       user?.id,
       profile?.restaurant_id,
@@ -275,64 +167,6 @@ export default function AddModuleModal({
       resetCustomForm,
     ],
   );
-
-  const handleAddNumberInput = useCallback(() => {
-    setNumberInputs((current) => [
-      ...current,
-      createNumberInput(current.length + 1),
-    ]);
-  }, []);
-
-  const handleRemoveNumberInput = useCallback((id: string) => {
-    setNumberInputs((current) => current.filter((input) => input.id !== id));
-  }, []);
-
-  const handleUpdateNumberInput = useCallback(
-    (id: string, updates: Partial<NumberInputConfig>) => {
-      setNumberInputs((current) =>
-        current.map((input) =>
-          input.id === id ? { ...input, ...updates } : input,
-        ),
-      );
-    },
-    [],
-  );
-
-  const handleAddBooleanInput = useCallback(() => {
-    setBooleanInputs((current) => [
-      ...current,
-      createBooleanInput(current.length + 1),
-    ]);
-  }, []);
-
-  const handleRemoveBooleanInput = useCallback((id: string) => {
-    setBooleanInputs((current) => current.filter((input) => input.id !== id));
-  }, []);
-
-  const handleUpdateBooleanInput = useCallback(
-    (id: string, updates: Partial<BooleanInputConfig>) => {
-      setBooleanInputs((current) =>
-        current.map((input) =>
-          input.id === id ? { ...input, ...updates } : input,
-        ),
-      );
-    },
-    [],
-  );
-
-  const handleAddListItem = useCallback(() => {
-    setListItems((current) => [...current, createListItem(current.length + 1)]);
-  }, []);
-
-  const handleRemoveListItem = useCallback((id: string) => {
-    setListItems((current) => current.filter((item) => item.id !== id));
-  }, []);
-
-  const handleUpdateListItem = useCallback((id: string, name: string) => {
-    setListItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, name } : item)),
-    );
-  }, []);
 
   if (!open) return null;
 
@@ -509,34 +343,9 @@ export default function AddModuleModal({
               </div>
             </section>
 
-            {moduleType === "number" ? (
-              <NumberInputsBuilder
-                numberInputs={numberInputs}
-                onAdd={handleAddNumberInput}
-                onRemove={handleRemoveNumberInput}
-                onUpdate={handleUpdateNumberInput}
-              />
-            ) : null}
-
-            {moduleType === "boolean" ? (
-              <BooleanInputsBuilder
-                booleanInputs={booleanInputs}
-                onAdd={handleAddBooleanInput}
-                onRemove={handleRemoveBooleanInput}
-                onUpdate={handleUpdateBooleanInput}
-              />
-            ) : null}
-
-            {moduleType === "list" ? (
-              <ListBuilder
-                listItems={listItems}
-                hasRemark={listHasRemark}
-                onAdd={handleAddListItem}
-                onRemove={handleRemoveListItem}
-                onUpdate={handleUpdateListItem}
-                onToggleRemark={() => setListHasRemark((current) => !current)}
-              />
-            ) : null}
+            <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
+              Na het aanmaken kun je items toevoegen in het beheerscherm.
+            </p>
 
             <div className="flex flex-col gap-3 pt-2">
               <SupercellButton
@@ -569,317 +378,4 @@ export default function AddModuleModal({
   );
 }
 
-type NumberInputsBuilderProps = {
-  numberInputs: NumberInputConfig[];
-  onAdd: () => void;
-  onRemove: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<NumberInputConfig>) => void;
-};
 
-function NumberInputsBuilder({
-  numberInputs,
-  onAdd,
-  onRemove,
-  onUpdate,
-}: NumberInputsBuilderProps) {
-  return (
-    <section className="flex flex-col gap-4">
-      <SupercellButton
-        type="button"
-        size="sm"
-        variant="primary"
-        onClick={onAdd}
-        className="self-start text-lg normal-case"
-      >
-        + Getalveld toevoegen
-      </SupercellButton>
-
-      <div className="flex flex-col gap-4">
-        {numberInputs.map((input) => {
-          const stepLabel = formatStep(input.step);
-
-          return (
-            <div
-              key={input.id}
-              className="relative rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 p-5"
-            >
-              <div className="flex items-start gap-3">
-                <label className="flex flex-1 flex-col gap-2">
-                  <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                    Naam veld
-                  </span>
-                  <input
-                    type="text"
-                    value={input.name}
-                    onChange={(e) =>
-                      onUpdate(input.id, { name: e.target.value })
-                    }
-                    className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-                  />
-                </label>
-
-                <SupercellButton
-                  type="button"
-                  size="icon"
-                  variant="danger"
-                  onClick={() => onRemove(input.id)}
-                  aria-label={`${input.name} verwijderen`}
-                  className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center"
-                >
-                  <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-                </SupercellButton>
-              </div>
-
-              <div className="mt-5 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-4">
-                <p className="mb-3 text-sm font-black uppercase tracking-wide text-slate-500">
-                  Voorbeeld
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl border-2 border-slate-300 border-b-4 bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
-                    - {stepLabel}
-                  </div>
-                  <div className="min-w-0 flex-[1.4] text-center">
-                    <p className="truncate text-5xl font-black tabular-nums text-blue-600">
-                      {input.defaultValue}
-                      {input.unit}
-                    </p>
-                  </div>
-                  <div className="flex min-h-[72px] flex-1 items-center justify-center rounded-xl border-2 border-slate-300 border-b-4 bg-slate-100 px-3 text-2xl font-black tabular-nums text-slate-700">
-                    + {stepLabel}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-2">
-                <label className="flex min-w-0 flex-col gap-2">
-                  <span className="text-xs font-bold text-slate-500">
-                    Stapgrootte
-                  </span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={input.step}
-                    onChange={(e) =>
-                      onUpdate(input.id, {
-                        step: Number.parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-base font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-                  />
-                </label>
-
-                <label className="flex min-w-0 flex-col gap-2">
-                  <span className="text-xs font-bold text-slate-500">
-                    Standaardwaarde
-                  </span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={input.defaultValue}
-                    onChange={(e) =>
-                      onUpdate(input.id, {
-                        defaultValue: Number.parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-base font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-                  />
-                </label>
-
-                <label className="flex min-w-0 flex-col gap-2">
-                  <span className="text-xs font-bold text-slate-500">
-                    Eenheid
-                  </span>
-                  <input
-                    type="text"
-                    value={input.unit}
-                    onChange={(e) =>
-                      onUpdate(input.id, { unit: e.target.value })
-                    }
-                    className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-base font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-                  />
-                </label>
-              </div>
-
-              <SupercellButton
-                type="button"
-                size="sm"
-                variant={input.hasRemark ? "danger" : "primary"}
-                onClick={() =>
-                  onUpdate(input.id, { hasRemark: !input.hasRemark })
-                }
-                className="mt-5 text-left text-lg normal-case"
-              >
-                {input.hasRemark
-                  ? "- Opmerking verwijderen"
-                  : "+ Opmerking toevoegen"}
-              </SupercellButton>
-
-              {input.hasRemark ? (
-                <textarea
-                  disabled
-                  rows={3}
-                  placeholder="Opmerking"
-                  className="mt-3 w-full resize-none rounded-2xl border-2 border-slate-300 border-b-4 bg-white px-4 py-4 text-lg font-semibold text-slate-400"
-                />
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-type BooleanInputsBuilderProps = {
-  booleanInputs: BooleanInputConfig[];
-  onAdd: () => void;
-  onRemove: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<BooleanInputConfig>) => void;
-};
-
-function BooleanInputsBuilder({
-  booleanInputs,
-  onAdd,
-  onRemove,
-  onUpdate,
-}: BooleanInputsBuilderProps) {
-  return (
-    <section className="flex flex-col gap-4">
-      <SupercellButton
-        type="button"
-        size="sm"
-        variant="primary"
-        onClick={onAdd}
-        className="self-start text-lg normal-case"
-      >
-        + Controle toevoegen
-      </SupercellButton>
-
-      <div className="flex flex-col gap-4">
-        {booleanInputs.map((input) => (
-          <div
-            key={input.id}
-            className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 p-5"
-          >
-            <div className="flex items-start gap-3">
-              <label className="flex flex-1 flex-col gap-2">
-                <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                  Naam controle
-                </span>
-                <input
-                  type="text"
-                  value={input.name}
-                  onChange={(event) =>
-                    onUpdate(input.id, { name: event.target.value })
-                  }
-                  placeholder="Bijv. Frituurolie helder?"
-                  className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-                />
-              </label>
-
-              <SupercellButton
-                type="button"
-                size="icon"
-                variant="danger"
-                onClick={() => onRemove(input.id)}
-                aria-label={`${input.name} verwijderen`}
-                className="mt-7 flex h-16 w-16 shrink-0 items-center justify-center"
-              >
-                <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-              </SupercellButton>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="flex min-h-[72px] items-center justify-center rounded-2xl border-2 border-emerald-700 border-b-4 bg-emerald-500 px-4 text-xl font-black text-white">
-                Goedgekeurd
-              </div>
-              <div className="flex min-h-[72px] items-center justify-center rounded-2xl border-2 border-red-700 border-b-4 bg-red-500 px-4 text-xl font-black text-white">
-                Afgekeurd
-              </div>
-            </div>
-
-            <SupercellButton
-              type="button"
-              size="sm"
-              variant={input.hasRemark ? "danger" : "primary"}
-              onClick={() =>
-                onUpdate(input.id, { hasRemark: !input.hasRemark })
-              }
-              className="mt-5 text-left text-lg normal-case"
-            >
-              {input.hasRemark
-                ? "- Opmerking verwijderen"
-                : "+ Opmerking toevoegen"}
-            </SupercellButton>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-type ListBuilderProps = {
-  listItems: ListItemConfig[];
-  hasRemark: boolean;
-  onAdd: () => void;
-  onRemove: (id: string) => void;
-  onUpdate: (id: string, name: string) => void;
-  onToggleRemark: () => void;
-};
-
-function ListBuilder({
-  listItems,
-  hasRemark,
-  onAdd,
-  onRemove,
-  onUpdate,
-  onToggleRemark,
-}: ListBuilderProps) {
-  return (
-    <section className="flex flex-col gap-4 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 p-5">
-      <SupercellButton
-        type="button"
-        size="sm"
-        variant="primary"
-        onClick={onAdd}
-        className="self-start text-lg normal-case"
-      >
-        + Item toevoegen
-      </SupercellButton>
-
-      <div className="flex flex-col gap-3">
-        {listItems.map((item) => (
-          <div key={item.id} className="flex items-center gap-3">
-            <input
-              type="text"
-              value={item.name}
-              onChange={(event) => onUpdate(item.id, event.target.value)}
-              placeholder="Bijv. Afzuigkap reinigen"
-              className="min-h-[64px] min-w-0 flex-1 rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-lg font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-            />
-            <SupercellButton
-              type="button"
-              size="icon"
-              variant="danger"
-              onClick={() => onRemove(item.id)}
-              aria-label={`${item.name} verwijderen`}
-              className="flex h-16 w-16 shrink-0 items-center justify-center"
-            >
-              <Trash2 className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-            </SupercellButton>
-          </div>
-        ))}
-      </div>
-
-      <SupercellButton
-        type="button"
-        size="sm"
-        variant={hasRemark ? "danger" : "primary"}
-        onClick={onToggleRemark}
-        className="text-left text-lg normal-case"
-      >
-        {hasRemark ? "- Opmerking verwijderen" : "+ Opmerking toevoegen"}
-      </SupercellButton>
-    </section>
-  );
-}
