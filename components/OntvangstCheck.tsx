@@ -95,7 +95,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
 
   useEffect(() => {
     void loadProducts();
-  }, [loadProducts]);
+  }, [loadProducts, restaurantId]);
 
   // ---------- product CRUD ----------
   const handleAddProduct = useCallback(async () => {

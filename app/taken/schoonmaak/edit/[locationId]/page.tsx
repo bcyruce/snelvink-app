@@ -110,9 +110,16 @@ function LocationEditContent() {
     const taskName = window.prompt("Naam van de nieuwe taak");
     if (!taskName?.trim()) return;
 
+    const restaurantId = profile?.restaurant_id ?? "";
+    if (!restaurantId) {
+      setErrorMessage("Geen restaurant gekoppeld.");
+      return;
+    }
+
     const { data, error } = await supabase
       .from("haccp_cleaning_tasks")
       .insert({
+        restaurant_id: restaurantId,
         location_id: locationId,
         name: taskName.trim(),
       })

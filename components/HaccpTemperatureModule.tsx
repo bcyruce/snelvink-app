@@ -152,7 +152,7 @@ export default function HaccpTemperatureModule({
 
   useEffect(() => {
     void loadEquipments();
-  }, [loadEquipments]);
+  }, [loadEquipments, restaurantId]);
 
   // ---------- equipment CRUD ----------
   const handleAddEquipment = useCallback(async () => {

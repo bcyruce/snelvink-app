@@ -143,7 +143,15 @@ function EquipmentEditContent() {
   }
 
   const adjustValue = (delta: number) => {
-    setDefaultValue((v) => Math.round((v + delta) * 10) / 10);
+    setDefaultValue((v) => {
+      const effectiveStep = step > 0 ? step : 0.5;
+      return Math.round((v + delta * effectiveStep) * 10) / 10;
+    });
+  };
+
+  const handleStepChange = (raw: string) => {
+    const parsed = Number.parseFloat(raw);
+    setStep(Number.isFinite(parsed) && parsed > 0 ? parsed : 0.5);
   };
 
   if (loading) {
@@ -256,7 +264,7 @@ function EquipmentEditContent() {
                       type="button"
                       size="lg"
                       variant="neutral"
-                      onClick={() => adjustValue(-step)}
+                      onClick={() => adjustValue(-1)}
                       className="flex h-20 flex-1 items-center justify-center"
                     >
                       <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
@@ -272,7 +280,7 @@ function EquipmentEditContent() {
                       type="button"
                       size="lg"
                       variant="neutral"
-                      onClick={() => adjustValue(step)}
+                      onClick={() => adjustValue(1)}
                       className="flex h-20 flex-1 items-center justify-center"
                     >
                       <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
@@ -290,7 +298,7 @@ function EquipmentEditContent() {
                       type="number"
                       inputMode="decimal"
                       value={step}
-                      onChange={(e) => setStep(Number.parseFloat(e.target.value) || 0.5)}
+                      onChange={(e) => handleStepChange(e.target.value)}
                       className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
                     />
                   </label>
