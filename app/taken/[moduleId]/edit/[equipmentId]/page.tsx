@@ -11,17 +11,21 @@ type Equipment = {
   id: string;
   name: string;
   type: "koeling" | "kerntemperatuur";
-  default_temp: number | null;
-  unit: string | null;
-  step: number | null;
+  default_temp?: number | null;
+  unit?: string | null;
+  step?: number | null;
+  last_temp?: number | null;
 };
 
 function EquipmentEditContent() {
   const router = useRouter();
   const params = useParams<{ moduleId: string; equipmentId: string }>();
-  const moduleId = params?.moduleId ?? "";
+  const moduleIdParam = (params?.moduleId ?? "").toLowerCase();
   const equipmentId = params?.equipmentId ?? "";
-  const { profile } = useUser();
+  useUser();
+
+  const isValidModule =
+    moduleIdParam === "koeling" || moduleIdParam === "kerntemperatuur";
 
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,19 +40,28 @@ function EquipmentEditContent() {
   const [step, setStep] = useState(0.5);
 
   // Module title
-  const moduleTitle = moduleId === "koeling" ? "Koeling" : "Kerntemperatuur";
-  const defaultTemp = moduleId === "koeling" ? 7 : 75;
+  const moduleTitle =
+    moduleIdParam === "koeling" ? "Koeling" : "Kerntemperatuur";
+  const defaultTemp = moduleIdParam === "koeling" ? 7 : 75;
 
   useEffect(() => {
     async function loadEquipment() {
-      if (!equipmentId) return;
+      if (!isValidModule) {
+        setLoading(false);
+        return;
+      }
+      if (!equipmentId) {
+        setLoading(false);
+        return;
+      }
 
+      // Gebruik * zodat ontbrekende optionele kolommen (vóór migratie 0011) de query niet breken.
       const { data, error } = await supabase
         .from("haccp_equipments")
-        .select("id, name, type, default_temp, unit, step")
+        .select("*")
         .eq("id", equipmentId)
-        .eq("type", moduleId)
-        .single();
+        .eq("type", moduleIdParam)
+        .maybeSingle();
 
       if (error || !data) {
         console.error("Equipment not found:", error);
@@ -57,17 +70,27 @@ function EquipmentEditContent() {
         return;
       }
 
-      setEquipment(data);
-      setName(data.name);
-      setHasDefaultValue(data.default_temp !== null);
-      setDefaultValue(data.default_temp ?? defaultTemp);
-      setUnit(data.unit ?? "°C");
-      setStep(data.step ?? 0.5);
+      const row = data as Equipment;
+      setEquipment(row);
+      setName(row.name);
+      const storedDefault = row.default_temp;
+      setHasDefaultValue(
+        storedDefault !== null && storedDefault !== undefined,
+      );
+      setDefaultValue(
+        typeof storedDefault === "number"
+          ? storedDefault
+          : typeof row.last_temp === "number"
+            ? row.last_temp
+            : defaultTemp,
+      );
+      setUnit(row.unit ?? "°C");
+      setStep(typeof row.step === "number" ? row.step : 0.5);
       setLoading(false);
     }
 
-    loadEquipment();
-  }, [equipmentId, moduleId, defaultTemp]);
+    void loadEquipment();
+  }, [equipmentId, moduleIdParam, defaultTemp, isValidModule]);
 
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
@@ -86,10 +109,24 @@ function EquipmentEditContent() {
       step: step || 0.5,
     };
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("haccp_equipments")
       .update(updates)
       .eq("id", equipmentId);
+
+    if (error) {
+      const msg = error.message ?? "";
+      const maybeMissingOptionalCols =
+        /default_temp|\bunit\b|\bstep\b|column|does not exist|42703|PGRST204/i.test(
+          msg,
+        );
+      if (maybeMissingOptionalCols) {
+        ({ error } = await supabase
+          .from("haccp_equipments")
+          .update({ name: trimmedName })
+          .eq("id", equipmentId));
+      }
+    }
 
     if (error) {
       console.error("Save failed:", error);
@@ -98,8 +135,12 @@ function EquipmentEditContent() {
       return;
     }
 
-    router.push(`/taken/${moduleId}`);
-  }, [name, hasDefaultValue, defaultValue, unit, step, equipmentId, moduleId, router]);
+    router.push(`/taken/${moduleIdParam}`);
+  }, [name, hasDefaultValue, defaultValue, unit, step, equipmentId, moduleIdParam, router]);
+
+  if (!isValidModule) {
+    notFound();
+  }
 
   const adjustValue = (delta: number) => {
     setDefaultValue((v) => Math.round((v + delta) * 10) / 10);
@@ -116,7 +157,25 @@ function EquipmentEditContent() {
   }
 
   if (!equipment) {
-    return notFound();
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 pb-32 pt-8 sm:px-6">
+        <div className="mx-auto max-w-md space-y-4">
+          <SupercellButton
+            type="button"
+            size="lg"
+            variant="neutral"
+            onClick={() => router.push(`/taken/${moduleIdParam}`)}
+            className="flex h-20 w-full items-center justify-center gap-3 text-2xl"
+          >
+            <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+            Terug
+          </SupercellButton>
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-center font-bold text-red-700">
+            {errorMessage ?? "Apparaat niet gevonden."}
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -126,7 +185,7 @@ function EquipmentEditContent() {
           type="button"
           size="lg"
           variant="neutral"
-          onClick={() => router.push(`/taken/${moduleId}`)}
+          onClick={() => router.push(`/taken/${moduleIdParam}`)}
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
