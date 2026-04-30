@@ -38,6 +38,8 @@ function EquipmentEditContent() {
   const [defaultValue, setDefaultValue] = useState(7);
   const [unit, setUnit] = useState("°C");
   const [step, setStep] = useState(0.5);
+  // stepText manages the input display — allows the user to fully clear/delete the field
+  const [stepText, setStepText] = useState("0.5");
 
   // Module title
   const moduleTitle =
@@ -86,6 +88,7 @@ function EquipmentEditContent() {
       );
       setUnit(row.unit ?? "°C");
       setStep(typeof row.step === "number" ? row.step : 0.5);
+      setStepText(String(typeof row.step === "number" ? row.step : 0.5));
       setLoading(false);
     }
 
@@ -295,13 +298,19 @@ function EquipmentEditContent() {
                       Stapgrootte
                     </span>
                     <input
-                      type="number"
+                      type="text"
                       inputMode="decimal"
-                      value={step}
-                      onChange={(e) => setStep(Number.parseFloat(e.target.value) || 0)}
-                      onBlur={(e) => {
-                        const parsed = Number.parseFloat(e.target.value);
-                        setStep(Number.isFinite(parsed) && parsed > 0 ? parsed : 0.5);
+                      value={stepText}
+                      onChange={(e) => setStepText(e.target.value)}
+                      onBlur={() => {
+                        const parsed = Number.parseFloat(stepText.replace(",", "."));
+                        if (Number.isFinite(parsed) && parsed > 0) {
+                          setStep(parsed);
+                          setStepText(stepText);
+                        } else {
+                          setStep(0.5);
+                          setStepText("0.5");
+                        }
                       }}
                       className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
                     />
