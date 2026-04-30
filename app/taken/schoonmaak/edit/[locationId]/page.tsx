@@ -23,6 +23,7 @@ function LocationEditContent() {
   const params = useParams<{ locationId: string }>();
   const locationId = params?.locationId ?? "";
   const { profile } = useUser();
+  const restaurantId = profile?.restaurant_id ?? null;
 
   const [location, setLocation] = useState<Location | null>(null);
   const [tasks, setTasks] = useState<CleaningTask[]>([]);
@@ -61,12 +62,13 @@ function LocationEditContent() {
 
   useEffect(() => {
     async function loadTasks() {
-      if (!locationId) return;
+      if (!locationId || !restaurantId) return;
 
       setLoadingTasks(true);
       const { data, error } = await supabase
         .from("haccp_cleaning_tasks")
         .select("id, name, location_id")
+        .eq("restaurant_id", restaurantId)
         .eq("location_id", locationId)
         .order("created_at", { ascending: true });
 
@@ -79,7 +81,7 @@ function LocationEditContent() {
     }
 
     loadTasks();
-  }, [locationId]);
+  }, [locationId, restaurantId]);
 
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
@@ -135,7 +137,7 @@ function LocationEditContent() {
     if (data) {
       setTasks((prev) => [...prev, data]);
     }
-  }, [locationId]);
+  }, [locationId, profile]);
 
   const handleRenameTask = useCallback(async (task: CleaningTask) => {
     const newName = window.prompt("Nieuwe naam voor de taak", task.name);

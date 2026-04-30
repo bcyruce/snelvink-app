@@ -10,8 +10,6 @@ import { useCallback, useEffect, useState } from "react";
 type Product = {
   id: string;
   name: string;
-  accept_reasons: string[] | null;
-  reject_reasons: string[] | null;
 };
 
 function ProductEditContent() {
@@ -40,7 +38,7 @@ function ProductEditContent() {
 
       const { data, error } = await supabase
         .from("haccp_products")
-        .select("id, name, accept_reasons, reject_reasons")
+        .select("id, name")
         .eq("id", productId)
         .single();
 
@@ -53,8 +51,6 @@ function ProductEditContent() {
 
       setProduct(data);
       setName(data.name);
-      setAcceptReasons(data.accept_reasons ?? ["Anders"]);
-      setRejectReasons(data.reject_reasons ?? ["Anders"]);
       setLoading(false);
     }
 

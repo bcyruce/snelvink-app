@@ -298,7 +298,11 @@ function EquipmentEditContent() {
                       type="number"
                       inputMode="decimal"
                       value={step}
-                      onChange={(e) => handleStepChange(e.target.value)}
+                      onChange={(e) => setStep(Number.parseFloat(e.target.value) || 0)}
+                      onBlur={(e) => {
+                        const parsed = Number.parseFloat(e.target.value);
+                        setStep(Number.isFinite(parsed) && parsed > 0 ? parsed : 0.5);
+                      }}
                       className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
                     />
                   </label>
