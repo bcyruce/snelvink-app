@@ -65,7 +65,7 @@ function ModuleContent() {
   return (
     <>
       <VerifyEmailBanner />
-      <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
+      <section className="px-6 pb-32 pt-20 sm:px-10 sm:pb-36 sm:pt-28">
         <SupercellButton
           type="button"
           size="lg"

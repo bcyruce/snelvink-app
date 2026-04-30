@@ -267,7 +267,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         return;
       }
 
-      router.push("/");
+      router.push("/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
       setErrorMessage("Onverwachte fout. Probeer opnieuw.");
