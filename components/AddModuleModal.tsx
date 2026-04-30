@@ -9,7 +9,7 @@ import {
 } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Trash2, X } from "lucide-react";
+import { Camera, Trash2, X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
 type AddModuleTab = "standard" | "custom";
@@ -105,6 +105,7 @@ export default function AddModuleModal({
   const [booleanInputs, setBooleanInputs] = useState<BooleanInputConfig[]>([]);
   const [listItems, setListItems] = useState<ListItemConfig[]>([]);
   const [listHasRemark, setListHasRemark] = useState(false);
+  const [hasPhoto, setHasPhoto] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +121,7 @@ export default function AddModuleModal({
       setBooleanInputs([createBooleanInput(1)]);
       setListItems([createListItem(1)]);
       setListHasRemark(false);
+      setHasPhoto(false);
       setErrorMessage(null);
       setIsSaving(false);
       if (isEditing) {
@@ -145,6 +147,7 @@ export default function AddModuleModal({
     setBooleanInputs([createBooleanInput(1)]);
     setListItems([createListItem(1)]);
     setListHasRemark(false);
+    setHasPhoto(false);
     setErrorMessage(null);
   }, []);
 
@@ -176,16 +179,45 @@ export default function AddModuleModal({
       setIsSaving(true);
       setErrorMessage(null);
 
+      const trimmedNumberInputs = numberInputs
+        .map((input) => ({ ...input, name: input.name.trim() }))
+        .filter((input) => input.name.length > 0);
+      const trimmedBooleanInputs = booleanInputs
+        .map((input) => ({ ...input, name: input.name.trim() }))
+        .filter((input) => input.name.length > 0);
+      const trimmedListItems = listItems
+        .map((item) => ({ ...item, name: item.name.trim() }))
+        .filter((item) => item.name.length > 0);
+
+      if (moduleType === "number" && trimmedNumberInputs.length === 0) {
+        setErrorMessage("Voeg minstens één veld toe.");
+        setIsSaving(false);
+        return;
+      }
+      if (moduleType === "boolean" && trimmedBooleanInputs.length === 0) {
+        setErrorMessage("Voeg minstens één veld toe.");
+        setIsSaving(false);
+        return;
+      }
+      if (moduleType === "list" && trimmedListItems.length === 0) {
+        setErrorMessage("Voeg minstens één item toe.");
+        setIsSaving(false);
+        return;
+      }
+
+      // Settings worden opgeslagen als object zodat we naast de configuratie
+      // ook flags zoals `hasPhoto` kwijt kunnen. Het lezen kan nog steeds
+      // overweg met de oude (array-)vorm.
       const settings =
         moduleType === "boolean"
-          ? { inputs: [], hasPhoto: true }
+          ? { inputs: trimmedBooleanInputs, hasPhoto }
           : moduleType === "list"
             ? {
-                items: [],
-                hasRemark: false,
-                hasPhoto: true,
+                items: trimmedListItems,
+                hasRemark: listHasRemark,
+                hasPhoto,
               }
-            : { inputs: [], hasPhoto: true };
+            : { inputs: trimmedNumberInputs, hasPhoto };
 
       try {
         const { data, error } = await supabase
@@ -238,6 +270,7 @@ export default function AddModuleModal({
       booleanInputs,
       listItems,
       listHasRemark,
+      hasPhoto,
       moduleType,
       user?.id,
       profile?.restaurant_id,
@@ -481,9 +514,39 @@ export default function AddModuleModal({
               </div>
             </section>
 
-            <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 px-4 py-4 text-base font-semibold text-slate-600">
-              Velden voeg je toe in het onderdeel zelf onder <strong>Taken beheren</strong>.
-            </p>
+            {moduleType === "number" ? (
+              <NumberInputsBuilder
+                numberInputs={numberInputs}
+                onAdd={handleAddNumberInput}
+                onRemove={handleRemoveNumberInput}
+                onUpdate={handleUpdateNumberInput}
+              />
+            ) : null}
+
+            {moduleType === "boolean" ? (
+              <BooleanInputsBuilder
+                booleanInputs={booleanInputs}
+                onAdd={handleAddBooleanInput}
+                onRemove={handleRemoveBooleanInput}
+                onUpdate={handleUpdateBooleanInput}
+              />
+            ) : null}
+
+            {moduleType === "list" ? (
+              <ListBuilder
+                listItems={listItems}
+                hasRemark={listHasRemark}
+                onAdd={handleAddListItem}
+                onRemove={handleRemoveListItem}
+                onUpdate={handleUpdateListItem}
+                onToggleRemark={() => setListHasRemark((current) => !current)}
+              />
+            ) : null}
+
+            <PhotoToggle
+              hasPhoto={hasPhoto}
+              onToggle={() => setHasPhoto((current) => !current)}
+            />
 
             <div className="flex flex-col gap-3 pt-2">
               <SupercellButton
@@ -513,6 +576,56 @@ export default function AddModuleModal({
         )}
       </div>
     </div>
+  );
+}
+
+type PhotoToggleProps = {
+  hasPhoto: boolean;
+  onToggle: () => void;
+};
+
+function PhotoToggle({ hasPhoto, onToggle }: PhotoToggleProps) {
+  return (
+    <SupercellButton
+      type="button"
+      size="lg"
+      variant={hasPhoto ? "primary" : "neutral"}
+      onClick={onToggle}
+      aria-pressed={hasPhoto}
+      className="flex min-h-[72px] w-full items-center gap-4 px-5 py-4 text-left normal-case"
+    >
+      <span
+        className={[
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-b-4 transition-colors",
+          hasPhoto ? "border-blue-700 bg-blue-500 text-white" : "border-slate-300 bg-slate-100 text-slate-500",
+        ].join(" ")}
+        aria-hidden
+      >
+        <Camera className="h-6 w-6" strokeWidth={2.5} />
+      </span>
+      <span className="flex flex-1 flex-col">
+        <span className="text-lg font-black text-slate-900">
+          + Foto toevoegen
+        </span>
+        <span className="text-sm font-semibold text-slate-500">
+          Medewerkers kunnen bij elke registratie een foto uploaden.
+        </span>
+      </span>
+      <span
+        className={[
+          "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+          hasPhoto ? "border-blue-700 bg-blue-500" : "border-slate-400 bg-slate-200",
+        ].join(" ")}
+        aria-hidden
+      >
+        <span
+          className={[
+            "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
+            hasPhoto ? "translate-x-7" : "translate-x-1",
+          ].join(" ")}
+        />
+      </span>
+    </SupercellButton>
   );
 }
 

@@ -5,7 +5,7 @@ import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import { Camera, Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Camera, Check, Pencil, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -18,13 +18,6 @@ const DEFAULT_REJECT_REASONS: readonly string[] = [
   "THT/TGT verstreken",
   "Verkeerd product",
   "Kwaliteit onvoldoende",
-  "其他",
-];
-const DEFAULT_APPROVE_REASONS: readonly string[] = [
-  "Visueel in orde",
-  "Temperatuur in orde",
-  "Verpakking intact",
-  "其他",
 ];
 
 type Product = {
@@ -49,11 +42,7 @@ function buildRecordedAt(local: string): string {
   return parsed.toISOString();
 }
 
-type OntvangstCheckProps = {
-  mode?: "record" | "manage";
-};
-
-export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps) {
+export default function OntvangstCheck() {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -68,9 +57,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
-  const [reasons, setReasons] = useState<string[]>([]);
-  const [customReason, setCustomReason] = useState("");
-  const [remark, setRemark] = useState("");
+  const [reason, setReason] = useState<string | null>(null);
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -131,48 +118,6 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
     }
   }, [restaurantId]);
 
-  const handleRenameProduct = useCallback(async (product: Product) => {
-    const input = window.prompt("Nieuwe productnaam", product.name);
-    if (!input) return;
-    const name = input.trim();
-    if (!name || name === product.name) return;
-
-    const { error } = await supabase
-      .from("haccp_products")
-      .update({ name })
-      .eq("id", product.id);
-
-    if (error) {
-      console.error("Product hernoemen mislukt:", error);
-      setErrorMessage("Product hernoemen mislukt.");
-      return;
-    }
-
-    setProducts((prev) =>
-      prev.map((item) => (item.id === product.id ? { ...item, name } : item)),
-    );
-    setSelectedProduct((prev) =>
-      prev && prev.id === product.id ? { ...prev, name } : prev,
-    );
-  }, []);
-
-  const handleDeleteProduct = useCallback(async (product: Product) => {
-    const ok = window.confirm(`"${product.name}" verwijderen?`);
-    if (!ok) return;
-
-    const { error } = await supabase.from("haccp_products").delete().eq("id", product.id);
-    if (error) {
-      console.error("Product verwijderen mislukt:", error);
-      setErrorMessage("Product verwijderen mislukt.");
-      return;
-    }
-
-    setProducts((prev) => prev.filter((item) => item.id !== product.id));
-    setSelectedProduct((prev) =>
-      prev && prev.id === product.id ? null : prev,
-    );
-  }, []);
-
   // ---------- photo handling ----------
   useEffect(() => {
     return () => {
@@ -216,17 +161,14 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
   const resetProduct = () => {
     setSelectedProduct(null);
     setStatus(null);
-    setReasons([]);
-    setCustomReason("");
+    setReason(null);
   };
   const resetStatus = () => {
     setStatus(null);
-    setReasons([]);
-    setCustomReason("");
+    setReason(null);
   };
   const resetReason = () => {
-    setReasons([]);
-    setCustomReason("");
+    setReason(null);
   };
 
   // ---------- step derivation ----------
@@ -235,14 +177,14 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
       ? "product"
       : !status
         ? "beoordeling"
-        : status && reasons.length === 0
+        : status === "afgekeurd" && !reason
           ? "reden"
           : "foto";
 
   const canSave =
     !!selectedProduct &&
     !!status &&
-    !(status && reasons.length === 0) &&
+    !(status === "afgekeurd" && !reason) &&
     !!restaurantId &&
     !isSaving;
 
@@ -282,8 +224,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
           equipment_id: null,
           product_name: selectedProduct.name,
           status,
-          reason: [...reasons, customReason.trim()].filter(Boolean).join(", "),
-          note: remark.trim() || null,
+          reason: status === "afgekeurd" ? reason : null,
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
@@ -295,7 +236,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         return;
       }
 
-      router.push("/registreren");
+      router.push("/");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
       setErrorMessage("Onverwachte fout. Probeer opnieuw.");
@@ -322,6 +263,19 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         Ontvangst
       </h2>
 
+      {/* Datum & tijd van ontvangst */}
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+          Datum &amp; tijd van ontvangst
+        </span>
+        <input
+          type="datetime-local"
+          value={recordedAtLocal}
+          onChange={(e) => setRecordedAtLocal(e.target.value)}
+          className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
+        />
+      </label>
+
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
           {errorMessage}
@@ -334,90 +288,44 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         </p>
       ) : null}
 
-      {mode === "manage" ? (
-        <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Producten
-          </h3>
-          {loadingProducts ? (
-            <p className="text-center text-slate-500">Producten laden…</p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {products.map((product) => (
-                <li
-                  key={product.id}
-                  className="flex min-h-[80px] items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm"
-                >
-                  <span className="flex-1 truncate text-xl font-bold text-slate-900">
-                    {product.name}
-                  </span>
-                  <SupercellButton
-                    size="icon"
-                    variant="neutral"
-                    onClick={() => handleRenameProduct(product)}
-                    aria-label={`Hernoem ${product.name}`}
-                    className="flex h-16 w-16 items-center justify-center p-2"
-                  >
-                    <Pencil className="h-5 w-5" aria-hidden />
-                  </SupercellButton>
-                  <SupercellButton
-                    size="icon"
-                    variant="danger"
-                    onClick={() => handleDeleteProduct(product)}
-                    aria-label={`Verwijder ${product.name}`}
-                    className="flex h-16 w-16 items-center justify-center p-2"
-                  >
-                    <Trash2 className="h-5 w-5" aria-hidden />
-                  </SupercellButton>
-                </li>
-              ))}
-            </ul>
-          )}
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            onClick={handleAddProduct}
-            className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-          >
-            <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            Product toevoegen
-          </SupercellButton>
-        </section>
-      ) : (
-        <Section
-          title="Product"
-          summary={selectedProduct?.name ?? null}
-          onEdit={null}
-          collapsed={currentStep !== "product"}
-        >
-          {loadingProducts ? (
-            <p className="text-center text-slate-500">Producten laden…</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {products.map((p) => (
-                <SupercellButton
-                  key={p.id}
-                  size="lg"
-                  variant="neutral"
-                  onClick={() => setSelectedProduct(p)}
-                  className="flex min-h-[80px] w-full items-center justify-between text-left text-2xl normal-case"
-                >
-                  <span className="flex-1 truncate">{p.name}</span>
-                </SupercellButton>
-              ))}
+      {/* ===== Product sectie ===== */}
+      <Section
+        title="Product"
+        summary={selectedProduct?.name ?? null}
+        onEdit={selectedProduct ? resetProduct : null}
+        collapsed={currentStep !== "product"}
+      >
+        {loadingProducts ? (
+          <p className="text-center text-slate-500">Producten laden…</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {products.map((p) => (
+              <SupercellButton
+                key={p.id}
+                size="lg"
+                variant="neutral"
+                onClick={() => setSelectedProduct(p)}
+                className="flex min-h-[80px] w-full items-center justify-between text-left text-2xl normal-case"
+              >
+                <span className="flex-1 truncate">{p.name}</span>
+              </SupercellButton>
+            ))}
 
-              {products.length === 0 ? (
-                <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-center text-base font-semibold text-slate-600">
-                  Geen producten beschikbaar. Voeg producten toe in Taken beheren.
-                </p>
-              ) : null}
-            </div>
-          )}
-        </Section>
-      )}
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              onClick={handleAddProduct}
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+            >
+              <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+              Product toevoegen
+            </SupercellButton>
+          </div>
+        )}
+      </Section>
 
       {/* ===== Beoordeling sectie ===== */}
-      {mode === "record" && selectedProduct ? (
+      {selectedProduct ? (
         <Section
           title="Beoordeling"
           summary={
@@ -427,7 +335,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
                 ? "✕ Afgekeurd"
                 : null
           }
-          onEdit={null}
+          onEdit={status ? resetStatus : null}
           collapsed={currentStep !== "beoordeling"}
           summaryAccentClass={
             status === "goedgekeurd"
@@ -460,55 +368,47 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         </Section>
       ) : null}
 
-      {/* ===== Reden sectie ===== */}
-      {mode === "record" && selectedProduct && status ? (
+      {/* ===== Reden sectie (alleen bij afkeuring) ===== */}
+      {selectedProduct && status === "afgekeurd" ? (
         <Section
-          title="Reden"
-          summary={reasons.length > 0 ? reasons.join(", ") : null}
-          summaryAccentClass={status === "afgekeurd" ? "text-red-700" : "text-green-700"}
-          onEdit={null}
+          title="Reden afkeuring"
+          summary={reason}
+          summaryAccentClass="text-red-700"
+          onEdit={reason ? resetReason : null}
           collapsed={currentStep !== "reden"}
         >
           <div className="flex flex-col gap-3">
-            {(status === "afgekeurd"
-              ? DEFAULT_REJECT_REASONS
-              : DEFAULT_APPROVE_REASONS
-            ).map((r) => {
-              const selected = reasons.includes(r);
-              return (
+            {DEFAULT_REJECT_REASONS.map((r) => (
               <SupercellButton
                 key={r}
-                size="sm"
-                variant={selected ? "primary" : "neutral"}
-                onClick={() =>
-                  setReasons((current) => {
-                    const next = new Set(current);
-                    if (next.has(r)) next.delete(r);
-                    else next.add(r);
-                    return Array.from(next);
-                  })
-                }
-                className="text-base normal-case"
+                size="lg"
+                variant="neutral"
+                onClick={() => setReason(r)}
+                className="flex min-h-[80px] w-full items-center justify-center text-center text-xl normal-case"
               >
                 {r}
               </SupercellButton>
-              );
-            })}
-            {reasons.includes("其他") ? (
-              <input
-                type="text"
-                value={customReason}
-                onChange={(event) => setCustomReason(event.target.value)}
-                placeholder="Eigen reden..."
-                className="min-h-[56px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-              />
-            ) : null}
+            ))}
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              onClick={() => {
+                const custom = window.prompt("Beschrijf de reden van afkeuring");
+                if (!custom) return;
+                const trimmed = custom.trim();
+                if (trimmed) setReason(trimmed);
+              }}
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+            >
+              <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
+              Anders…
+            </SupercellButton>
           </div>
         </Section>
       ) : null}
 
       {/* ===== Foto + opslaan ===== */}
-      {mode === "record" && currentStep === "foto" ? (
+      {currentStep === "foto" ? (
         <div className="flex flex-col gap-4">
           <h3 className="text-xl font-black uppercase tracking-wide text-slate-500">
             Foto&apos;s (optioneel)
@@ -560,14 +460,6 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
               ))}
             </div>
           ) : null}
-
-          <textarea
-            value={remark}
-            onChange={(event) => setRemark(event.target.value)}
-            placeholder="Opmerking toevoegen..."
-            rows={3}
-            className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-          />
 
           <SupercellButton
             size="lg"

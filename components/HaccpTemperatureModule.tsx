@@ -34,7 +34,6 @@ type Props = {
   defaultTemperature: number;
   /** Naam voor het automatisch aangemaakte eerste apparaat. */
   firstEquipmentName: string;
-  mode?: "record" | "manage";
 };
 
 const MAX_PHOTOS = 5;
@@ -70,7 +69,6 @@ export default function HaccpTemperatureModule({
   title,
   defaultTemperature,
   firstEquipmentName,
-  mode = "record",
 }: Props) {
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -80,7 +78,7 @@ export default function HaccpTemperatureModule({
   const [view, setView] = useState<"list" | "record">("list");
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [loadingEquipments, setLoadingEquipments] = useState(true);
-  const [isManaging, setIsManaging] = useState(mode === "manage");
+  const [isManaging, setIsManaging] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const ensuredDefaultRef = useRef(false);
 
@@ -94,7 +92,6 @@ export default function HaccpTemperatureModule({
   const [temperature, setTemperature] = useState<number>(defaultTemperature);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [remark, setRemark] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -243,7 +240,6 @@ export default function HaccpTemperatureModule({
         prev.forEach((u) => URL.revokeObjectURL(u));
         return [];
       });
-      setRemark("");
       setView("record");
     },
     [defaultTemperature],
@@ -257,7 +253,6 @@ export default function HaccpTemperatureModule({
       return [];
     });
     setPhotoFiles([]);
-    setRemark("");
   }, []);
 
   useEffect(() => {
@@ -357,7 +352,6 @@ export default function HaccpTemperatureModule({
           module_type: moduleType,
           equipment_id: activeEquipment.id,
           temperature,
-          note: remark.trim() || null,
           recorded_at: recordedAt,
           image_urls: uploadedUrls,
         });
@@ -406,9 +400,8 @@ export default function HaccpTemperatureModule({
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      {view === "list" || mode === "manage" ? (
+      {view === "list" ? (
         <ListView
-          mode={mode}
           title={title}
           equipments={equipments}
           loading={loadingEquipments}
@@ -440,10 +433,9 @@ export default function HaccpTemperatureModule({
           onPhotoChange={handlePhotoChange}
           onRemovePhoto={removePhoto}
           photoInputRef={photoInputRef}
-          remark={remark}
-          onRemarkChange={setRemark}
           isSaving={isSaving}
           canSave={canSave}
+          onCancel={exitRecord}
           onSave={handleSave}
           errorMessage={errorMessage}
         />
@@ -456,7 +448,6 @@ export default function HaccpTemperatureModule({
 // LIST VIEW
 // =========================================================================
 type ListViewProps = {
-  mode: "record" | "manage";
   title: string;
   equipments: Equipment[];
   loading: boolean;
@@ -471,7 +462,6 @@ type ListViewProps = {
 };
 
 function ListView({
-  mode,
   title,
   equipments,
   loading,
@@ -484,14 +474,21 @@ function ListView({
   errorMessage,
   restaurantReady,
 }: ListViewProps) {
-  const forceManage = mode === "manage";
-
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {title}
         </h2>
+        <SupercellButton
+          size="lg"
+          variant={isManaging ? "success" : "neutral"}
+          onClick={onToggleManaging}
+          aria-pressed={isManaging}
+          className="min-h-[64px] text-xl"
+        >
+          {isManaging ? "Klaar" : "Wijzigen"}
+        </SupercellButton>
       </div>
 
       {!restaurantReady ? (
@@ -512,7 +509,7 @@ function ListView({
         <ul className="flex flex-col gap-3">
           {equipments.map((eq) => (
             <li key={eq.id}>
-              {isManaging || forceManage ? (
+              {isManaging ? (
                 <div className="flex min-h-[80px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
                   <span className="flex-1 truncate text-xl font-bold text-slate-900">
                     {eq.name}
@@ -522,7 +519,7 @@ function ListView({
                     variant="neutral"
                     onClick={() => onRename(eq)}
                     aria-label={`Hernoem ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center p-2"
+                    className="flex h-16 w-16 items-center justify-center"
                   >
                     <Pencil className="h-5 w-5" aria-hidden />
                   </SupercellButton>
@@ -531,7 +528,7 @@ function ListView({
                     variant="danger"
                     onClick={() => onDelete(eq)}
                     aria-label={`Verwijder ${eq.name}`}
-                    className="flex h-16 w-16 items-center justify-center p-2"
+                    className="flex h-16 w-16 items-center justify-center"
                   >
                     <Trash2 className="h-5 w-5" aria-hidden />
                   </SupercellButton>
@@ -561,18 +558,16 @@ function ListView({
         </ul>
       )}
 
-      {forceManage ? (
-        <SupercellButton
-          size="lg"
-          variant="neutral"
-          onClick={onAdd}
-          disabled={!restaurantReady}
-          className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-        >
-          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Apparaat toevoegen
-        </SupercellButton>
-      ) : null}
+      <SupercellButton
+        size="lg"
+        variant="neutral"
+        onClick={onAdd}
+        disabled={!restaurantReady}
+        className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+      >
+        <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+        Apparaat toevoegen
+      </SupercellButton>
     </div>
   );
 }
@@ -598,10 +593,9 @@ type RecordViewProps = {
   onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemovePhoto: (index: number) => void;
   photoInputRef: React.RefObject<HTMLInputElement | null>;
-  remark: string;
-  onRemarkChange: (value: string) => void;
   isSaving: boolean;
   canSave: boolean;
+  onCancel: () => void;
   onSave: () => void;
   errorMessage: string | null;
 };
@@ -624,10 +618,9 @@ function RecordView({
   onPhotoChange,
   onRemovePhoto,
   photoInputRef,
-  remark,
-  onRemarkChange,
   isSaving,
   canSave,
+  onCancel,
   onSave,
   errorMessage,
 }: RecordViewProps) {
@@ -672,9 +665,19 @@ function RecordView({
         />
       </label>
 
-      <h3 className="truncate text-2xl font-extrabold text-slate-900">
-        {equipment?.name ?? title}
-      </h3>
+      <div className="flex items-center justify-between gap-3">
+        <SupercellButton
+          size="sm"
+          variant="neutral"
+          onClick={onCancel}
+          className="min-h-[64px] text-base normal-case"
+        >
+          ← Terug naar lijst
+        </SupercellButton>
+        <h3 className="flex-1 truncate text-right text-2xl font-extrabold text-slate-900">
+          {equipment?.name ?? title}
+        </h3>
+      </div>
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -816,14 +819,6 @@ function RecordView({
           ))}
         </div>
       ) : null}
-
-      <textarea
-        value={remark}
-        onChange={(event) => onRemarkChange(event.target.value)}
-        placeholder="Opmerking toevoegen..."
-        rows={3}
-        className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-      />
 
       {/* Save */}
       <SupercellButton

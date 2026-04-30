@@ -1,8 +1,9 @@
 "use client";
 
 import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
-import HaccpTemperatureModule from "@/components/HaccpTemperatureModule";
 import SupercellButton from "@/components/SupercellButton";
+import KerntemperatuurCheck from "@/components/KerntemperatuurCheck";
+import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
@@ -12,26 +13,10 @@ import { notFound, useParams, useRouter } from "next/navigation";
 import { useEffect, type ComponentType } from "react";
 
 const MODULE_COMPONENTS: Record<string, ComponentType> = {
-  koeling: () => (
-    <HaccpTemperatureModule
-      moduleType="koeling"
-      title="Koeling"
-      defaultTemperature={7}
-      firstEquipmentName="Koelkast 1"
-      mode="manage"
-    />
-  ),
-  ontvangst: () => <OntvangstCheck mode="manage" />,
-  schoonmaak: () => <SchoonmaakCheck mode="manage" />,
-  kerntemperatuur: () => (
-    <HaccpTemperatureModule
-      moduleType="kerntemperatuur"
-      title="Kerntemperatuur"
-      defaultTemperature={75}
-      firstEquipmentName="Kernsonde 1"
-      mode="manage"
-    />
-  ),
+  koeling: KoelingCheck,
+  ontvangst: OntvangstCheck,
+  schoonmaak: SchoonmaakCheck,
+  kerntemperatuur: KerntemperatuurCheck,
 };
 
 function ModuleContent() {
@@ -62,8 +47,7 @@ function ModuleContent() {
   }
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") router.push("/registreren");
-    else if (tab === "taken") router.push("/");
+    if (tab === "taken") router.push("/");
     else router.push(`/?tab=${tab}`);
   };
 

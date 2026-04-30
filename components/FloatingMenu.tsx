@@ -4,19 +4,19 @@ import { useTheme } from "@/hooks/useTheme";
 import {
   Menu,
   X,
-  PlusCircle,
   ClipboardCheck,
   History,
   Users,
   User,
   Store,
   Settings,
+  Calendar,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type MenuTab =
-  | "registreren"
+  | "vandaag"
   | "taken"
   | "geschiedenis"
   | "personeel"
@@ -32,7 +32,7 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "registreren", label: "Registreren", Icon: PlusCircle },
+  { id: "vandaag", label: "Vandaag", Icon: Calendar, disabled: true },
   { id: "taken", label: "Taken", Icon: ClipboardCheck },
   { id: "geschiedenis", label: "Geschiedenis", Icon: History },
   { id: "personeel", label: "Personeelsbeheer", Icon: Users },
