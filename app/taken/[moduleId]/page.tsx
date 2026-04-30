@@ -21,8 +21,8 @@ const MODULE_COMPONENTS: Record<string, ComponentType> = {
       mode="manage"
     />
   ),
-  ontvangst: OntvangstCheck,
-  schoonmaak: SchoonmaakCheck,
+  ontvangst: () => <OntvangstCheck mode="manage" />,
+  schoonmaak: () => <SchoonmaakCheck mode="manage" />,
   kerntemperatuur: () => (
     <HaccpTemperatureModule
       moduleType="kerntemperatuur"

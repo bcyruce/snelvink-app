@@ -31,7 +31,11 @@ function buildRecordedAt(local: string): string {
   return parsed.toISOString();
 }
 
-export default function SchoonmaakCheck() {
+type SchoonmaakCheckProps = {
+  mode?: "record" | "manage";
+};
+
+export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -112,6 +116,48 @@ export default function SchoonmaakCheck() {
       setSelectedLocation(next);
     }
   }, [restaurantId]);
+
+  const handleRenameLocation = useCallback(async (location: Location) => {
+    const input = window.prompt("Nieuwe locatienaam", location.name);
+    if (!input) return;
+    const name = input.trim();
+    if (!name || name === location.name) return;
+
+    const { error } = await supabase
+      .from("haccp_locations")
+      .update({ name })
+      .eq("id", location.id);
+
+    if (error) {
+      console.error("Locatie hernoemen mislukt:", error);
+      setErrorMessage("Locatie hernoemen mislukt.");
+      return;
+    }
+
+    setLocations((prev) =>
+      prev.map((item) => (item.id === location.id ? { ...item, name } : item)),
+    );
+    setSelectedLocation((prev) =>
+      prev && prev.id === location.id ? { ...prev, name } : prev,
+    );
+  }, []);
+
+  const handleDeleteLocation = useCallback(async (location: Location) => {
+    const ok = window.confirm(`"${location.name}" verwijderen?`);
+    if (!ok) return;
+
+    const { error } = await supabase.from("haccp_locations").delete().eq("id", location.id);
+    if (error) {
+      console.error("Locatie verwijderen mislukt:", error);
+      setErrorMessage("Locatie verwijderen mislukt.");
+      return;
+    }
+
+    setLocations((prev) => prev.filter((item) => item.id !== location.id));
+    setSelectedLocation((prev) =>
+      prev && prev.id === location.id ? null : prev,
+    );
+  }, []);
 
   // ---------- tasks ----------
   const loadTasks = useCallback(
@@ -233,6 +279,26 @@ export default function SchoonmaakCheck() {
       next.delete(task.id);
       return next;
     });
+  }, []);
+
+  const handleRenameTask = useCallback(async (task: CleaningTask) => {
+    const input = window.prompt("Nieuwe taaknaam", task.name);
+    if (!input) return;
+    const name = input.trim();
+    if (!name || name === task.name) return;
+
+    const { error } = await supabase
+      .from("haccp_cleaning_tasks")
+      .update({ name })
+      .eq("id", task.id);
+    if (error) {
+      console.error("Taak hernoemen mislukt:", error);
+      setErrorMessage("Taak hernoemen mislukt.");
+      return;
+    }
+    setTasks((prev) =>
+      prev.map((item) => (item.id === task.id ? { ...item, name } : item)),
+    );
   }, []);
 
   // ---------- reset helpers ----------
@@ -361,18 +427,19 @@ export default function SchoonmaakCheck() {
         Schoonmaak
       </h2>
 
-      {/* Datum & tijd */}
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Datum &amp; tijd
-        </span>
-        <input
-          type="datetime-local"
-          value={recordedAtLocal}
-          onChange={(e) => setRecordedAtLocal(e.target.value)}
-          className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
-        />
-      </label>
+      {mode === "record" ? (
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+            Datum &amp; tijd
+          </span>
+          <input
+            type="datetime-local"
+            value={recordedAtLocal}
+            onChange={(e) => setRecordedAtLocal(e.target.value)}
+            className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
+          />
+        </label>
+      ) : null}
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -386,13 +453,12 @@ export default function SchoonmaakCheck() {
         </p>
       ) : null}
 
-      {/* ===== Locatie sectie ===== */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Kies een locatie
           </h3>
-          {selectedLocation ? (
+          {mode === "record" && selectedLocation ? (
             <SupercellButton
               size="sm"
               variant="neutral"
@@ -405,7 +471,7 @@ export default function SchoonmaakCheck() {
           ) : null}
         </div>
 
-        {selectedLocation ? (
+        {mode === "record" && selectedLocation ? (
           <p className="truncate rounded-2xl bg-slate-100 px-5 py-5 text-2xl font-black text-slate-900 shadow-sm">
             {selectedLocation.name}
           </p>
@@ -414,15 +480,48 @@ export default function SchoonmaakCheck() {
         ) : (
           <div className="flex flex-col gap-3">
             {locations.map((loc) => (
-              <SupercellButton
-                key={loc.id}
-                size="lg"
-                variant="neutral"
-                onClick={() => setSelectedLocation(loc)}
-                className="flex h-20 w-full items-center justify-between text-left text-2xl normal-case"
-              >
-                <span className="flex-1 truncate">{loc.name}</span>
-              </SupercellButton>
+              mode === "manage" ? (
+                <div
+                  key={loc.id}
+                  className="flex min-h-[80px] items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSelectedLocation(loc)}
+                    className="flex-1 truncate text-left text-xl font-bold text-slate-900"
+                  >
+                    {loc.name}
+                  </button>
+                  <SupercellButton
+                    size="icon"
+                    variant="neutral"
+                    onClick={() => handleRenameLocation(loc)}
+                    aria-label={`Hernoem ${loc.name}`}
+                    className="flex h-16 w-16 items-center justify-center p-2"
+                  >
+                    <Pencil className="h-5 w-5" aria-hidden />
+                  </SupercellButton>
+                  <SupercellButton
+                    size="icon"
+                    variant="danger"
+                    onClick={() => handleDeleteLocation(loc)}
+                    aria-label={`Verwijder ${loc.name}`}
+                    className="flex h-16 w-16 items-center justify-center p-2"
+                  >
+                    <Trash2 className="h-5 w-5" aria-hidden />
+                  </SupercellButton>
+                </div>
+              ) : (
+                <SupercellButton
+                  key={loc.id}
+                  size="lg"
+                  variant="neutral"
+                  onClick={() => setSelectedLocation(loc)}
+                  className="flex h-20 w-full items-center justify-between text-left text-2xl normal-case"
+                >
+                  <span className="flex-1 truncate">{loc.name}</span>
+                </SupercellButton>
+              )
             ))}
             <SupercellButton
               size="lg"
@@ -444,9 +543,11 @@ export default function SchoonmaakCheck() {
             <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
               Schoonmaaktaken
             </h3>
-            <span className="text-sm font-bold text-slate-500">
-              {completedCount}/{tasks.length} voltooid
-            </span>
+            {mode === "record" ? (
+              <span className="text-sm font-bold text-slate-500">
+                {completedCount}/{tasks.length} voltooid
+              </span>
+            ) : null}
           </div>
 
           {loadingTasks ? (
@@ -457,28 +558,45 @@ export default function SchoonmaakCheck() {
                 const checked = checkedTaskIds.has(task.id);
                 return (
                   <li key={task.id} className="flex items-stretch gap-2">
-                    <SupercellButton
-                      size="lg"
-                      variant={checked ? "success" : "neutral"}
-                      onClick={() => toggleTask(task.id)}
-                      aria-pressed={checked}
-                      className="flex h-20 flex-1 items-center justify-between gap-3 px-5 text-left text-xl normal-case"
-                    >
-                      <span className="flex-1 truncate">{task.name}</span>
-                      <span
-                        className={[
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                          checked
-                            ? "bg-white text-green-600"
-                            : "border-2 border-slate-300 bg-white text-slate-300",
-                        ].join(" ")}
-                        aria-hidden
+                    {mode === "record" ? (
+                      <SupercellButton
+                        size="lg"
+                        variant={checked ? "success" : "neutral"}
+                        onClick={() => toggleTask(task.id)}
+                        aria-pressed={checked}
+                        className="flex h-20 flex-1 items-center justify-between gap-3 px-5 text-left text-xl normal-case"
                       >
-                        {checked ? (
-                          <Check className="h-6 w-6" strokeWidth={3} />
-                        ) : null}
-                      </span>
-                    </SupercellButton>
+                        <span className="flex-1 truncate">{task.name}</span>
+                        <span
+                          className={[
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                            checked
+                              ? "bg-white text-green-600"
+                              : "border-2 border-slate-300 bg-white text-slate-300",
+                          ].join(" ")}
+                          aria-hidden
+                        >
+                          {checked ? (
+                            <Check className="h-6 w-6" strokeWidth={3} />
+                          ) : null}
+                        </span>
+                      </SupercellButton>
+                    ) : (
+                      <div className="flex h-20 flex-1 items-center rounded-2xl border border-slate-100 bg-white px-5 text-xl font-bold text-slate-900 shadow-sm">
+                        <span className="flex-1 truncate">{task.name}</span>
+                      </div>
+                    )}
+                    {mode === "manage" ? (
+                      <SupercellButton
+                        size="icon"
+                        variant="neutral"
+                        onClick={() => handleRenameTask(task)}
+                        aria-label={`Hernoem ${task.name}`}
+                        className="flex h-20 w-16 shrink-0 items-center justify-center"
+                      >
+                        <Pencil className="h-5 w-5" aria-hidden />
+                      </SupercellButton>
+                    ) : null}
                     <SupercellButton
                       size="icon"
                       variant="danger"
@@ -508,7 +626,7 @@ export default function SchoonmaakCheck() {
       ) : null}
 
       {/* ===== Foto + opslaan ===== */}
-      {selectedLocation && !loadingTasks ? (
+      {mode === "record" && selectedLocation && !loadingTasks ? (
         <section className="flex flex-col gap-4">
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Foto&apos;s (optioneel)

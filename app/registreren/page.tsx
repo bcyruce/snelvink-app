@@ -37,7 +37,7 @@ function RegistrerenContent() {
   const handleSelectModule = (module: TaskModule) => {
     setOpen(false);
     if (module.isCustom) {
-      router.push(module.href);
+      router.push(module.href.replace("/taken/custom/", "/registreren/custom/"));
       return;
     }
     router.push(`/registreren/${module.id}`);

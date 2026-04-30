@@ -179,45 +179,16 @@ export default function AddModuleModal({
       setIsSaving(true);
       setErrorMessage(null);
 
-      const trimmedNumberInputs = numberInputs
-        .map((input) => ({ ...input, name: input.name.trim() }))
-        .filter((input) => input.name.length > 0);
-      const trimmedBooleanInputs = booleanInputs
-        .map((input) => ({ ...input, name: input.name.trim() }))
-        .filter((input) => input.name.length > 0);
-      const trimmedListItems = listItems
-        .map((item) => ({ ...item, name: item.name.trim() }))
-        .filter((item) => item.name.length > 0);
-
-      if (moduleType === "number" && trimmedNumberInputs.length === 0) {
-        setErrorMessage("Voeg minstens één veld toe.");
-        setIsSaving(false);
-        return;
-      }
-      if (moduleType === "boolean" && trimmedBooleanInputs.length === 0) {
-        setErrorMessage("Voeg minstens één veld toe.");
-        setIsSaving(false);
-        return;
-      }
-      if (moduleType === "list" && trimmedListItems.length === 0) {
-        setErrorMessage("Voeg minstens één item toe.");
-        setIsSaving(false);
-        return;
-      }
-
-      // Settings worden opgeslagen als object zodat we naast de configuratie
-      // ook flags zoals `hasPhoto` kwijt kunnen. Het lezen kan nog steeds
-      // overweg met de oude (array-)vorm.
       const settings =
         moduleType === "boolean"
-          ? { inputs: trimmedBooleanInputs, hasPhoto }
+          ? { inputs: [], hasPhoto }
           : moduleType === "list"
             ? {
-                items: trimmedListItems,
-                hasRemark: listHasRemark,
+                items: [],
+                hasRemark: false,
                 hasPhoto,
               }
-            : { inputs: trimmedNumberInputs, hasPhoto };
+            : { inputs: [], hasPhoto };
 
       try {
         const { data, error } = await supabase
@@ -514,34 +485,9 @@ export default function AddModuleModal({
               </div>
             </section>
 
-            {moduleType === "number" ? (
-              <NumberInputsBuilder
-                numberInputs={numberInputs}
-                onAdd={handleAddNumberInput}
-                onRemove={handleRemoveNumberInput}
-                onUpdate={handleUpdateNumberInput}
-              />
-            ) : null}
-
-            {moduleType === "boolean" ? (
-              <BooleanInputsBuilder
-                booleanInputs={booleanInputs}
-                onAdd={handleAddBooleanInput}
-                onRemove={handleRemoveBooleanInput}
-                onUpdate={handleUpdateBooleanInput}
-              />
-            ) : null}
-
-            {moduleType === "list" ? (
-              <ListBuilder
-                listItems={listItems}
-                hasRemark={listHasRemark}
-                onAdd={handleAddListItem}
-                onRemove={handleRemoveListItem}
-                onUpdate={handleUpdateListItem}
-                onToggleRemark={() => setListHasRemark((current) => !current)}
-              />
-            ) : null}
+            <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 px-4 py-4 text-base font-semibold text-slate-600">
+              Velden voeg je toe in het onderdeel zelf onder <strong>Taken beheren</strong>.
+            </p>
 
             <PhotoToggle
               hasPhoto={hasPhoto}
