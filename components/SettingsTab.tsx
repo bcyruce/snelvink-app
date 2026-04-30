@@ -21,6 +21,17 @@ type StaffMember = {
   full_name: string | null;
 };
 
+type ExportHaccpRow = {
+  recorded_at: string;
+  module_type: "koeling" | "kerntemperatuur" | "ontvangst" | "schoonmaak";
+  temperature: number | null;
+  product_name: string | null;
+  status: "goedgekeurd" | "afgekeurd" | null;
+  location_name: string | null;
+  completed_tasks: string[] | null;
+  haccp_equipments: { name: string | null } | { name: string | null }[] | null;
+};
+
 function formatNlDateTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
@@ -122,41 +133,48 @@ export default function SettingsTab() {
     setIsExporting(true);
 
     try {
-      const [tempRes, cleanRes] = await Promise.all([
-        supabase
-          .from("temperature_logs")
-          .select("created_at, equipment_name, temperature")
-          .eq("restaurant_id", restaurantId)
-          .order("created_at", { ascending: false })
-          .limit(10_000),
-        supabase
-          .from("cleaning_logs")
-          .select("created_at, task_name, is_completed")
-          .eq("restaurant_id", restaurantId)
-          .order("created_at", { ascending: false })
-          .limit(10_000),
-      ]);
+      const { data, error } = await supabase
+        .from("haccp_records")
+        .select(
+          "recorded_at, module_type, temperature, product_name, status, location_name, completed_tasks, haccp_equipments(name)",
+        )
+        .eq("restaurant_id", restaurantId)
+        .order("recorded_at", { ascending: false })
+        .limit(10_000);
 
-      if (tempRes.error) {
-        console.error("temperature_logs ophalen mislukt:", tempRes.error);
-      }
-      if (cleanRes.error) {
-        console.error("cleaning_logs ophalen mislukt:", cleanRes.error);
+      if (error) {
+        console.error("haccp_records ophalen mislukt:", error);
       }
 
-      const tempRows =
-        tempRes.data?.map((row) => [
-          formatNlDateTime(row.created_at),
-          String(row.equipment_name ?? "—"),
-          `${Number(row.temperature).toFixed(1)} °C`,
-        ]) ?? [];
+      const haccpRows = (data ?? []) as ExportHaccpRow[];
 
-      const cleanRows =
-        cleanRes.data?.map((row) => [
-          formatNlDateTime(row.created_at),
-          String(row.task_name ?? "—"),
-          row.is_completed ? "Voltooid" : "Niet voltooid",
-        ]) ?? [];
+      const tempRows = haccpRows
+        .filter(
+          (row) =>
+            row.module_type === "koeling" || row.module_type === "kerntemperatuur",
+        )
+        .map((row) => {
+          const equipmentName = Array.isArray(row.haccp_equipments)
+            ? (row.haccp_equipments[0]?.name ?? "—")
+            : (row.haccp_equipments?.name ?? "—");
+          return [
+            formatNlDateTime(row.recorded_at),
+            String(equipmentName),
+            typeof row.temperature === "number"
+              ? `${Number(row.temperature).toFixed(1)} °C`
+              : "—",
+          ];
+        });
+
+      const cleanRows = haccpRows
+        .filter((row) => row.module_type === "schoonmaak")
+        .map((row) => [
+          formatNlDateTime(row.recorded_at),
+          String(row.location_name ?? "—"),
+          row.completed_tasks && row.completed_tasks.length > 0
+            ? "Voltooid"
+            : "Geen taken aangevinkt",
+        ]);
 
       const doc = new jsPDF();
       const margin = 14;

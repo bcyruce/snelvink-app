@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 type Equipment = {
   id: string;
   name: string;
+  type: "koeling" | "kerntemperatuur";
   default_temp: number | null;
   unit: string | null;
   step: number | null;
@@ -38,17 +39,15 @@ function EquipmentEditContent() {
   const moduleTitle = moduleId === "koeling" ? "Koeling" : "Kerntemperatuur";
   const defaultTemp = moduleId === "koeling" ? 7 : 75;
 
-  // Determine table based on module type
-  const tableName = moduleId === "koeling" ? "haccp_equipment" : "haccp_kerntemperatuur_equipment";
-
   useEffect(() => {
     async function loadEquipment() {
       if (!equipmentId) return;
 
       const { data, error } = await supabase
-        .from(tableName)
-        .select("id, name, default_temp, unit, step")
+        .from("haccp_equipments")
+        .select("id, name, type, default_temp, unit, step")
         .eq("id", equipmentId)
+        .eq("type", moduleId)
         .single();
 
       if (error || !data) {
@@ -68,7 +67,7 @@ function EquipmentEditContent() {
     }
 
     loadEquipment();
-  }, [equipmentId, tableName, defaultTemp]);
+  }, [equipmentId, moduleId, defaultTemp]);
 
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
@@ -88,7 +87,7 @@ function EquipmentEditContent() {
     };
 
     const { error } = await supabase
-      .from(tableName)
+      .from("haccp_equipments")
       .update(updates)
       .eq("id", equipmentId);
 
@@ -100,7 +99,7 @@ function EquipmentEditContent() {
     }
 
     router.push(`/taken/${moduleId}`);
-  }, [name, hasDefaultValue, defaultValue, unit, step, equipmentId, tableName, moduleId, router]);
+  }, [name, hasDefaultValue, defaultValue, unit, step, equipmentId, moduleId, router]);
 
   const adjustValue = (delta: number) => {
     setDefaultValue((v) => Math.round((v + delta) * 10) / 10);

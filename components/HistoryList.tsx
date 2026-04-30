@@ -8,21 +8,6 @@ import { useUser } from "@/hooks/useUser";
 import { Eye, Printer, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
-type TemperatureLogRow = {
-  id: string;
-  created_at: string;
-  equipment_name: string;
-  temperature: number;
-  photo_url?: string | null;
-};
-
-type CleaningLogRow = {
-  id: string;
-  created_at: string;
-  task_name: string;
-  is_completed: boolean;
-};
-
 type HaccpModuleType =
   | "koeling"
   | "kerntemperatuur"
@@ -50,7 +35,7 @@ type ReportRow = {
   taskName: string;
   valueOrStatus: string;
   remarks: string;
-  source: "temperature" | "cleaning" | "haccp" | "custom";
+  source: "haccp" | "custom";
   photoUrls: string[];
 };
 
@@ -214,16 +199,6 @@ export default function HistoryList() {
 
     const sinceIso = new Date(Date.now() - FREE_HISTORY_MS).toISOString();
 
-    const tempBase = supabase
-      .from("temperature_logs")
-      .select("id, created_at, equipment_name, temperature, photo_url")
-      .eq("restaurant_id", restaurantId);
-
-    const cleanBase = supabase
-      .from("cleaning_logs")
-      .select("id, created_at, task_name, is_completed")
-      .eq("restaurant_id", restaurantId);
-
     const haccpBase = supabase
       .from("haccp_records")
       .select(
@@ -236,49 +211,17 @@ export default function HistoryList() {
       .select("id, created_at, module_id, custom_module_id, log_data")
       .eq("restaurant_id", restaurantId);
 
-    const [tempRes, cleanRes, haccpRes, customRes] = await Promise.all([
-      isFreePlan ? tempBase.gte("created_at", sinceIso) : tempBase,
-      isFreePlan ? cleanBase.gte("created_at", sinceIso) : cleanBase,
+    const [haccpRes, customRes] = await Promise.all([
       isFreePlan ? haccpBase.gte("recorded_at", sinceIso) : haccpBase,
       isFreePlan ? customBase.gte("created_at", sinceIso) : customBase,
     ]);
 
-    if (tempRes.error) {
-      console.error("temperature_logs ophalen mislukt:", tempRes.error);
-    }
-    if (cleanRes.error) {
-      console.error("cleaning_logs ophalen mislukt:", cleanRes.error);
-    }
     if (haccpRes.error) {
       console.error("haccp_records ophalen mislukt:", haccpRes.error);
     }
     if (customRes.error) {
       console.error("custom_module_logs ophalen mislukt:", customRes.error);
     }
-
-    const tempRows =
-      (tempRes.data as TemperatureLogRow[] | null)?.map((row) => ({
-        id: `t-${row.id}`,
-        created_at: row.created_at,
-        apparaat: row.equipment_name ?? "Onbekend apparaat",
-        taskName: "Temperatuur check",
-        valueOrStatus: `${Number(row.temperature).toFixed(1)} °C`,
-        remarks: "",
-        source: "temperature" as const,
-        photoUrls: row.photo_url ? [row.photo_url] : [],
-      })) ?? [];
-
-    const cleaningRows =
-      (cleanRes.data as CleaningLogRow[] | null)?.map((row) => ({
-        id: `c-${row.id}`,
-        created_at: row.created_at,
-        apparaat: row.task_name ?? "Onbekende taak",
-        taskName: "Schoonmaak",
-        valueOrStatus: row.is_completed ? "Voltooid" : "Niet voltooid",
-        remarks: "",
-        source: "cleaning" as const,
-        photoUrls: [],
-      })) ?? [];
 
     const haccpRows =
       (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => {
@@ -322,8 +265,6 @@ export default function HistoryList() {
       }) ?? [];
 
     const merged = [
-      ...tempRows,
-      ...cleaningRows,
       ...haccpRows,
       ...customRows,
     ].sort(
