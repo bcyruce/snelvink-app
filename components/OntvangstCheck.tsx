@@ -18,6 +18,13 @@ const DEFAULT_REJECT_REASONS: readonly string[] = [
   "THT/TGT verstreken",
   "Verkeerd product",
   "Kwaliteit onvoldoende",
+  "其他",
+];
+const DEFAULT_APPROVE_REASONS: readonly string[] = [
+  "Visueel in orde",
+  "Temperatuur in orde",
+  "Verpakking intact",
+  "其他",
 ];
 
 type Product = {
@@ -61,7 +68,8 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
-  const [reason, setReason] = useState<string | null>(null);
+  const [reasons, setReasons] = useState<string[]>([]);
+  const [customReason, setCustomReason] = useState("");
   const [remark, setRemark] = useState("");
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -208,14 +216,17 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
   const resetProduct = () => {
     setSelectedProduct(null);
     setStatus(null);
-    setReason(null);
+    setReasons([]);
+    setCustomReason("");
   };
   const resetStatus = () => {
     setStatus(null);
-    setReason(null);
+    setReasons([]);
+    setCustomReason("");
   };
   const resetReason = () => {
-    setReason(null);
+    setReasons([]);
+    setCustomReason("");
   };
 
   // ---------- step derivation ----------
@@ -224,14 +235,14 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
       ? "product"
       : !status
         ? "beoordeling"
-        : status === "afgekeurd" && !reason
+        : status && reasons.length === 0
           ? "reden"
           : "foto";
 
   const canSave =
     !!selectedProduct &&
     !!status &&
-    !(status === "afgekeurd" && !reason) &&
+    !(status && reasons.length === 0) &&
     !!restaurantId &&
     !isSaving;
 
@@ -271,7 +282,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
           equipment_id: null,
           product_name: selectedProduct.name,
           status,
-          reason: status === "afgekeurd" ? reason : null,
+          reason: [...reasons, customReason.trim()].filter(Boolean).join(", "),
           note: remark.trim() || null,
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
@@ -310,20 +321,6 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
       <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
         Ontvangst
       </h2>
-
-      {mode === "record" ? (
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Datum &amp; tijd van ontvangst
-          </span>
-          <input
-            type="datetime-local"
-            value={recordedAtLocal}
-            onChange={(e) => setRecordedAtLocal(e.target.value)}
-            className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
-          />
-        </label>
-      ) : null}
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -390,7 +387,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         <Section
           title="Product"
           summary={selectedProduct?.name ?? null}
-          onEdit={selectedProduct ? resetProduct : null}
+          onEdit={null}
           collapsed={currentStep !== "product"}
         >
           {loadingProducts ? (
@@ -430,7 +427,7 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
                 ? "✕ Afgekeurd"
                 : null
           }
-          onEdit={status ? resetStatus : null}
+          onEdit={null}
           collapsed={currentStep !== "beoordeling"}
           summaryAccentClass={
             status === "goedgekeurd"
@@ -463,41 +460,49 @@ export default function OntvangstCheck({ mode = "record" }: OntvangstCheckProps)
         </Section>
       ) : null}
 
-      {/* ===== Reden sectie (alleen bij afkeuring) ===== */}
-      {mode === "record" && selectedProduct && status === "afgekeurd" ? (
+      {/* ===== Reden sectie ===== */}
+      {mode === "record" && selectedProduct && status ? (
         <Section
-          title="Reden afkeuring"
-          summary={reason}
-          summaryAccentClass="text-red-700"
-          onEdit={reason ? resetReason : null}
+          title="Reden"
+          summary={reasons.length > 0 ? reasons.join(", ") : null}
+          summaryAccentClass={status === "afgekeurd" ? "text-red-700" : "text-green-700"}
+          onEdit={null}
           collapsed={currentStep !== "reden"}
         >
           <div className="flex flex-col gap-3">
-            {DEFAULT_REJECT_REASONS.map((r) => (
+            {(status === "afgekeurd"
+              ? DEFAULT_REJECT_REASONS
+              : DEFAULT_APPROVE_REASONS
+            ).map((r) => {
+              const selected = reasons.includes(r);
+              return (
               <SupercellButton
                 key={r}
-                size="lg"
-                variant="neutral"
-                onClick={() => setReason(r)}
-                className="flex min-h-[80px] w-full items-center justify-center text-center text-xl normal-case"
+                size="sm"
+                variant={selected ? "primary" : "neutral"}
+                onClick={() =>
+                  setReasons((current) => {
+                    const next = new Set(current);
+                    if (next.has(r)) next.delete(r);
+                    else next.add(r);
+                    return Array.from(next);
+                  })
+                }
+                className="text-base normal-case"
               >
                 {r}
               </SupercellButton>
-            ))}
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              onClick={() => {
-                const custom = window.prompt("Beschrijf de reden van afkeuring");
-                if (!custom) return;
-                const trimmed = custom.trim();
-                if (trimmed) setReason(trimmed);
-              }}
-              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-            >
-              <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-              Anders…
-            </SupercellButton>
+              );
+            })}
+            {reasons.includes("其他") ? (
+              <input
+                type="text"
+                value={customReason}
+                onChange={(event) => setCustomReason(event.target.value)}
+                placeholder="Eigen reden..."
+                className="min-h-[56px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+              />
+            ) : null}
           </div>
         </Section>
       ) : null}

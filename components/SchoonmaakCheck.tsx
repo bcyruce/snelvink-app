@@ -429,20 +429,6 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
         Schoonmaak
       </h2>
 
-      {mode === "record" ? (
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Datum &amp; tijd
-          </span>
-          <input
-            type="datetime-local"
-            value={recordedAtLocal}
-            onChange={(e) => setRecordedAtLocal(e.target.value)}
-            className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
-          />
-        </label>
-      ) : null}
-
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
           {errorMessage}
@@ -460,17 +446,6 @@ export default function SchoonmaakCheck({ mode = "record" }: SchoonmaakCheckProp
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Kies een locatie
           </h3>
-          {mode === "record" && selectedLocation ? (
-            <SupercellButton
-              size="sm"
-              variant="neutral"
-              onClick={resetLocation}
-              className="flex h-10 items-center gap-1.5 rounded-full border-b-[4px] px-3 text-sm normal-case"
-            >
-              <Pencil className="h-4 w-4" aria-hidden />
-              Wijzigen
-            </SupercellButton>
-          ) : null}
         </div>
 
         {mode === "record" && selectedLocation ? (

@@ -185,9 +185,6 @@ function CustomModuleContent() {
   const [generalRemark, setGeneralRemark] = useState("");
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [listRemark, setListRemark] = useState("");
-  const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>(
-    {},
-  );
   const [isModuleLoading, setIsModuleLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -263,9 +260,6 @@ function CustomModuleContent() {
             numberSettings.map((setting) => [setting.id, setting.defaultValue]),
           ),
         );
-        setEnabledFields(
-          Object.fromEntries(numberSettings.map((setting) => [setting.id, true])),
-        );
         setRemarks(
           Object.fromEntries(
             numberSettings
@@ -284,9 +278,6 @@ function CustomModuleContent() {
         setBooleanCustomReason(
           Object.fromEntries(booleanSettings.map((setting) => [setting.id, ""])),
         );
-        setEnabledFields(
-          Object.fromEntries(booleanSettings.map((setting) => [setting.id, true])),
-        );
         setRemarks(
           Object.fromEntries(
             booleanSettings
@@ -301,7 +292,6 @@ function CustomModuleContent() {
         );
         setListRemark("");
         setListCustomItem("");
-        setEnabledFields({});
         setRemarks({});
       }
       setGeneralRemark("");
@@ -382,24 +372,6 @@ function CustomModuleContent() {
     [],
   );
 
-  const toggleField = useCallback((fieldId: string) => {
-    setEnabledFields((current) => ({
-      ...current,
-      [fieldId]: !(current[fieldId] ?? true),
-    }));
-  }, []);
-
-  const toggleAllFields = useCallback((checked: boolean) => {
-    setEnabledFields((current) =>
-      Object.fromEntries(
-        (module && Array.isArray(module.settings)
-          ? module.settings.map((setting) => setting.id)
-          : Object.keys(current)
-        ).map((fieldId) => [fieldId, checked]),
-      ),
-    );
-  }, [module?.settings]);
-
   const handleSave = useCallback(async () => {
     if (!module || !user || isSaving) return;
     if (!profile?.restaurant_id) {
@@ -419,9 +391,7 @@ function CustomModuleContent() {
       | null = null;
 
     if (module.moduleType === "temperature" && Array.isArray(module.settings)) {
-      const selectedSettings = (module.settings as NumberInputConfig[]).filter(
-        (setting) => enabledFields[setting.id] ?? true,
-      );
+      const selectedSettings = module.settings as NumberInputConfig[];
 
       if (selectedSettings.length === 0) {
         setErrorMessage("Vink minstens één veld aan om op te slaan.");
@@ -438,9 +408,7 @@ function CustomModuleContent() {
     }
 
     if (module.moduleType === "boolean" && Array.isArray(module.settings)) {
-      const selectedSettings = (module.settings as BooleanInputConfig[]).filter(
-        (setting) => enabledFields[setting.id] ?? true,
-      );
+      const selectedSettings = module.settings as BooleanInputConfig[];
 
       if (selectedSettings.length === 0) {
         setErrorMessage("Vink minstens één veld aan om op te slaan.");
@@ -574,7 +542,6 @@ function CustomModuleContent() {
     listChecked,
     listRemark,
     remarks,
-    enabledFields,
     isSaving,
     isFreePlan,
     photoFiles,
@@ -605,13 +572,9 @@ function CustomModuleContent() {
     module?.moduleType === "list"
       ? (listSettings?.items.length ?? 0) > 0
       : fieldSettings.length > 0;
-  const selectedCount = fieldSettings.filter(
-    (setting) => enabledFields[setting.id] ?? true,
-  ).length;
+  const selectedCount = fieldSettings.length;
   const listCheckedCount =
     listSettings?.items.filter((item) => listChecked[item.id]).length ?? 0;
-  const allFieldsSelected =
-    fieldSettings.length > 0 && selectedCount === fieldSettings.length;
 
   return (
     <>
@@ -668,72 +631,32 @@ function CustomModuleContent() {
             {hasFields ? (
               <>
                 {module.moduleType !== "list" ? (
-                  <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
-                    <div>
-                      <p className="text-base font-black text-slate-900">
-                        Vink aan om te registreren
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-500">
-                        {selectedCount}/{fieldSettings.length} velden geselecteerd
-                      </p>
-                    </div>
-                    <SupercellButton
-                      variant={allFieldsSelected ? "primary" : "neutral"}
-                      size="icon"
-                      onClick={() => toggleAllFields(!allFieldsSelected)}
-                      aria-pressed={allFieldsSelected}
-                      aria-label={
-                        allFieldsSelected
-                          ? "Alle velden uitvinken"
-                          : "Alle velden aanvinken"
-                      }
-                      className="h-16 w-16 shrink-0"
-                    >
-                      <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                    </SupercellButton>
+                  <div className="rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-500">
+                      {selectedCount}/{fieldSettings.length} velden
+                    </p>
                   </div>
                 ) : null}
 
                 {module.moduleType === "temperature" &&
                   (fieldSettings as NumberInputConfig[]).map((setting) => {
                     const value = values[setting.id] ?? setting.defaultValue;
-                    const enabled = enabledFields[setting.id] ?? true;
 
                     return (
                       <div
                         key={setting.id}
-                        className={[
-                          "mb-6 rounded-3xl border p-5 shadow-sm transition-all duration-300",
-                          enabled
-                            ? "border-slate-100 bg-white"
-                            : "border-slate-200 bg-slate-50 opacity-75",
-                        ].join(" ")}
+                        className="mb-6 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all duration-300"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <h2 className="pt-2 text-xl font-bold text-slate-900">
                             {setting.name}
                           </h2>
-                      <SupercellButton
-                        variant={enabled ? "primary" : "neutral"}
-                        size="icon"
-                        onClick={() => toggleField(setting.id)}
-                        aria-pressed={enabled}
-                        aria-label={
-                          enabled
-                            ? `${setting.name} niet registreren`
-                            : `${setting.name} registreren`
-                        }
-                        className="h-14 w-14 shrink-0"
-                      >
-                        <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                      </SupercellButton>
                         </div>
 
                         <div className="mt-5 flex items-center gap-3">
                           <SupercellButton
                             variant="neutral"
                             size="icon"
-                            disabled={!enabled}
                             onClick={() => updateValue(setting, "down")}
                             className="h-14 w-14 shrink-0"
                             aria-label={`${setting.name} verlagen`}
@@ -749,7 +672,6 @@ function CustomModuleContent() {
                               <input
                                 type="number"
                                 inputMode="decimal"
-                                disabled={!enabled}
                                 step={setting.step || "any"}
                                 value={value}
                                 onChange={(event) =>
@@ -766,7 +688,6 @@ function CustomModuleContent() {
                           <SupercellButton
                             variant="primary"
                             size="icon"
-                            disabled={!enabled}
                             onClick={() => updateValue(setting, "up")}
                             className="h-14 w-14 shrink-0"
                             aria-label={`${setting.name} verhogen`}
@@ -778,7 +699,6 @@ function CustomModuleContent() {
                         {setting.hasRemark ? (
                           <textarea
                             value={remarks[setting.id] ?? ""}
-                            disabled={!enabled}
                             onChange={(event) =>
                               setRemarks((current) => ({
                                 ...current,
@@ -787,7 +707,7 @@ function CustomModuleContent() {
                             }
                             placeholder="Opmerking toevoegen..."
                             rows={3}
-                            className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
                           />
                         ) : null}
                       </div>
@@ -796,7 +716,6 @@ function CustomModuleContent() {
 
                 {module.moduleType === "boolean" &&
                   (fieldSettings as BooleanInputConfig[]).map((setting) => {
-                    const enabled = enabledFields[setting.id] ?? true;
                     const selected = booleanValues[setting.id];
                     const reasonOptions =
                       selected === "goedgekeurd"
@@ -810,38 +729,18 @@ function CustomModuleContent() {
                     return (
                       <div
                         key={setting.id}
-                        className={[
-                          "mb-6 rounded-3xl border p-5 shadow-sm transition-all duration-300",
-                          enabled
-                            ? "border-slate-100 bg-white"
-                            : "border-slate-200 bg-slate-50 opacity-75",
-                        ].join(" ")}
+                        className="mb-6 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-all duration-300"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <h2 className="pt-2 text-xl font-bold text-slate-900">
                             {setting.name}
                           </h2>
-                          <SupercellButton
-                            variant={enabled ? "primary" : "neutral"}
-                            size="icon"
-                            onClick={() => toggleField(setting.id)}
-                            aria-pressed={enabled}
-                            aria-label={
-                              enabled
-                                ? `${setting.name} niet registreren`
-                                : `${setting.name} registreren`
-                            }
-                            className="h-14 w-14 shrink-0"
-                          >
-                            <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                          </SupercellButton>
                         </div>
 
                         <div className="mt-5 grid grid-cols-2 gap-3">
                           <SupercellButton
                             variant={selected === "goedgekeurd" ? "success" : "neutral"}
                             size="lg"
-                            disabled={!enabled}
                             onClick={() =>
                               setBooleanValues((current) => ({
                                 ...current,
@@ -855,7 +754,6 @@ function CustomModuleContent() {
                           <SupercellButton
                             variant={selected === "afgekeurd" ? "danger" : "neutral"}
                             size="lg"
-                            disabled={!enabled}
                             onClick={() =>
                               setBooleanValues((current) => ({
                                 ...current,
@@ -877,7 +775,6 @@ function CustomModuleContent() {
                                   key={`${setting.id}-${reason}`}
                                   size="sm"
                                   variant={active ? "primary" : "neutral"}
-                                  disabled={!enabled}
                                   onClick={() =>
                                     setBooleanReasons((current) => {
                                       const next = new Set(current[setting.id] ?? []);
@@ -899,7 +796,6 @@ function CustomModuleContent() {
                           <input
                             type="text"
                             value={booleanCustomReason[setting.id] ?? ""}
-                            disabled={!enabled}
                             onChange={(event) =>
                               setBooleanCustomReason((current) => ({
                                 ...current,
@@ -907,14 +803,13 @@ function CustomModuleContent() {
                               }))
                             }
                             placeholder="Eigen reden..."
-                            className="mt-3 min-h-[56px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="mt-3 min-h-[56px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
                           />
                         ) : null}
 
                         {setting.hasRemark ? (
                           <textarea
                             value={remarks[setting.id] ?? ""}
-                            disabled={!enabled}
                             onChange={(event) =>
                               setRemarks((current) => ({
                                 ...current,
@@ -923,7 +818,7 @@ function CustomModuleContent() {
                             }
                             placeholder="Opmerking toevoegen..."
                             rows={3}
-                            className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
                           />
                         ) : null}
                       </div>

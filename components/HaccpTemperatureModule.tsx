@@ -94,6 +94,7 @@ export default function HaccpTemperatureModule({
   const [temperature, setTemperature] = useState<number>(defaultTemperature);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [remark, setRemark] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -242,6 +243,7 @@ export default function HaccpTemperatureModule({
         prev.forEach((u) => URL.revokeObjectURL(u));
         return [];
       });
+      setRemark("");
       setView("record");
     },
     [defaultTemperature],
@@ -255,6 +257,7 @@ export default function HaccpTemperatureModule({
       return [];
     });
     setPhotoFiles([]);
+    setRemark("");
   }, []);
 
   useEffect(() => {
@@ -354,6 +357,7 @@ export default function HaccpTemperatureModule({
           module_type: moduleType,
           equipment_id: activeEquipment.id,
           temperature,
+          note: remark.trim() || null,
           recorded_at: recordedAt,
           image_urls: uploadedUrls,
         });
@@ -436,9 +440,10 @@ export default function HaccpTemperatureModule({
           onPhotoChange={handlePhotoChange}
           onRemovePhoto={removePhoto}
           photoInputRef={photoInputRef}
+          remark={remark}
+          onRemarkChange={setRemark}
           isSaving={isSaving}
           canSave={canSave}
-          onCancel={exitRecord}
           onSave={handleSave}
           errorMessage={errorMessage}
         />
@@ -593,9 +598,10 @@ type RecordViewProps = {
   onPhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemovePhoto: (index: number) => void;
   photoInputRef: React.RefObject<HTMLInputElement | null>;
+  remark: string;
+  onRemarkChange: (value: string) => void;
   isSaving: boolean;
   canSave: boolean;
-  onCancel: () => void;
   onSave: () => void;
   errorMessage: string | null;
 };
@@ -618,9 +624,10 @@ function RecordView({
   onPhotoChange,
   onRemovePhoto,
   photoInputRef,
+  remark,
+  onRemarkChange,
   isSaving,
   canSave,
-  onCancel,
   onSave,
   errorMessage,
 }: RecordViewProps) {
@@ -665,19 +672,9 @@ function RecordView({
         />
       </label>
 
-      <div className="flex items-center justify-between gap-3">
-        <SupercellButton
-          size="sm"
-          variant="neutral"
-          onClick={onCancel}
-          className="min-h-[64px] text-base normal-case"
-        >
-          ← Terug naar lijst
-        </SupercellButton>
-        <h3 className="flex-1 truncate text-right text-2xl font-extrabold text-slate-900">
-          {equipment?.name ?? title}
-        </h3>
-      </div>
+      <h3 className="truncate text-2xl font-extrabold text-slate-900">
+        {equipment?.name ?? title}
+      </h3>
 
       {errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
@@ -819,6 +816,14 @@ function RecordView({
           ))}
         </div>
       ) : null}
+
+      <textarea
+        value={remark}
+        onChange={(event) => onRemarkChange(event.target.value)}
+        placeholder="Opmerking toevoegen..."
+        rows={3}
+        className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+      />
 
       {/* Save */}
       <SupercellButton

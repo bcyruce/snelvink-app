@@ -216,9 +216,8 @@ function CustomModuleManageContent() {
     async (row: RowItem) => {
       if (!module) return;
       const input = window.prompt("Nieuwe naam", row.name);
-      if (!input) return;
-      const name = input.trim();
-      if (!name || name === row.name) return;
+      if (input === null) return;
+      const name = input.trim() || row.name;
 
       if (module.moduleType === "list") {
         const current = module.settings as ListSettings;
