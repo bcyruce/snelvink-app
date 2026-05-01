@@ -17,8 +17,10 @@ import { supabase } from "@/lib/supabase";
 import {
   AlertCircle,
   CalendarClock,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -198,29 +200,136 @@ function ReminderSection({
   title,
   tasks,
   emptyText,
+  defaultOpen = true,
 }: {
   title: string;
   tasks: PlannedTask[];
   emptyText: string;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const count = tasks.length;
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
-        {title}
-      </h3>
-      <TaskList tasks={tasks} emptyText={emptyText} />
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm"
+      >
+        <span className="flex items-center gap-2">
+          <span className="text-sm font-black uppercase tracking-wide text-slate-500">
+            {title}
+          </span>
+          {count > 0 ? (
+            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-black text-white">
+              {count}
+            </span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={[
+            "h-5 w-5 shrink-0 text-slate-400 transition-transform",
+            open ? "rotate-180" : "",
+          ].join(" ")}
+        />
+      </button>
+      {open ? <TaskList tasks={tasks} emptyText={emptyText} /> : null}
     </section>
+  );
+}
+
+function DayPreviewModal({
+  date,
+  tasks,
+  onClose,
+}: {
+  date: Date;
+  tasks: PlannedTask[];
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const titleLabel = date.toLocaleDateString("nl-NL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+      <button
+        type="button"
+        aria-label="Sluiten"
+        onClick={onClose}
+        className="absolute inset-0 h-full w-full"
+      />
+      <div className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl">
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-lg font-black capitalize text-slate-900">
+            {titleLabel}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Sluiten"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {tasks.length === 0 ? (
+          <p className="rounded-2xl bg-slate-50 px-4 py-5 text-center text-sm font-semibold text-slate-500">
+            Geen geplande taken op deze dag.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {tasks.map((task) => (
+              <li key={task.key}>
+                <SupercellButton
+                  type="button"
+                  variant="neutral"
+                  onClick={() => {
+                    onClose();
+                    router.push(task.route);
+                  }}
+                  className="flex min-h-[72px] w-full items-center gap-3 text-left normal-case"
+                >
+                  <AlertCircle
+                    className={[
+                      "h-5 w-5 shrink-0",
+                      task.completed ? "text-emerald-500" : "text-red-500",
+                    ].join(" ")}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-lg font-black text-slate-900">
+                      {task.title}
+                    </span>
+                    <span className="block truncate text-sm font-semibold text-slate-500">
+                      {task.subtitle}
+                    </span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+                </SupercellButton>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
 
 function CalendarMonth({
   month,
   tasks,
+  onSelectDate,
 }: {
   month: Date;
   tasks: PlannedTask[];
+  onSelectDate: (date: Date) => void;
 }) {
-  const router = useRouter();
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const firstOffset = (first.getDay() + 6) % 7;
   const start = addDays(first, -firstOffset);
@@ -238,26 +347,26 @@ function CalendarMonth({
           const dayTasks = tasksForDate(tasks, date);
           const isCurrentMonth = date.getMonth() === month.getMonth();
           return (
-            <div
+            <button
               key={toIsoDate(date)}
+              type="button"
+              onClick={() => onSelectDate(date)}
               className={[
-                "min-h-[76px] rounded-xl border p-1",
+                "flex min-h-[76px] flex-col rounded-xl border p-1 text-left transition-colors active:bg-slate-100",
                 isCurrentMonth
                   ? "border-slate-100 bg-slate-50"
                   : "border-transparent bg-transparent opacity-40",
               ].join(" ")}
             >
-              <div className="text-xs font-black text-slate-700">
+              <span className="text-xs font-black text-slate-700">
                 {date.getDate()}
-              </div>
-              <div className="mt-1 flex flex-col gap-1">
+              </span>
+              <span className="mt-1 flex flex-col gap-1">
                 {dayTasks.slice(0, 2).map((task) => (
-                  <button
+                  <span
                     key={task.key}
-                    type="button"
-                    onClick={() => router.push(task.route)}
                     className={[
-                      "truncate rounded px-1 py-0.5 text-left text-[10px] font-bold",
+                      "truncate rounded px-1 py-0.5 text-[10px] font-bold",
                       task.completed
                         ? "bg-emerald-100 text-emerald-700"
                         : "bg-blue-100 text-blue-700",
@@ -265,15 +374,15 @@ function CalendarMonth({
                     title={task.title}
                   >
                     {task.title}
-                  </button>
+                  </span>
                 ))}
                 {dayTasks.length > 2 ? (
                   <span className="text-[10px] font-bold text-slate-400">
                     +{dayTasks.length - 2}
                   </span>
                 ) : null}
-              </div>
-            </div>
+              </span>
+            </button>
           );
         })}
       </div>
@@ -297,6 +406,7 @@ export default function ScheduleReminderList() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [monthIndex, setMonthIndex] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -472,6 +582,7 @@ export default function ScheduleReminderList() {
             title="Deze week"
             tasks={weekTasks}
             emptyText="Deze week staan er geen taken gepland."
+            defaultOpen={false}
           />
 
           <section className="flex flex-col gap-3">
@@ -505,10 +616,22 @@ export default function ScheduleReminderList() {
             <p className="text-center text-base font-black capitalize text-slate-900">
               {monthLabel(calendarMonth)}
             </p>
-            <CalendarMonth month={calendarMonth} tasks={plannedTasks} />
+            <CalendarMonth
+              month={calendarMonth}
+              tasks={plannedTasks}
+              onSelectDate={(date) => setSelectedDate(date)}
+            />
           </section>
         </>
       )}
+
+      {selectedDate ? (
+        <DayPreviewModal
+          date={selectedDate}
+          tasks={tasksForDate(plannedTasks, selectedDate)}
+          onClose={() => setSelectedDate(null)}
+        />
+      ) : null}
     </section>
   );
 }
