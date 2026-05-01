@@ -21,6 +21,7 @@ type HaccpRecordRow = {
   temperature: number | null;
   status: "goedgekeurd" | "afgekeurd" | null;
   reason: string | null;
+  reasons: string[] | null;
   product_name: string | null;
   location_name: string | null;
   completed_tasks: string[] | null;
@@ -42,6 +43,8 @@ type ReportRow = {
   remarks: string;
   correctionAction: string | null;
   isOverLimit: boolean;
+  ontvangstStatus: "goedgekeurd" | "afgekeurd" | null;
+  ontvangstReasons: string[];
   source: "haccp" | "custom";
   photoUrls: string[];
 };
@@ -104,11 +107,15 @@ function describeHaccpRow(row: HaccpRecordRow): {
         : row.status === "afgekeurd"
           ? "Afgekeurd"
           : "Onbekend";
+    const reasonsList =
+      Array.isArray(row.reasons) && row.reasons.length > 0
+        ? row.reasons.join(", ")
+        : (row.reason ?? "");
     return {
       apparaat: productName,
       taskName: "Ontvangst",
       valueOrStatus: status,
-      remarks: row.reason ?? "",
+      remarks: reasonsList,
     };
   }
   if (row.module_type === "schoonmaak") {
@@ -216,7 +223,7 @@ export default function HistoryList() {
     const haccpBase = supabase
       .from("haccp_records")
       .select(
-        "id, recorded_at, module_type, temperature, status, reason, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, haccp_equipments ( name, limit_temp )",
+        "id, recorded_at, module_type, temperature, status, reason, reasons, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, haccp_equipments ( name, limit_temp )",
       )
       .eq("restaurant_id", restaurantId);
 
@@ -248,6 +255,17 @@ export default function HistoryList() {
           typeof row.temperature === "number" &&
           typeof limit === "number" &&
           Number(row.temperature) > limit;
+        const ontvangstReasons =
+          row.module_type === "ontvangst"
+            ? Array.isArray(row.reasons) && row.reasons.length > 0
+              ? row.reasons
+              : row.reason
+                ? row.reason
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter((s) => s.length > 0)
+                : []
+            : [];
         return {
           id: `h-${row.id}`,
           created_at: row.recorded_at,
@@ -257,6 +275,9 @@ export default function HistoryList() {
           remarks,
           correctionAction: row.correction_action ?? null,
           isOverLimit,
+          ontvangstStatus:
+            row.module_type === "ontvangst" ? row.status : null,
+          ontvangstReasons,
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
         };
@@ -284,6 +305,8 @@ export default function HistoryList() {
           remarks: value.remark ?? "",
           correctionAction: null,
           isOverLimit: false,
+          ontvangstStatus: null,
+          ontvangstReasons: [],
           source: "custom" as const,
           photoUrls,
         }));
@@ -607,6 +630,36 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
               ) : null}
             </p>
           </div>
+
+          {row.ontvangstReasons.length > 0 ? (
+            <section className="mt-5">
+              <h3
+                className={[
+                  "text-xs font-bold uppercase tracking-wide",
+                  row.ontvangstStatus === "afgekeurd"
+                    ? "text-red-700"
+                    : "text-emerald-700",
+                ].join(" ")}
+              >
+                Geselecteerde redenen ({row.ontvangstReasons.length})
+              </h3>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {row.ontvangstReasons.map((reason, i) => (
+                  <li
+                    key={`${row.id}-reason-${i}`}
+                    className={[
+                      "rounded-full border-2 px-3 py-1 text-sm font-bold",
+                      row.ontvangstStatus === "afgekeurd"
+                        ? "border-red-300 bg-red-50 text-red-700"
+                        : "border-emerald-300 bg-emerald-50 text-emerald-700",
+                    ].join(" ")}
+                  >
+                    {translate(reason)}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {row.correctionAction ? (
             <section className="mt-5">

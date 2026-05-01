@@ -12,17 +12,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const MAX_PHOTOS = 5;
 const STORAGE_BUCKET = "haccp_photos";
 
+const DEFAULT_ACCEPT_REASONS: readonly string[] = ["Anders"];
 const DEFAULT_REJECT_REASONS: readonly string[] = [
   "Temperatuur te hoog",
   "Verpakking beschadigd",
   "THT/TGT verstreken",
   "Verkeerd product",
   "Kwaliteit onvoldoende",
+  "Anders",
 ];
 
 type Product = {
   id: string;
   name: string;
+  accept_reasons: string[] | null;
+  reject_reasons: string[] | null;
 };
 
 type Status = "goedgekeurd" | "afgekeurd";
@@ -61,7 +65,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
-  const [reason, setReason] = useState<string | null>(null);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [opmerking, setOpmerking] = useState("");
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -80,7 +84,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
 
     const { data, error } = await supabase
       .from("haccp_products")
-      .select("id, name")
+      .select("id, name, accept_reasons, reject_reasons")
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: true });
 
@@ -108,7 +112,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
     const { data, error } = await supabase
       .from("haccp_products")
       .insert({ restaurant_id: restaurantId, name })
-      .select("id, name")
+      .select("id, name, accept_reasons, reject_reasons")
       .single();
 
     if (error) {
@@ -190,33 +194,43 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
   const resetProduct = () => {
     setSelectedProduct(null);
     setStatus(null);
-    setReason(null);
+    setSelectedReasons([]);
     setOpmerking("");
   };
-  const resetStatus = () => {
-    setStatus(null);
-    setReason(null);
+
+  const toggleReason = (reason: string) => {
+    setSelectedReasons((prev) =>
+      prev.includes(reason)
+        ? prev.filter((r) => r !== reason)
+        : [...prev, reason],
+    );
   };
-  const resetReason = () => {
-    setReason(null);
+
+  // Wanneer de status wisselt, oude selectie van redenen wissen.
+  const handleSetStatus = (next: Status) => {
+    if (next !== status) setSelectedReasons([]);
+    setStatus(next);
   };
 
   // ---------- step derivation ----------
-  const currentStep: "product" | "beoordeling" | "reden" | "foto" =
-    !selectedProduct
-      ? "product"
-      : !status
-        ? "beoordeling"
-        : status === "afgekeurd" && !reason
-          ? "reden"
-          : "foto";
+  const currentStep: "product" | "beoordeling" =
+    !selectedProduct ? "product" : "beoordeling";
+
+  const reasonsForStatus =
+    status === "goedgekeurd"
+      ? selectedProduct?.accept_reasons &&
+        selectedProduct.accept_reasons.length > 0
+        ? selectedProduct.accept_reasons
+        : DEFAULT_ACCEPT_REASONS
+      : status === "afgekeurd"
+        ? selectedProduct?.reject_reasons &&
+          selectedProduct.reject_reasons.length > 0
+          ? selectedProduct.reject_reasons
+          : DEFAULT_REJECT_REASONS
+        : [];
 
   const canSave =
-    !!selectedProduct &&
-    !!status &&
-    !(status === "afgekeurd" && !reason) &&
-    !!restaurantId &&
-    !isSaving;
+    !!selectedProduct && !!status && !!restaurantId && !isSaving;
 
   // ---------- save ----------
   const handleSave = async () => {
@@ -245,6 +259,8 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         }
       }
 
+      const reasonsArray = selectedReasons.filter((r) => r.trim().length > 0);
+
       const { error: insertError } = await supabase
         .from("haccp_records")
         .insert({
@@ -254,7 +270,8 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
           equipment_id: null,
           product_name: selectedProduct.name,
           status,
-          reason: status === "afgekeurd" ? reason : null,
+          reason: reasonsArray.length > 0 ? reasonsArray.join(", ") : null,
+          reasons: reasonsArray,
           temperature: null,
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
@@ -431,91 +448,136 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         </label>
       ) : null}
 
-      {/* ===== Beoordeling sectie ===== */}
+      {/* ===== Beoordeling – knoppen blijven altijd zichtbaar ===== */}
       {selectedProduct ? (
-        <Section
-          title="Beoordeling"
-          summary={
-            status === "goedgekeurd"
-              ? "✓ Goedgekeurd"
-              : status === "afgekeurd"
-                ? "✕ Afgekeurd"
-                : null
-          }
-          onEdit={status ? resetStatus : null}
-          collapsed={currentStep !== "beoordeling"}
-          summaryAccentClass={
-            status === "goedgekeurd"
-              ? "text-green-700"
-              : status === "afgekeurd"
-                ? "text-red-700"
-                : undefined
-          }
-        >
-          <div className="flex flex-col gap-3">
-            <SupercellButton
-              size="lg"
-              variant="success"
-              onClick={() => setStatus("goedgekeurd")}
-              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl text-3xl normal-case"
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+            Beoordeling
+          </span>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleSetStatus("goedgekeurd")}
+              aria-pressed={status === "goedgekeurd"}
+              className={[
+                "flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-4 transition-all",
+                status === "goedgekeurd"
+                  ? "border-emerald-700 bg-emerald-500 text-white"
+                  : "border-emerald-300 bg-emerald-50 text-emerald-700 active:bg-emerald-100",
+              ].join(" ")}
             >
               <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
-              Goedgekeurd
-            </SupercellButton>
-            <SupercellButton
-              size="lg"
-              variant="danger"
-              onClick={() => setStatus("afgekeurd")}
-              className="flex min-h-[112px] w-full items-center justify-center gap-4 rounded-3xl text-3xl normal-case"
+              <span className="text-lg font-black">Goedgekeurd</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSetStatus("afgekeurd")}
+              aria-pressed={status === "afgekeurd"}
+              className={[
+                "flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-4 transition-all",
+                status === "afgekeurd"
+                  ? "border-red-700 bg-red-500 text-white"
+                  : "border-red-300 bg-red-50 text-red-700 active:bg-red-100",
+              ].join(" ")}
             >
               <X className="h-9 w-9" strokeWidth={3} aria-hidden />
-              Afgekeurd
-            </SupercellButton>
+              <span className="text-lg font-black">Afgekeurd</span>
+            </button>
           </div>
-        </Section>
+        </div>
       ) : null}
 
-      {/* ===== Reden sectie (alleen bij afkeuring) ===== */}
-      {selectedProduct && status === "afgekeurd" ? (
-        <Section
-          title="Reden afkeuring"
-          summary={reason}
-          summaryAccentClass="text-red-700"
-          onEdit={reason ? resetReason : null}
-          collapsed={currentStep !== "reden"}
+      {/* ===== Redenen – multi-select panel onder de beoordelingsknoppen ===== */}
+      {selectedProduct && status ? (
+        <div
+          className={[
+            "rounded-2xl border-2 p-4",
+            status === "goedgekeurd"
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-red-200 bg-red-50",
+          ].join(" ")}
         >
-          <div className="flex flex-col gap-3">
-            {DEFAULT_REJECT_REASONS.map((r) => (
-              <SupercellButton
-                key={r}
-                size="lg"
-                variant="neutral"
-                onClick={() => setReason(r)}
-                className="flex min-h-[80px] w-full items-center justify-center text-center text-xl normal-case"
-              >
-                {r}
-              </SupercellButton>
-            ))}
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              onClick={() => {
-                const custom = window.prompt("Beschrijf de reden van afkeuring");
-                if (!custom) return;
-                const trimmed = custom.trim();
-                if (trimmed) setReason(trimmed);
-              }}
-              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+          <h3
+            className={[
+              "mb-1 text-lg font-black",
+              status === "goedgekeurd" ? "text-emerald-800" : "text-red-800",
+            ].join(" ")}
+          >
+            {status === "goedgekeurd"
+              ? "Redenen voor goedkeuring"
+              : "Redenen voor afkeuring"}
+          </h3>
+          <p
+            className={[
+              "mb-4 text-sm font-semibold",
+              status === "goedgekeurd" ? "text-emerald-700" : "text-red-700",
+            ].join(" ")}
+          >
+            Tik op een of meerdere redenen. Geselecteerde redenen worden samen
+            met de registratie opgeslagen.
+          </p>
+
+          {reasonsForStatus.length === 0 ? (
+            <p className="rounded-xl bg-white px-4 py-4 text-center text-sm font-semibold text-slate-500">
+              Geen redenen geconfigureerd voor dit product.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {reasonsForStatus.map((r) => {
+                const isSelected = selectedReasons.includes(r);
+                const accent =
+                  status === "goedgekeurd"
+                    ? isSelected
+                      ? "border-emerald-700 bg-emerald-500 text-white"
+                      : "border-emerald-200 bg-white text-slate-800 active:bg-emerald-50"
+                    : isSelected
+                      ? "border-red-700 bg-red-500 text-white"
+                      : "border-red-200 bg-white text-slate-800 active:bg-red-50";
+                return (
+                  <li key={r}>
+                    <button
+                      type="button"
+                      onClick={() => toggleReason(r)}
+                      aria-pressed={isSelected}
+                      className={[
+                        "flex w-full items-center justify-between gap-3 rounded-xl border-2 border-b-4 px-4 py-4 text-left text-lg font-bold transition-all",
+                        accent,
+                      ].join(" ")}
+                    >
+                      <span className="flex-1 truncate">{r}</span>
+                      {isSelected ? (
+                        <Check
+                          className="h-6 w-6 shrink-0"
+                          strokeWidth={3}
+                          aria-hidden
+                        />
+                      ) : (
+                        <span className="h-6 w-6 shrink-0 rounded-full border-2 border-current opacity-30" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {selectedReasons.length > 0 ? (
+            <p
+              className={[
+                "mt-4 text-sm font-bold",
+                status === "goedgekeurd" ? "text-emerald-800" : "text-red-800",
+              ].join(" ")}
             >
-              <Plus className="h-6 w-6" strokeWidth={2.5} aria-hidden />
-              Anders…
-            </SupercellButton>
-          </div>
-        </Section>
+              {selectedReasons.length} reden
+              {selectedReasons.length === 1 ? "" : "en"} geselecteerd
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {/* ===== Opmerking + Foto + opslaan ===== */}
-      {currentStep === "foto" ? (
+      {selectedProduct && status ? (
         <div className="flex flex-col gap-4">
           {/* Opmerking */}
           <label className="flex flex-col gap-2">

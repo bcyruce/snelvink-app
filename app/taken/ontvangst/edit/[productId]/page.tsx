@@ -36,7 +36,7 @@ function ProductEditContent() {
     "Kwaliteit onvoldoende",
     "Anders",
   ]);
-  const [showAcceptReasons, setShowAcceptReasons] = useState(false);
+  const [showAcceptReasons, setShowAcceptReasons] = useState(true);
   const [showRejectReasons, setShowRejectReasons] = useState(false);
   const [newAcceptReason, setNewAcceptReason] = useState("");
   const [newRejectReason, setNewRejectReason] = useState("");
