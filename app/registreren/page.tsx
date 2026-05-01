@@ -95,25 +95,25 @@ function RegistrerenContent() {
           Registreren
         </span>
 
-        {/* Big "Nieuwe Registratie" Button */}
+        {/* Nieuwe Registratie */}
         <SupercellButton
           size="lg"
           variant="primary"
           onClick={() => setIsModalOpen(true)}
-          className="flex w-full items-center justify-center gap-4 py-10 text-2xl"
+          className="flex w-full items-center justify-center gap-3 py-5 text-xl"
           style={{
-            minHeight: 140,
+            minHeight: 82,
             background: theme.primary,
             borderColor: theme.primaryDark,
           }}
         >
-          <Plus className="h-10 w-10" strokeWidth={2.5} />
+          <Plus className="h-7 w-7" strokeWidth={2.5} />
           <span>Nieuwe Registratie</span>
         </SupercellButton>
 
         {/* Info text */}
         <p
-          className="mt-6 text-center text-sm font-medium"
+          className="mt-4 text-center text-sm font-medium"
           style={{ color: theme.muted }}
         >
           Tik op de knop hierboven om een nieuwe registratie te starten.

@@ -643,29 +643,6 @@ export default function ScheduleReminderList() {
         </p>
       ) : (
         <>
-          {moduleLabels.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-black uppercase tracking-wide text-slate-500">
-                Filter op type
-              </span>
-              <div className="-mx-1 flex flex-wrap gap-2">
-                <FilterChip
-                  active={moduleFilter === "all"}
-                  onClick={() => setModuleFilter("all")}
-                  label="Alle"
-                />
-                {moduleLabels.map((label) => (
-                  <FilterChip
-                    key={label}
-                    active={moduleFilter === label}
-                    onClick={() => setModuleFilter(label)}
-                    label={label}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
           <ReminderSection
             title="Vandaag"
             tasks={todayTasks}
@@ -687,6 +664,28 @@ export default function ScheduleReminderList() {
             <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
               Alle planning
             </h3>
+            {moduleLabels.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-black uppercase tracking-wide text-slate-500">
+                  Filter op type
+                </span>
+                <div className="-mx-1 flex flex-wrap gap-2">
+                  <FilterChip
+                    active={moduleFilter === "all"}
+                    onClick={() => setModuleFilter("all")}
+                    label="Alle"
+                  />
+                  {moduleLabels.map((label) => (
+                    <FilterChip
+                      key={label}
+                      active={moduleFilter === label}
+                      onClick={() => setModuleFilter(label)}
+                      label={label}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="flex items-center gap-2">
               <button
                 type="button"
