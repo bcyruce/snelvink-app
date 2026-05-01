@@ -137,6 +137,12 @@ export default function OntvangstCheck({
           restaurant_id: restaurantId,
           name,
           custom_module_id: customModuleId ?? null,
+          ...(isCustom
+            ? {
+                accept_reasons: [...DEFAULT_ACCEPT_REASONS],
+                reject_reasons: [...DEFAULT_ACCEPT_REASONS],
+              }
+            : {}),
         })
         .select("id, name, accept_reasons, reject_reasons")
         .single();
@@ -154,7 +160,7 @@ export default function OntvangstCheck({
         }
       }
     },
-    [restaurantId, mode, customModuleId],
+    [restaurantId, mode, customModuleId, isCustom],
   );
 
   const handleDeleteProduct = useCallback(
