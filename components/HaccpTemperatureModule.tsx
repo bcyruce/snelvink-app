@@ -7,6 +7,7 @@ import { useLongPress } from "@/hooks/useLongPress";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import {
+  AlertTriangle,
   Camera,
   Check,
   ChevronRight,
@@ -23,6 +24,7 @@ type Equipment = {
   id: string;
   name: string;
   type: ModuleType;
+  default_temp: number | null;
   last_temp: number | null;
   limit_temp: number | null;
 };
@@ -82,6 +84,7 @@ export default function HaccpTemperatureModule({
   );
   const [temperature, setTemperature] = useState<number>(defaultTemperature);
   const [opmerking, setOpmerking] = useState("");
+  const [correctionAction, setCorrectionAction] = useState("");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,8 +92,15 @@ export default function HaccpTemperatureModule({
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // ---------- derived ----------
-  const tempColorClass = "text-slate-900";
-  const canSave = !isSaving && !!restaurantId && !!activeEquipment;
+  const limitTemp =
+    typeof activeEquipment?.limit_temp === "number"
+      ? activeEquipment.limit_temp
+      : null;
+  const isOverLimit = limitTemp !== null && temperature > limitTemp;
+  const tempColorClass = isOverLimit ? "text-red-600" : "text-slate-900";
+  const correctionRequired = isOverLimit && correctionAction.trim().length === 0;
+  const canSave =
+    !isSaving && !!restaurantId && !!activeEquipment && !correctionRequired;
 
   // ---------- load equipments ----------
   const loadEquipments = useCallback(async () => {
@@ -99,7 +109,7 @@ export default function HaccpTemperatureModule({
     setErrorMessage(null);
     const { data, error } = await supabase
       .from("haccp_equipments")
-      .select("id, name, type, last_temp, limit_temp")
+      .select("id, name, type, default_temp, last_temp, limit_temp")
       .eq("restaurant_id", restaurantId)
       .eq("type", moduleType)
       .order("created_at", { ascending: true });
@@ -124,7 +134,7 @@ export default function HaccpTemperatureModule({
           last_temp: null,
           limit_temp: null,
         })
-        .select("id, name, type, last_temp, limit_temp")
+        .select("id, name, type, default_temp, last_temp, limit_temp")
         .single();
 
       if (insertError) {
@@ -163,7 +173,7 @@ export default function HaccpTemperatureModule({
         last_temp: null,
         limit_temp: null,
       })
-      .select("id, name, type, last_temp, limit_temp")
+      .select("id, name, type, default_temp, last_temp, limit_temp")
       .single();
 
     if (error) {
@@ -201,10 +211,17 @@ export default function HaccpTemperatureModule({
     (eq: Equipment) => {
       setActiveEquipment(eq);
       setRecordedAtLocal(formatLocalDateTime(new Date()));
-      setTemperature(
-        typeof eq.last_temp === "number" ? eq.last_temp : defaultTemperature,
-      );
+      // Standaardwaarde heeft voorrang; anders de laatst gemeten waarde;
+      // anders de module-default.
+      const startTemp =
+        typeof eq.default_temp === "number"
+          ? eq.default_temp
+          : typeof eq.last_temp === "number"
+            ? eq.last_temp
+            : defaultTemperature;
+      setTemperature(startTemp);
       setOpmerking("");
+      setCorrectionAction("");
       setPhotoFiles([]);
       setPhotoPreviews((prev) => {
         prev.forEach((u) => URL.revokeObjectURL(u));
@@ -323,6 +340,9 @@ export default function HaccpTemperatureModule({
           recorded_at: recordedAt,
           image_urls: uploadedUrls,
           opmerking: opmerking.trim() || null,
+          correction_action: isOverLimit
+            ? correctionAction.trim() || null
+            : null,
         });
 
       if (insertError) {
@@ -388,6 +408,11 @@ export default function HaccpTemperatureModule({
           onRecordedAtChange={setRecordedAtLocal}
           temperature={temperature}
           tempColorClass={tempColorClass}
+          isOverLimit={isOverLimit}
+          limitTemp={limitTemp}
+          correctionAction={correctionAction}
+          onCorrectionActionChange={setCorrectionAction}
+          correctionRequired={correctionRequired}
           incOnePress={incOnePress}
           incTenthPress={incTenthPress}
           decOnePress={decOnePress}
@@ -544,6 +569,11 @@ type RecordViewProps = {
   onRecordedAtChange: (v: string) => void;
   temperature: number;
   tempColorClass: string;
+  isOverLimit: boolean;
+  limitTemp: number | null;
+  correctionAction: string;
+  onCorrectionActionChange: (v: string) => void;
+  correctionRequired: boolean;
   incOnePress: ReturnType<typeof useLongPress>;
   incTenthPress: ReturnType<typeof useLongPress>;
   decOnePress: ReturnType<typeof useLongPress>;
@@ -570,6 +600,11 @@ function RecordView({
   onRecordedAtChange,
   temperature,
   tempColorClass,
+  isOverLimit,
+  limitTemp,
+  correctionAction,
+  onCorrectionActionChange,
+  correctionRequired,
   incOnePress,
   incTenthPress,
   decOnePress,
@@ -634,9 +669,9 @@ function RecordView({
       </h3>
 
       {/* Limit info */}
-      {equipment?.limit_temp != null ? (
+      {limitTemp !== null ? (
         <p className="text-center text-sm font-semibold text-slate-500">
-          Standaardwaarde: {equipment.limit_temp.toFixed(1)} °C
+          Limiet: {limitTemp.toFixed(1)} °C
         </p>
       ) : null}
 
@@ -733,6 +768,54 @@ function RecordView({
         Houd een knop ingedrukt om snel aan te passen. Tik op het getal om
         handmatig in te voeren.
       </p>
+
+      {/* Limit waarschuwing + corrigerende maatregel */}
+      {isOverLimit && limitTemp !== null ? (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex flex-col gap-3 rounded-2xl border-2 border-red-300 border-b-4 border-b-red-500 bg-red-50 px-5 py-4 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
+              <AlertTriangle className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-black text-red-700">
+                Temperatuur boven limiet ({limitTemp.toFixed(1)} °C)
+              </p>
+              <p className="mt-1 text-sm font-semibold text-red-700/90">
+                Vul een corrigerende maatregel in om door te gaan.
+              </p>
+            </div>
+          </div>
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-red-700">
+              Corrigerende maatregel
+            </span>
+            <textarea
+              value={correctionAction}
+              onChange={(e) => onCorrectionActionChange(e.target.value)}
+              placeholder="Bijv. Koeling op stand 4 gezet, deur gecontroleerd…"
+              rows={3}
+              autoFocus
+              className={[
+                "w-full resize-none rounded-2xl border-2 border-b-4 bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none focus:ring-4",
+                correctionRequired
+                  ? "border-red-400 border-b-red-500 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-slate-200 border-b-slate-300 focus:border-slate-900 focus:ring-slate-900/10",
+              ].join(" ")}
+              aria-invalid={correctionRequired}
+              aria-required="true"
+            />
+            {correctionRequired ? (
+              <span className="text-xs font-bold text-red-700">
+                Verplicht: vul een corrigerende maatregel in.
+              </span>
+            ) : null}
+          </label>
+        </div>
+      ) : null}
 
       {/* Opmerking */}
       <label className="flex flex-col gap-2">

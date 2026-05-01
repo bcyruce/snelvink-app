@@ -25,7 +25,12 @@ type HaccpRecordRow = {
   location_name: string | null;
   completed_tasks: string[] | null;
   image_urls: string[] | null;
-  haccp_equipments: { name: string | null } | { name: string | null }[] | null;
+  opmerking: string | null;
+  correction_action: string | null;
+  haccp_equipments:
+    | { name: string | null; limit_temp: number | null }
+    | { name: string | null; limit_temp: number | null }[]
+    | null;
 };
 
 type ReportRow = {
@@ -35,6 +40,8 @@ type ReportRow = {
   taskName: string;
   valueOrStatus: string;
   remarks: string;
+  correctionAction: string | null;
+  isOverLimit: boolean;
   source: "haccp" | "custom";
   photoUrls: string[];
 };
@@ -74,6 +81,13 @@ function equipmentName(row: HaccpRecordRow): string {
   if (!e) return "Onbekend apparaat";
   if (Array.isArray(e)) return e[0]?.name ?? "Onbekend apparaat";
   return e.name ?? "Onbekend apparaat";
+}
+
+function equipmentLimit(row: HaccpRecordRow): number | null {
+  const e = row.haccp_equipments;
+  if (!e) return null;
+  const entry = Array.isArray(e) ? e[0] : e;
+  return typeof entry?.limit_temp === "number" ? entry.limit_temp : null;
 }
 
 function describeHaccpRow(row: HaccpRecordRow): {
@@ -117,7 +131,7 @@ function describeHaccpRow(row: HaccpRecordRow): {
       typeof row.temperature === "number"
         ? `${Number(row.temperature).toFixed(1)} °C`
         : "—",
-    remarks: "",
+    remarks: row.opmerking ?? "",
   };
 }
 
@@ -202,7 +216,7 @@ export default function HistoryList() {
     const haccpBase = supabase
       .from("haccp_records")
       .select(
-        "id, recorded_at, module_type, temperature, status, reason, product_name, location_name, completed_tasks, image_urls, haccp_equipments ( name )",
+        "id, recorded_at, module_type, temperature, status, reason, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, haccp_equipments ( name, limit_temp )",
       )
       .eq("restaurant_id", restaurantId);
 
@@ -227,6 +241,13 @@ export default function HistoryList() {
       (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => {
         const { apparaat, taskName, valueOrStatus, remarks } =
           describeHaccpRow(row);
+        const limit = equipmentLimit(row);
+        const isOverLimit =
+          (row.module_type === "koeling" ||
+            row.module_type === "kerntemperatuur") &&
+          typeof row.temperature === "number" &&
+          typeof limit === "number" &&
+          Number(row.temperature) > limit;
         return {
           id: `h-${row.id}`,
           created_at: row.recorded_at,
@@ -234,6 +255,8 @@ export default function HistoryList() {
           taskName,
           valueOrStatus,
           remarks,
+          correctionAction: row.correction_action ?? null,
+          isOverLimit,
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
         };
@@ -259,6 +282,8 @@ export default function HistoryList() {
           taskName: moduleName,
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
           remarks: value.remark ?? "",
+          correctionAction: null,
+          isOverLimit: false,
           source: "custom" as const,
           photoUrls,
         }));
@@ -398,8 +423,20 @@ export default function HistoryList() {
                       <td className="border-b border-slate-100 px-4 py-5 text-base font-semibold text-slate-600 print:border-black print:text-black">
                         {translateHaccpText(row.taskName)}
                       </td>
-                      <td className="whitespace-nowrap border-b border-slate-100 px-4 py-5 text-base font-black text-slate-900 print:border-black print:text-black">
+                      <td
+                        className={[
+                          "whitespace-nowrap border-b border-slate-100 px-4 py-5 text-base font-black print:border-black print:text-black",
+                          row.isOverLimit
+                            ? "text-red-600"
+                            : "text-slate-900",
+                        ].join(" ")}
+                      >
                         {translateHaccpText(row.valueOrStatus)}
+                        {row.isOverLimit ? (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-black uppercase tracking-wide text-red-700 print:bg-white print:text-black">
+                            Boven limiet
+                          </span>
+                        ) : null}
                       </td>
                       <td className="border-b border-slate-100 px-4 py-5 text-base text-slate-700 print:border-black print:text-black">
                         <SupercellButton
@@ -429,6 +466,12 @@ export default function HistoryList() {
                               ? translateHaccpText(row.remarks)
                               : "—"}
                           </p>
+                          {row.correctionAction ? (
+                            <p className="mt-1 font-bold text-black">
+                              Corrigerende maatregel:{" "}
+                              {translateHaccpText(row.correctionAction)}
+                            </p>
+                          ) : null}
                           {row.photoUrls.length > 0 ? (
                             <div className="mt-2 flex flex-wrap gap-2">
                               {row.photoUrls.map((url, i) => (
@@ -534,14 +577,47 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="rounded-2xl bg-slate-50 px-5 py-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+          <div
+            className={[
+              "rounded-2xl px-5 py-4",
+              row.isOverLimit
+                ? "border-2 border-red-300 bg-red-50"
+                : "bg-slate-50",
+            ].join(" ")}
+          >
+            <p
+              className={[
+                "text-xs font-bold uppercase tracking-wide",
+                row.isOverLimit ? "text-red-700" : "text-slate-500",
+              ].join(" ")}
+            >
               Waarde / status
             </p>
-            <p className="mt-1 text-2xl font-black text-slate-900">
+            <p
+              className={[
+                "mt-1 text-2xl font-black",
+                row.isOverLimit ? "text-red-600" : "text-slate-900",
+              ].join(" ")}
+            >
               {translate(row.valueOrStatus)}
+              {row.isOverLimit ? (
+                <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 align-middle text-xs font-black uppercase tracking-wide text-red-700">
+                  Boven limiet
+                </span>
+              ) : null}
             </p>
           </div>
+
+          {row.correctionAction ? (
+            <section className="mt-5">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-red-700">
+                Corrigerende maatregel
+              </h3>
+              <p className="mt-2 whitespace-pre-wrap rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-base font-semibold leading-relaxed text-red-800 shadow-sm">
+                {translate(row.correctionAction)}
+              </p>
+            </section>
+          ) : null}
 
           <section className="mt-5">
             <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
