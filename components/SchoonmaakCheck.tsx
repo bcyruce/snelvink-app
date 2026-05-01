@@ -335,6 +335,7 @@ export default function SchoonmaakCheck({
           module_type: recordModuleType,
           custom_module_id: customModuleId ?? null,
           equipment_id: null,
+          location_id: selectedLocation.id,
           location_name: selectedLocation.name,
           completed_tasks: completed,
           temperature: null,

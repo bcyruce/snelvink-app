@@ -1,8 +1,15 @@
 "use client";
 
+import FrequencySelector from "@/components/FrequencySelector";
 import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
 import { useUser, UserProvider } from "@/hooks/useUser";
+import {
+  normalizeSchedule,
+  scheduleToJson,
+  validateSchedule,
+  type FrequencySchedule,
+} from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -11,6 +18,7 @@ import { useCallback, useEffect, useState } from "react";
 type Location = {
   id: string;
   name: string;
+  schedule?: unknown;
 };
 
 type CleaningTask = {
@@ -35,6 +43,7 @@ function LocationEditContent() {
 
   // Form state
   const [name, setName] = useState("");
+  const [schedule, setSchedule] = useState<FrequencySchedule | null>(null);
 
   useEffect(() => {
     async function loadLocation() {
@@ -42,7 +51,7 @@ function LocationEditContent() {
 
       const { data, error } = await supabase
         .from("haccp_locations")
-        .select("id, name")
+        .select("id, name, schedule")
         .eq("id", locationId)
         .single();
 
@@ -55,6 +64,7 @@ function LocationEditContent() {
 
       setLocation(data);
       setName(data.name);
+      setSchedule(normalizeSchedule(data.schedule));
       setLoading(false);
     }
 
@@ -94,9 +104,16 @@ function LocationEditContent() {
     setSaving(true);
     setErrorMessage(null);
 
+    const scheduleError = validateSchedule(schedule);
+    if (scheduleError) {
+      setErrorMessage(scheduleError);
+      setSaving(false);
+      return;
+    }
+
     const { error } = await supabase
       .from("haccp_locations")
-      .update({ name: trimmedName })
+      .update({ name: trimmedName, schedule: scheduleToJson(schedule) })
       .eq("id", locationId);
 
     if (error) {
@@ -107,7 +124,7 @@ function LocationEditContent() {
     }
 
     router.push("/taken/schoonmaak");
-  }, [name, locationId, router]);
+  }, [name, schedule, locationId, router]);
 
   const handleAddTask = useCallback(
     async (taskName: string) => {
@@ -279,6 +296,8 @@ function LocationEditContent() {
               onAdd={handleAddTask}
             />
           </div>
+
+          <FrequencySelector value={schedule} onChange={setSchedule} />
 
           {/* Save button */}
           <SupercellButton

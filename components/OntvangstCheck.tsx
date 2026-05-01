@@ -327,6 +327,7 @@ export default function OntvangstCheck({
           module_type: recordModuleType,
           custom_module_id: customModuleId ?? null,
           equipment_id: null,
+          product_id: selectedProduct.id,
           product_name: selectedProduct.name,
           status,
           reason: reasonsArray.length > 0 ? reasonsArray.join(", ") : null,

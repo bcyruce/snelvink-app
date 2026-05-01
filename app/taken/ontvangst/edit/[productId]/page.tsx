@@ -1,7 +1,14 @@
 "use client";
 
+import FrequencySelector from "@/components/FrequencySelector";
 import SupercellButton from "@/components/SupercellButton";
 import { useUser, UserProvider } from "@/hooks/useUser";
+import {
+  normalizeSchedule,
+  scheduleToJson,
+  validateSchedule,
+  type FrequencySchedule,
+} from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Check, Plus, Trash2, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -12,13 +19,14 @@ type Product = {
   name: string;
   accept_reasons: string[] | null;
   reject_reasons: string[] | null;
+  schedule?: unknown;
 };
 
 function ProductEditContent() {
   const router = useRouter();
   const params = useParams<{ productId: string }>();
   const productId = params?.productId ?? "";
-  const { profile } = useUser();
+  useUser();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +48,7 @@ function ProductEditContent() {
   const [showRejectReasons, setShowRejectReasons] = useState(false);
   const [newAcceptReason, setNewAcceptReason] = useState("");
   const [newRejectReason, setNewRejectReason] = useState("");
+  const [schedule, setSchedule] = useState<FrequencySchedule | null>(null);
 
   useEffect(() => {
     async function loadProduct() {
@@ -47,7 +56,7 @@ function ProductEditContent() {
 
       const { data, error } = await supabase
         .from("haccp_products")
-        .select("id, name, accept_reasons, reject_reasons")
+        .select("id, name, accept_reasons, reject_reasons, schedule")
         .eq("id", productId)
         .single();
 
@@ -77,6 +86,7 @@ function ProductEditContent() {
               "Anders",
             ],
       );
+      setSchedule(normalizeSchedule(data.schedule));
       setLoading(false);
     }
 
@@ -93,6 +103,13 @@ function ProductEditContent() {
     setSaving(true);
     setErrorMessage(null);
 
+    const scheduleError = validateSchedule(schedule);
+    if (scheduleError) {
+      setErrorMessage(scheduleError);
+      setSaving(false);
+      return;
+    }
+
     // Ensure "Anders" is always included
     const finalAcceptReasons = acceptReasons.includes("Anders")
       ? acceptReasons
@@ -107,6 +124,7 @@ function ProductEditContent() {
         name: trimmedName,
         accept_reasons: finalAcceptReasons,
         reject_reasons: finalRejectReasons,
+        schedule: scheduleToJson(schedule),
       })
       .eq("id", productId);
 
@@ -118,7 +136,7 @@ function ProductEditContent() {
     }
 
     router.push("/taken/ontvangst");
-  }, [name, acceptReasons, rejectReasons, productId, router]);
+  }, [name, acceptReasons, rejectReasons, schedule, productId, router]);
 
   const addAcceptReason = () => {
     const trimmed = newAcceptReason.trim();
@@ -367,6 +385,8 @@ function ProductEditContent() {
               </div>
             </div>
           ) : null}
+
+          <FrequencySelector value={schedule} onChange={setSchedule} />
 
           {/* Save button */}
           <SupercellButton

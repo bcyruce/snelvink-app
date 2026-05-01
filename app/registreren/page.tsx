@@ -2,6 +2,7 @@
 
 import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import RecordSelectionModal from "@/components/RecordSelectionModal";
+import ScheduleReminderList from "@/components/ScheduleReminderList";
 import SupercellButton from "@/components/SupercellButton";
 import ThemePicker from "@/components/ThemePicker";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
@@ -117,6 +118,8 @@ function RegistrerenContent() {
         >
           Tik op de knop hierboven om een nieuwe registratie te starten.
         </p>
+
+        <ScheduleReminderList />
       </section>
 
       {/* Module Selection Modal */}

@@ -1,7 +1,14 @@
 "use client";
 
+import FrequencySelector from "@/components/FrequencySelector";
 import SupercellButton from "@/components/SupercellButton";
 import { useUser, UserProvider } from "@/hooks/useUser";
+import {
+  normalizeSchedule,
+  scheduleToJson,
+  validateSchedule,
+  type FrequencySchedule,
+} from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
@@ -14,6 +21,7 @@ type Equipment = {
   default_temp?: number | null;
   last_temp?: number | null;
   limit_temp?: number | null;
+  schedule?: unknown;
 };
 
 function EquipmentEditContent() {
@@ -37,6 +45,7 @@ function EquipmentEditContent() {
   const [defaultValueText, setDefaultValueText] = useState("7");
   const [limitTemp, setLimitTemp] = useState(7);
   const [limitTempText, setLimitTempText] = useState("7");
+  const [schedule, setSchedule] = useState<FrequencySchedule | null>(null);
 
   const moduleTitle =
     moduleIdParam === "koeling" ? "Koeling" : "Kerntemperatuur";
@@ -87,6 +96,7 @@ function EquipmentEditContent() {
         typeof row.limit_temp === "number" ? row.limit_temp : defaultTemp;
       setLimitTemp(initialLimit);
       setLimitTempText(String(initialLimit));
+      setSchedule(normalizeSchedule(row.schedule));
       setLoading(false);
     }
 
@@ -103,10 +113,18 @@ function EquipmentEditContent() {
     setSaving(true);
     setErrorMessage(null);
 
+    const scheduleError = validateSchedule(schedule);
+    if (scheduleError) {
+      setErrorMessage(scheduleError);
+      setSaving(false);
+      return;
+    }
+
     const updates: Record<string, unknown> = {
       name: trimmedName,
       default_temp: hasDefaultValue ? defaultValue : null,
       limit_temp: limitTemp,
+      schedule: scheduleToJson(schedule),
     };
 
     let { error } = await supabase
@@ -139,7 +157,16 @@ function EquipmentEditContent() {
     }
 
     router.push(`/taken/${moduleIdParam}`);
-  }, [name, hasDefaultValue, defaultValue, limitTemp, equipmentId, moduleIdParam, router]);
+  }, [
+    name,
+    hasDefaultValue,
+    defaultValue,
+    limitTemp,
+    schedule,
+    equipmentId,
+    moduleIdParam,
+    router,
+  ]);
 
   if (!isValidModule) {
     notFound();
@@ -325,6 +352,8 @@ function EquipmentEditContent() {
               />
             </label>
           </div>
+
+          <FrequencySelector value={schedule} onChange={setSchedule} />
 
           {/* Save button */}
           <SupercellButton

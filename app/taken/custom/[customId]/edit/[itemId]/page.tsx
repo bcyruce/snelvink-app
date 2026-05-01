@@ -1,8 +1,15 @@
 "use client";
 
+import FrequencySelector from "@/components/FrequencySelector";
 import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import {
+  normalizeSchedule,
+  scheduleToJson,
+  validateSchedule,
+  type FrequencySchedule,
+} from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Check, Pencil, Trash2, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -39,6 +46,7 @@ function CustomItemEditContent() {
 
   // Shared
   const [name, setName] = useState("");
+  const [schedule, setSchedule] = useState<FrequencySchedule | null>(null);
 
   // Getal
   const [hasDefault, setHasDefault] = useState(false);
@@ -92,7 +100,7 @@ function CustomItemEditContent() {
         const { data, error } = await supabase
           .from("haccp_equipments")
           .select(
-            "id, name, default_temp, limit_temp, step, unit, last_temp",
+            "id, name, default_temp, limit_temp, step, unit, last_temp, schedule",
           )
           .eq("id", itemId)
           .maybeSingle();
@@ -121,10 +129,11 @@ function CustomItemEditContent() {
             : "0.1",
         );
         setUnit(typeof data.unit === "string" ? data.unit : "");
+        setSchedule(normalizeSchedule(data.schedule));
       } else if (moduleType === "boolean") {
         const { data, error } = await supabase
           .from("haccp_products")
-          .select("id, name, accept_reasons, reject_reasons")
+          .select("id, name, accept_reasons, reject_reasons, schedule")
           .eq("id", itemId)
           .maybeSingle();
         if (ignore) return;
@@ -144,10 +153,11 @@ function CustomItemEditContent() {
             ? data.reject_reasons
             : ["Anders"],
         );
+        setSchedule(normalizeSchedule(data.schedule));
       } else {
         const { data, error } = await supabase
           .from("haccp_locations")
-          .select("id, name")
+          .select("id, name, schedule")
           .eq("id", itemId)
           .maybeSingle();
         if (ignore) return;
@@ -157,6 +167,7 @@ function CustomItemEditContent() {
           return;
         }
         setName(data.name ?? "");
+        setSchedule(normalizeSchedule(data.schedule));
 
         const { data: ts } = await supabase
           .from("haccp_cleaning_tasks")
@@ -189,6 +200,13 @@ function CustomItemEditContent() {
     setSaving(true);
     setErrorMessage(null);
 
+    const scheduleError = validateSchedule(schedule);
+    if (scheduleError) {
+      setErrorMessage(scheduleError);
+      setSaving(false);
+      return;
+    }
+
     if (customModule.moduleType === "number") {
       const parsedDefault = Number.parseFloat(
         defaultValueText.replace(",", "."),
@@ -207,6 +225,7 @@ function CustomItemEditContent() {
           step:
             Number.isFinite(parsedStep) && parsedStep > 0 ? parsedStep : 0.1,
           unit: unit.trim() || null,
+          schedule: scheduleToJson(schedule),
         })
         .eq("id", itemId);
 
@@ -229,6 +248,7 @@ function CustomItemEditContent() {
           name: trimmed,
           accept_reasons: finalAccept,
           reject_reasons: finalReject,
+          schedule: scheduleToJson(schedule),
         })
         .eq("id", itemId);
 
@@ -241,7 +261,7 @@ function CustomItemEditContent() {
     } else {
       const { error } = await supabase
         .from("haccp_locations")
-        .update({ name: trimmed })
+        .update({ name: trimmed, schedule: scheduleToJson(schedule) })
         .eq("id", itemId);
 
       if (error) {
@@ -263,6 +283,7 @@ function CustomItemEditContent() {
     hasDefault,
     acceptReasons,
     rejectReasons,
+    schedule,
     itemId,
     router,
     backToManage,
@@ -411,6 +432,8 @@ function CustomItemEditContent() {
                 onDelete={handleDeleteTask}
               />
             ) : null}
+
+            <FrequencySelector value={schedule} onChange={setSchedule} />
 
             <SupercellButton
               type="button"
