@@ -35,6 +35,7 @@ function EquipmentEditContent() {
 
   // Form state
   const [name, setName] = useState("");
+  const [hasDefaultValue, setHasDefaultValue] = useState(false);
   const [defaultValue, setDefaultValue] = useState(7);
   const [unit, setUnit] = useState("°C");
   const [step, setStep] = useState(0.5);
@@ -74,9 +75,13 @@ function EquipmentEditContent() {
       const row = data as Equipment;
       setEquipment(row);
       setName(row.name);
+      const storedDefault = row.default_temp;
+      setHasDefaultValue(
+        storedDefault !== null && storedDefault !== undefined,
+      );
       setDefaultValue(
-        typeof row.default_temp === "number"
-          ? row.default_temp
+        typeof storedDefault === "number"
+          ? storedDefault
           : typeof row.last_temp === "number"
             ? row.last_temp
             : defaultTemp,
@@ -105,7 +110,7 @@ function EquipmentEditContent() {
 
     const updates: Record<string, unknown> = {
       name: trimmedName,
-      default_temp: defaultValue,
+      default_temp: hasDefaultValue ? defaultValue : null,
       unit: unit.trim() || "°C",
       step: step || 0.5,
       limit_temp: limitTemp,
@@ -141,7 +146,7 @@ function EquipmentEditContent() {
     }
 
     router.push(`/taken/${moduleIdParam}`);
-  }, [name, defaultValue, unit, step, limitTemp, equipmentId, moduleIdParam, router]);
+  }, [name, hasDefaultValue, defaultValue, unit, step, limitTemp, equipmentId, moduleIdParam, router]);
 
   if (!isValidModule) {
     notFound();
@@ -237,8 +242,26 @@ function EquipmentEditContent() {
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <span className="text-lg font-bold text-slate-800">
-                Standaardwaarde
+                Standaardwaarde instellen
               </span>
+              <button
+                type="button"
+                onClick={() => setHasDefaultValue(!hasDefaultValue)}
+                className={[
+                  "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+                  hasDefaultValue
+                    ? "border-blue-700 bg-blue-500"
+                    : "border-slate-400 bg-slate-200",
+                ].join(" ")}
+                aria-pressed={hasDefaultValue}
+              >
+                <span
+                  className={[
+                    "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
+                    hasDefaultValue ? "translate-x-7" : "translate-x-1",
+                  ].join(" ")}
+                />
+              </button>
             </div>
 
             <p className="text-sm text-slate-500">
