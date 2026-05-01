@@ -12,7 +12,10 @@ type HaccpModuleType =
   | "koeling"
   | "kerntemperatuur"
   | "ontvangst"
-  | "schoonmaak";
+  | "schoonmaak"
+  | "custom_number"
+  | "custom_boolean"
+  | "custom_list";
 
 type HaccpRecordRow = {
   id: string;
@@ -28,9 +31,22 @@ type HaccpRecordRow = {
   image_urls: string[] | null;
   opmerking: string | null;
   correction_action: string | null;
+  custom_module_id: string | null;
   haccp_equipments:
-    | { name: string | null; limit_temp: number | null }
-    | { name: string | null; limit_temp: number | null }[]
+    | {
+        name: string | null;
+        limit_temp: number | null;
+        unit: string | null;
+      }
+    | {
+        name: string | null;
+        limit_temp: number | null;
+        unit: string | null;
+      }[]
+    | null;
+  custom_modules:
+    | { name: string | null }
+    | { name: string | null }[]
     | null;
 };
 
@@ -76,7 +92,17 @@ function moduleLabel(type: HaccpModuleType): string {
   if (type === "kerntemperatuur") return "Kerntemperatuur";
   if (type === "ontvangst") return "Ontvangst";
   if (type === "schoonmaak") return "Schoonmaak";
+  if (type === "custom_number") return "Getal";
+  if (type === "custom_boolean") return "Ja/Nee";
+  if (type === "custom_list") return "Lijst";
   return type;
+}
+
+function customModuleName(row: HaccpRecordRow): string | null {
+  const c = row.custom_modules;
+  if (!c) return null;
+  const entry = Array.isArray(c) ? c[0] : c;
+  return entry?.name ?? null;
 }
 
 function equipmentName(row: HaccpRecordRow): string {
@@ -93,14 +119,23 @@ function equipmentLimit(row: HaccpRecordRow): number | null {
   return typeof entry?.limit_temp === "number" ? entry.limit_temp : null;
 }
 
+function equipmentUnit(row: HaccpRecordRow): string {
+  const e = row.haccp_equipments;
+  if (!e) return "°C";
+  const entry = Array.isArray(e) ? e[0] : e;
+  return entry?.unit && entry.unit.length > 0 ? entry.unit : "°C";
+}
+
 function describeHaccpRow(row: HaccpRecordRow): {
   apparaat: string;
   taskName: string;
   valueOrStatus: string;
   remarks: string;
 } {
-  if (row.module_type === "ontvangst") {
-    const productName = row.product_name ?? "Onbekend product";
+  const customName = customModuleName(row);
+
+  if (row.module_type === "ontvangst" || row.module_type === "custom_boolean") {
+    const productName = row.product_name ?? "Onbekend item";
     const status =
       row.status === "goedgekeurd"
         ? "Goedgekeurd"
@@ -113,30 +148,32 @@ function describeHaccpRow(row: HaccpRecordRow): {
         : (row.reason ?? "");
     return {
       apparaat: productName,
-      taskName: "Ontvangst",
+      taskName: customName ?? moduleLabel(row.module_type),
       valueOrStatus: status,
       remarks: reasonsList,
     };
   }
-  if (row.module_type === "schoonmaak") {
-    const location = row.location_name ?? "Onbekende locatie";
+  if (row.module_type === "schoonmaak" || row.module_type === "custom_list") {
+    const location = row.location_name ?? "Onbekende groep";
     const tasks = row.completed_tasks ?? [];
     return {
       apparaat: location,
-      taskName: "Schoonmaak",
-      valueOrStatus: tasks.length > 0 ? "Voltooid" : "Geen taken aangevinkt",
+      taskName: customName ?? moduleLabel(row.module_type),
+      valueOrStatus: tasks.length > 0 ? "Voltooid" : "Geen items aangevinkt",
       remarks: tasks.length > 0 ? tasks.join(", ") : "",
     };
   }
+  // Koeling / kerntemperatuur / custom_number
+  const unit = equipmentUnit(row);
   return {
     apparaat: equipmentName(row),
     taskName:
       row.module_type === "koeling"
         ? "Temperatuur check"
-        : moduleLabel(row.module_type),
+        : (customName ?? moduleLabel(row.module_type)),
     valueOrStatus:
       typeof row.temperature === "number"
-        ? `${Number(row.temperature).toFixed(1)} °C`
+        ? `${Number(row.temperature).toFixed(1)} ${unit}`
         : "—",
     remarks: row.opmerking ?? "",
   };
@@ -223,7 +260,7 @@ export default function HistoryList() {
     const haccpBase = supabase
       .from("haccp_records")
       .select(
-        "id, recorded_at, module_type, temperature, status, reason, reasons, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, haccp_equipments ( name, limit_temp )",
+        "id, recorded_at, module_type, temperature, status, reason, reasons, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, custom_module_id, haccp_equipments ( name, limit_temp, unit ), custom_modules ( name )",
       )
       .eq("restaurant_id", restaurantId);
 
@@ -251,21 +288,24 @@ export default function HistoryList() {
         const limit = equipmentLimit(row);
         const isOverLimit =
           (row.module_type === "koeling" ||
-            row.module_type === "kerntemperatuur") &&
+            row.module_type === "kerntemperatuur" ||
+            row.module_type === "custom_number") &&
           typeof row.temperature === "number" &&
           typeof limit === "number" &&
           Number(row.temperature) > limit;
-        const ontvangstReasons =
-          row.module_type === "ontvangst"
-            ? Array.isArray(row.reasons) && row.reasons.length > 0
-              ? row.reasons
-              : row.reason
-                ? row.reason
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter((s) => s.length > 0)
-                : []
-            : [];
+        const isStatusType =
+          row.module_type === "ontvangst" ||
+          row.module_type === "custom_boolean";
+        const ontvangstReasons = isStatusType
+          ? Array.isArray(row.reasons) && row.reasons.length > 0
+            ? row.reasons
+            : row.reason
+              ? row.reason
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter((s) => s.length > 0)
+              : []
+          : [];
         return {
           id: `h-${row.id}`,
           created_at: row.recorded_at,
@@ -275,8 +315,7 @@ export default function HistoryList() {
           remarks,
           correctionAction: row.correction_action ?? null,
           isOverLimit,
-          ontvangstStatus:
-            row.module_type === "ontvangst" ? row.status : null,
+          ontvangstStatus: isStatusType ? row.status : null,
           ontvangstReasons,
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],

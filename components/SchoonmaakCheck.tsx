@@ -1,11 +1,12 @@
 "use client";
 
+import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import { Camera, Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Camera, Check, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -33,9 +34,29 @@ function buildRecordedAt(local: string): string {
 
 type Props = {
   mode?: "manage" | "record";
+  /**
+   * Wanneer gezet, opereert de module op rijen met dit `custom_module_id`
+   * in plaats van standaard schoonmaak-locaties. Records worden geschreven
+   * naar `haccp_records` met `module_type = "custom_list"`.
+   */
+  customModuleId?: string;
+  /** Custom heeft een eigen titel (module-naam) in plaats van "Schoonmaak". */
+  title?: string;
 };
 
-export default function SchoonmaakCheck({ mode = "record" }: Props) {
+export default function SchoonmaakCheck({
+  mode = "record",
+  customModuleId,
+  title,
+}: Props) {
+  const isCustom = !!customModuleId;
+  const editBasePath = isCustom
+    ? `/taken/custom/${customModuleId}/edit`
+    : "/taken/schoonmaak/edit";
+  const recordModuleType = isCustom ? "custom_list" : "schoonmaak";
+  const headingTitle = title ?? "Schoonmaak";
+  const groupSingular = isCustom ? "Groep" : "Locatie";
+  const groupSingularLower = isCustom ? "groep" : "locatie";
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -74,11 +95,14 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
     if (!restaurantId) return;
     setLoadingLocations(true);
     setErrorMessage(null);
-    const { data, error } = await supabase
+    const baseQuery = supabase
       .from("haccp_locations")
       .select("id, name")
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: true });
+    const { data, error } = await (isCustom
+      ? baseQuery.eq("custom_module_id", customModuleId)
+      : baseQuery.is("custom_module_id", null));
 
     if (error) {
       console.error("haccp_locations laden mislukt:", error);
@@ -87,38 +111,41 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
       setLocations((data ?? []) as Location[]);
     }
     setLoadingLocations(false);
-  }, [restaurantId]);
+  }, [restaurantId, customModuleId, isCustom]);
 
   useEffect(() => {
     void loadLocations();
   }, [loadLocations]);
 
-  const handleAddLocation = useCallback(async () => {
-    if (!restaurantId) return;
-    const input = window.prompt("Naam van de nieuwe locatie");
-    if (!input) return;
-    const name = input.trim();
-    if (!name) return;
+  const handleAddLocation = useCallback(
+    async (name: string) => {
+      if (!restaurantId) return;
 
-    const { data, error } = await supabase
-      .from("haccp_locations")
-      .insert({ restaurant_id: restaurantId, name })
-      .select("id, name")
-      .single();
+      const { data, error } = await supabase
+        .from("haccp_locations")
+        .insert({
+          restaurant_id: restaurantId,
+          name,
+          custom_module_id: customModuleId ?? null,
+        })
+        .select("id, name")
+        .single();
 
-    if (error) {
-      console.error("Locatie toevoegen mislukt:", error);
-      setErrorMessage("Locatie toevoegen mislukt.");
-      return;
-    }
-    if (data) {
-      const next = data as Location;
-      setLocations((prev) => [...prev, next]);
-      if (mode === "record") {
-        setSelectedLocation(next);
+      if (error) {
+        console.error("Locatie toevoegen mislukt:", error);
+        setErrorMessage("Locatie toevoegen mislukt.");
+        return;
       }
-    }
-  }, [restaurantId, mode]);
+      if (data) {
+        const next = data as Location;
+        setLocations((prev) => [...prev, next]);
+        if (mode === "record") {
+          setSelectedLocation(next);
+        }
+      }
+    },
+    [restaurantId, mode, customModuleId],
+  );
 
   const handleDeleteLocation = useCallback(
     async (location: Location) => {
@@ -165,8 +192,13 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
 
       const rows = (data ?? []) as CleaningTask[];
 
-      // Eerste keer dat deze locatie geopend wordt → default taken seeden.
-      if (rows.length === 0 && !seededLocationRef.current.has(location.id)) {
+      // Eerste keer dat deze locatie geopend wordt → default taken seeden
+      // (alleen voor de standaard schoonmaak module; custom Lijst start leeg).
+      if (
+        rows.length === 0 &&
+        !seededLocationRef.current.has(location.id) &&
+        !isCustom
+      ) {
         seededLocationRef.current.add(location.id);
 
         const { data: seeded, error: seedError } = await supabase
@@ -193,7 +225,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
       setCheckedTaskIds(new Set());
       setLoadingTasks(false);
     },
-    [restaurantId],
+    [restaurantId, isCustom],
   );
 
   // Laad taken bij wisselen locatie
@@ -300,7 +332,8 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
         .insert({
           restaurant_id: restaurantId,
           user_id: user?.id ?? null,
-          module_type: "schoonmaak",
+          module_type: recordModuleType,
+          custom_module_id: customModuleId ?? null,
           equipment_id: null,
           location_name: selectedLocation.name,
           completed_tasks: completed,
@@ -337,7 +370,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
     return (
       <div className="mt-2 flex flex-col gap-6">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          Schoonmaak
+          {headingTitle}
         </h2>
 
         {errorMessage ? (
@@ -355,7 +388,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
         {/* ===== Locaties beheer ===== */}
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Locaties
+            {isCustom ? "Groepen" : "Locaties"}
           </h3>
 
           {loadingLocations ? (
@@ -372,7 +405,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
                     </div>
                     <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                       <a
-                        href={`/taken/schoonmaak/edit/${loc.id}`}
+                        href={`${editBasePath}/${loc.id}`}
                         aria-label={`Bewerk ${loc.name}`}
                         className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                       >
@@ -393,16 +426,12 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
             </ul>
           )}
 
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            onClick={handleAddLocation}
+          <InlineAddInput
+            label={`${groupSingular} toevoegen`}
+            placeholder={`Naam van de ${groupSingularLower}`}
+            onAdd={handleAddLocation}
             disabled={!restaurantId}
-            className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-          >
-            <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            Locatie toevoegen
-          </SupercellButton>
+          />
         </section>
       </div>
     );
@@ -421,7 +450,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
       </UpgradePromptModal>
 
       <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-        Schoonmaak
+        {headingTitle}
       </h2>
 
       {errorMessage ? (
@@ -440,7 +469,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Kies een locatie
+            Kies een {groupSingularLower}
           </h3>
           {selectedLocation ? (
             <SupercellButton
@@ -474,15 +503,11 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
                 <span className="flex-1 truncate">{loc.name}</span>
               </SupercellButton>
             ))}
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              onClick={handleAddLocation}
-              className="flex h-20 w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-xl normal-case"
-            >
-              <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-              Locatie toevoegen
-            </SupercellButton>
+            <InlineAddInput
+              label={`${groupSingular} toevoegen`}
+              placeholder={`Naam van de ${groupSingularLower}`}
+              onAdd={handleAddLocation}
+            />
           </div>
         )}
       </section>
@@ -507,7 +532,7 @@ export default function SchoonmaakCheck({ mode = "record" }: Props) {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Schoonmaaktaken
+              {isCustom ? "Items" : "Schoonmaaktaken"}
             </h3>
             <span className="text-sm font-bold text-slate-500">
               {completedCount}/{tasks.length} voltooid

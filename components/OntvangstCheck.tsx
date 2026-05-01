@@ -1,11 +1,12 @@
 "use client";
 
+import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import { Camera, Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Camera, Check, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -48,9 +49,29 @@ function buildRecordedAt(local: string): string {
 
 type Props = {
   mode?: "manage" | "record";
+  /**
+   * Wanneer gezet, opereert de module op rijen met dit `custom_module_id`
+   * in plaats van standaard ontvangst-producten. Records worden geschreven
+   * naar `haccp_records` met `module_type = "custom_boolean"`.
+   */
+  customModuleId?: string;
+  /** Custom heeft een eigen titel ("module naam") in plaats van "Ontvangst". */
+  title?: string;
 };
 
-export default function OntvangstCheck({ mode = "record" }: Props) {
+export default function OntvangstCheck({
+  mode = "record",
+  customModuleId,
+  title,
+}: Props) {
+  const isCustom = !!customModuleId;
+  const editBasePath = isCustom
+    ? `/taken/custom/${customModuleId}/edit`
+    : "/taken/ontvangst/edit";
+  const recordModuleType = isCustom ? "custom_boolean" : "ontvangst";
+  const headingTitle = title ?? "Ontvangst";
+  const itemSingular = isCustom ? "Item" : "Product";
+  const itemSingularLower = isCustom ? "item" : "product";
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
@@ -66,6 +87,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [status, setStatus] = useState<Status | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [andersText, setAndersText] = useState("");
   const [opmerking, setOpmerking] = useState("");
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -82,11 +104,14 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
     setLoadingProducts(true);
     setErrorMessage(null);
 
-    const { data, error } = await supabase
+    const baseQuery = supabase
       .from("haccp_products")
       .select("id, name, accept_reasons, reject_reasons")
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: true });
+    const { data, error } = await (isCustom
+      ? baseQuery.eq("custom_module_id", customModuleId)
+      : baseQuery.is("custom_module_id", null));
 
     if (error) {
       console.error("haccp_products laden mislukt:", error);
@@ -95,39 +120,42 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
       setProducts((data ?? []) as Product[]);
     }
     setLoadingProducts(false);
-  }, [restaurantId]);
+  }, [restaurantId, customModuleId, isCustom]);
 
   useEffect(() => {
     void loadProducts();
   }, [loadProducts, restaurantId]);
 
   // ---------- product CRUD ----------
-  const handleAddProduct = useCallback(async () => {
-    if (!restaurantId) return;
-    const input = window.prompt("Naam van het nieuwe product");
-    if (!input) return;
-    const name = input.trim();
-    if (!name) return;
+  const handleAddProduct = useCallback(
+    async (name: string) => {
+      if (!restaurantId) return;
 
-    const { data, error } = await supabase
-      .from("haccp_products")
-      .insert({ restaurant_id: restaurantId, name })
-      .select("id, name, accept_reasons, reject_reasons")
-      .single();
+      const { data, error } = await supabase
+        .from("haccp_products")
+        .insert({
+          restaurant_id: restaurantId,
+          name,
+          custom_module_id: customModuleId ?? null,
+        })
+        .select("id, name, accept_reasons, reject_reasons")
+        .single();
 
-    if (error) {
-      console.error("Product toevoegen mislukt:", error);
-      setErrorMessage("Product toevoegen mislukt.");
-      return;
-    }
-    if (data) {
-      const next = data as Product;
-      setProducts((prev) => [...prev, next]);
-      if (mode === "record") {
-        setSelectedProduct(next);
+      if (error) {
+        console.error("Product toevoegen mislukt:", error);
+        setErrorMessage("Product toevoegen mislukt.");
+        return;
       }
-    }
-  }, [restaurantId, mode]);
+      if (data) {
+        const next = data as Product;
+        setProducts((prev) => [...prev, next]);
+        if (mode === "record") {
+          setSelectedProduct(next);
+        }
+      }
+    },
+    [restaurantId, mode, customModuleId],
+  );
 
   const handleDeleteProduct = useCallback(
     async (product: Product) => {
@@ -195,25 +223,21 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
     setSelectedProduct(null);
     setStatus(null);
     setSelectedReasons([]);
+    setAndersText("");
     setOpmerking("");
   };
 
   const isAndersOption = (reason: string) => reason.trim() === "Anders";
-  const isAndersEntry = (entry: string) =>
-    entry === "Anders" || entry.startsWith("Anders:") || entry.startsWith("Anders ");
+  const isAndersSelected = selectedReasons.includes("Anders");
 
   const toggleReason = (reason: string) => {
     if (isAndersOption(reason)) {
-      setSelectedReasons((prev) => {
-        const existing = prev.find(isAndersEntry);
-        if (existing) {
-          return prev.filter((r) => !isAndersEntry(r));
-        }
-        const input = window.prompt("Beschrijf de reden (optioneel)") ?? "";
-        const trimmed = input.trim();
-        const entry = trimmed.length > 0 ? `Anders: ${trimmed}` : "Anders";
-        return [...prev, entry];
-      });
+      setSelectedReasons((prev) =>
+        prev.includes("Anders")
+          ? prev.filter((r) => r !== "Anders")
+          : [...prev, "Anders"],
+      );
+      if (isAndersSelected) setAndersText("");
       return;
     }
     setSelectedReasons((prev) =>
@@ -225,7 +249,10 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
 
   // Wanneer de status wisselt, oude selectie van redenen wissen.
   const handleSetStatus = (next: Status) => {
-    if (next !== status) setSelectedReasons([]);
+    if (next !== status) {
+      setSelectedReasons([]);
+      setAndersText("");
+    }
     setStatus(next);
   };
 
@@ -276,14 +303,23 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         }
       }
 
-      const reasonsArray = selectedReasons.filter((r) => r.trim().length > 0);
+      const reasonsArray = selectedReasons
+        .map((r) => {
+          if (r === "Anders") {
+            const trimmed = andersText.trim();
+            return trimmed.length > 0 ? `Anders: ${trimmed}` : "Anders";
+          }
+          return r;
+        })
+        .filter((r) => r.trim().length > 0);
 
       const { error: insertError } = await supabase
         .from("haccp_records")
         .insert({
           restaurant_id: restaurantId,
           user_id: user?.id ?? null,
-          module_type: "ontvangst",
+          module_type: recordModuleType,
+          custom_module_id: customModuleId ?? null,
           equipment_id: null,
           product_name: selectedProduct.name,
           status,
@@ -322,7 +358,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
     return (
       <div className="mt-2 flex flex-col gap-6">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          Ontvangst
+          {headingTitle}
         </h2>
 
         {errorMessage ? (
@@ -351,7 +387,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                   </div>
                   <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                     <a
-                      href={`/taken/ontvangst/edit/${p.id}`}
+                      href={`${editBasePath}/${p.id}`}
                       aria-label={`Bewerk ${p.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                     >
@@ -372,16 +408,12 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
           </ul>
         )}
 
-        <SupercellButton
-          size="lg"
-          variant="neutral"
-          onClick={handleAddProduct}
+        <InlineAddInput
+          label={`${itemSingular} toevoegen`}
+          placeholder={`Naam van het ${itemSingularLower}`}
+          onAdd={handleAddProduct}
           disabled={!restaurantId}
-          className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-        >
-          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Product toevoegen
-        </SupercellButton>
+        />
       </div>
     );
   }
@@ -399,7 +431,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
       </UpgradePromptModal>
 
       <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-        Ontvangst
+        {headingTitle}
       </h2>
 
       {errorMessage ? (
@@ -414,9 +446,9 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         </p>
       ) : null}
 
-      {/* ===== Product sectie ===== */}
+      {/* ===== Product/Item sectie ===== */}
       <Section
-        title="Product"
+        title={itemSingular}
         summary={selectedProduct?.name ?? null}
         onEdit={selectedProduct ? resetProduct : null}
         collapsed={currentStep !== "product"}
@@ -437,15 +469,11 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
               </SupercellButton>
             ))}
 
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              onClick={handleAddProduct}
-              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-            >
-              <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-              Product toevoegen
-            </SupercellButton>
+            <InlineAddInput
+              label={`${itemSingular} toevoegen`}
+              placeholder={`Naam van het ${itemSingularLower}`}
+              onAdd={handleAddProduct}
+            />
           </div>
         )}
       </Section>
@@ -533,16 +561,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
           ) : (
             <ul className="flex flex-col gap-2">
               {reasonsForStatus.map((r) => {
-                const andersEntry = isAndersOption(r)
-                  ? selectedReasons.find(isAndersEntry) ?? null
-                  : null;
-                const isSelected = isAndersOption(r)
-                  ? andersEntry !== null
-                  : selectedReasons.includes(r);
-                const customAndersText =
-                  andersEntry && andersEntry.startsWith("Anders:")
-                    ? andersEntry.slice("Anders:".length).trim()
-                    : "";
+                const isSelected = selectedReasons.includes(r);
                 const accent =
                   status === "goedgekeurd"
                     ? isSelected
@@ -552,7 +571,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                       ? "border-red-700 bg-red-500 text-white"
                       : "border-red-200 bg-white text-slate-800 active:bg-red-50";
                 return (
-                  <li key={r}>
+                  <li key={r} className="flex flex-col gap-2">
                     <button
                       type="button"
                       onClick={() => toggleReason(r)}
@@ -562,23 +581,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                         accent,
                       ].join(" ")}
                     >
-                      <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
-                        <span className="truncate">{r}</span>
-                        {isAndersOption(r) && customAndersText ? (
-                          <span
-                            className={[
-                              "truncate text-sm font-semibold",
-                              isSelected
-                                ? "text-white/90"
-                                : status === "goedgekeurd"
-                                  ? "text-emerald-700"
-                                  : "text-red-700",
-                            ].join(" ")}
-                          >
-                            “{customAndersText}”
-                          </span>
-                        ) : null}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate">{r}</span>
                       {isSelected ? (
                         <Check
                           className="h-6 w-6 shrink-0"
@@ -589,6 +592,22 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                         <span className="h-6 w-6 shrink-0 rounded-full border-2 border-current opacity-30" />
                       )}
                     </button>
+
+                    {isAndersOption(r) && isSelected ? (
+                      <input
+                        type="text"
+                        value={andersText}
+                        onChange={(e) => setAndersText(e.target.value)}
+                        placeholder="Beschrijf (optioneel)"
+                        autoFocus
+                        className={[
+                          "min-h-[56px] w-full rounded-xl border-2 border-b-4 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:ring-4",
+                          status === "goedgekeurd"
+                            ? "border-emerald-300 border-b-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/15"
+                            : "border-red-300 border-b-red-400 focus:border-red-500 focus:ring-red-500/15",
+                        ].join(" ")}
+                      />
+                    ) : null}
                   </li>
                 );
               })}

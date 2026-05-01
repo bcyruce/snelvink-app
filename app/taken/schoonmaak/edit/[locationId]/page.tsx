@@ -1,9 +1,10 @@
 "use client";
 
+import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
 import { useUser, UserProvider } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -108,36 +109,36 @@ function LocationEditContent() {
     router.push("/taken/schoonmaak");
   }, [name, locationId, router]);
 
-  const handleAddTask = useCallback(async () => {
-    const taskName = window.prompt("Naam van de nieuwe taak");
-    if (!taskName?.trim()) return;
+  const handleAddTask = useCallback(
+    async (taskName: string) => {
+      const restaurantId = profile?.restaurant_id ?? "";
+      if (!restaurantId) {
+        setErrorMessage("Geen restaurant gekoppeld.");
+        return;
+      }
 
-    const restaurantId = profile?.restaurant_id ?? "";
-    if (!restaurantId) {
-      setErrorMessage("Geen restaurant gekoppeld.");
-      return;
-    }
+      const { data, error } = await supabase
+        .from("haccp_cleaning_tasks")
+        .insert({
+          restaurant_id: restaurantId,
+          location_id: locationId,
+          name: taskName,
+        })
+        .select("id, name, location_id")
+        .single();
 
-    const { data, error } = await supabase
-      .from("haccp_cleaning_tasks")
-      .insert({
-        restaurant_id: restaurantId,
-        location_id: locationId,
-        name: taskName.trim(),
-      })
-      .select("id, name, location_id")
-      .single();
+      if (error) {
+        console.error("Failed to add task:", error);
+        setErrorMessage("Taak toevoegen mislukt.");
+        return;
+      }
 
-    if (error) {
-      console.error("Failed to add task:", error);
-      setErrorMessage("Taak toevoegen mislukt.");
-      return;
-    }
-
-    if (data) {
-      setTasks((prev) => [...prev, data]);
-    }
-  }, [locationId, profile]);
+      if (data) {
+        setTasks((prev) => [...prev, data]);
+      }
+    },
+    [locationId, profile],
+  );
 
   const handleRenameTask = useCallback(async (task: CleaningTask) => {
     const newName = window.prompt("Nieuwe naam voor de taak", task.name);
@@ -272,16 +273,11 @@ function LocationEditContent() {
               </ul>
             )}
 
-            <SupercellButton
-              type="button"
-              size="lg"
-              variant="neutral"
-              onClick={handleAddTask}
-              className="flex min-h-[64px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-300 text-lg normal-case"
-            >
-              <Plus className="h-6 w-6" strokeWidth={2.5} />
-              Taak toevoegen
-            </SupercellButton>
+            <InlineAddInput
+              label="Taak toevoegen"
+              placeholder="Naam van de taak"
+              onAdd={handleAddTask}
+            />
           </div>
 
           {/* Save button */}

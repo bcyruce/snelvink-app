@@ -1,5 +1,6 @@
 "use client";
 
+import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -12,21 +13,22 @@ import {
   Check,
   ChevronRight,
   Pencil,
-  Plus,
   Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type ModuleType = "koeling" | "kerntemperatuur";
+type ModuleType = "koeling" | "kerntemperatuur" | "custom_number";
 
 type Equipment = {
   id: string;
   name: string;
-  type: ModuleType;
+  type: string;
   default_temp: number | null;
   last_temp: number | null;
   limit_temp: number | null;
+  step: number | null;
+  unit: string | null;
 };
 
 type Props = {
@@ -35,6 +37,18 @@ type Props = {
   defaultTemperature: number;
   firstEquipmentName: string;
   mode?: "manage" | "record";
+  /**
+   * Wanneer gezet, opereert de module op rijen met dit `custom_module_id`
+   * in plaats van filteren op `type`. Records worden geschreven naar
+   * `haccp_records` met `module_type = "custom_number"` en hetzelfde
+   * `custom_module_id`.
+   */
+  customModuleId?: string;
+  /**
+   * "double" → +1/+0.1 + −1/−0.1 (koeling/kerntemperatuur).
+   * "single" → +<step><unit>/−<step><unit> per item (custom Getal).
+   */
+  stepLayout?: "double" | "single";
 };
 
 const MAX_PHOTOS = 5;
@@ -63,7 +77,14 @@ export default function HaccpTemperatureModule({
   defaultTemperature,
   firstEquipmentName,
   mode = "record",
+  customModuleId,
+  stepLayout = "double",
 }: Props) {
+  const isCustom = !!customModuleId;
+  const editBasePath = isCustom
+    ? `/taken/custom/${customModuleId}/edit`
+    : `/taken/${moduleType}/edit`;
+  const recordModuleType = isCustom ? "custom_number" : moduleType;
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
@@ -107,12 +128,16 @@ export default function HaccpTemperatureModule({
     if (!restaurantId) return;
     setLoadingEquipments(true);
     setErrorMessage(null);
-    const { data, error } = await supabase
+    const baseQuery = supabase
       .from("haccp_equipments")
-      .select("id, name, type, default_temp, last_temp, limit_temp")
+      .select(
+        "id, name, type, default_temp, last_temp, limit_temp, step, unit",
+      )
       .eq("restaurant_id", restaurantId)
-      .eq("type", moduleType)
       .order("created_at", { ascending: true });
+    const { data, error } = await (isCustom
+      ? baseQuery.eq("custom_module_id", customModuleId)
+      : baseQuery.eq("type", moduleType).is("custom_module_id", null));
 
     if (error) {
       console.error("haccp_equipments laden mislukt:", error);
@@ -130,11 +155,14 @@ export default function HaccpTemperatureModule({
         .insert({
           restaurant_id: restaurantId,
           name: firstEquipmentName,
-          type: moduleType,
+          type: isCustom ? "custom" : moduleType,
           last_temp: null,
           limit_temp: null,
+          custom_module_id: customModuleId ?? null,
         })
-        .select("id, name, type, default_temp, last_temp, limit_temp")
+        .select(
+          "id, name, type, default_temp, last_temp, limit_temp, step, unit",
+        )
         .single();
 
       if (insertError) {
@@ -147,42 +175,41 @@ export default function HaccpTemperatureModule({
       setEquipments(rows);
     }
     setLoadingEquipments(false);
-  }, [restaurantId, moduleType, firstEquipmentName]);
+  }, [restaurantId, moduleType, firstEquipmentName, customModuleId, isCustom]);
 
   useEffect(() => {
     void loadEquipments();
   }, [loadEquipments, restaurantId]);
 
   // ---------- equipment CRUD ----------
-  const handleAddEquipment = useCallback(async () => {
-    if (!restaurantId) return;
-    const proposed = window.prompt(
-      "Naam van het nieuwe apparaat",
-      `${firstEquipmentName.replace(/\s*\d+$/, "")} ${equipments.length + 1}`,
-    );
-    if (!proposed) return;
-    const name = proposed.trim();
-    if (!name) return;
+  const handleAddEquipment = useCallback(
+    async (name: string) => {
+      if (!restaurantId) return;
 
-    const { data, error } = await supabase
-      .from("haccp_equipments")
-      .insert({
-        restaurant_id: restaurantId,
-        name,
-        type: moduleType,
-        last_temp: null,
-        limit_temp: null,
-      })
-      .select("id, name, type, default_temp, last_temp, limit_temp")
-      .single();
+      const { data, error } = await supabase
+        .from("haccp_equipments")
+        .insert({
+          restaurant_id: restaurantId,
+          name,
+          type: isCustom ? "custom" : moduleType,
+          last_temp: null,
+          limit_temp: null,
+          custom_module_id: customModuleId ?? null,
+        })
+        .select(
+          "id, name, type, default_temp, last_temp, limit_temp, step, unit",
+        )
+        .single();
 
-    if (error) {
-      console.error("Apparaat toevoegen mislukt:", error);
-      setErrorMessage("Apparaat toevoegen mislukt.");
-      return;
-    }
-    if (data) setEquipments((prev) => [...prev, data as Equipment]);
-  }, [restaurantId, moduleType, equipments.length, firstEquipmentName]);
+      if (error) {
+        console.error("Apparaat toevoegen mislukt:", error);
+        setErrorMessage("Apparaat toevoegen mislukt.");
+        return;
+      }
+      if (data) setEquipments((prev) => [...prev, data as Equipment]);
+    },
+    [restaurantId, moduleType, customModuleId, isCustom],
+  );
 
   const handleDeleteEquipment = useCallback(
     async (eq: Equipment) => {
@@ -250,6 +277,7 @@ export default function HaccpTemperatureModule({
   }, []);
 
   // ---------- long-press +/- ----------
+  // Voor de standaard koeling/kerntemperatuur weergave (twee stappen).
   const incOnePress = useLongPress({
     onTrigger: () => setTemperature((v) => roundTenth(v + 1)),
     disabled: isSaving,
@@ -264,6 +292,19 @@ export default function HaccpTemperatureModule({
   });
   const decTenthPress = useLongPress({
     onTrigger: () => setTemperature((v) => roundTenth(v - 0.1)),
+    disabled: isSaving,
+  });
+  // Voor custom Getal: gebruik de step van het actieve apparaat.
+  const customStep =
+    typeof activeEquipment?.step === "number" && activeEquipment.step > 0
+      ? activeEquipment.step
+      : 0.1;
+  const incCustomPress = useLongPress({
+    onTrigger: () => setTemperature((v) => roundTenth(v + customStep)),
+    disabled: isSaving,
+  });
+  const decCustomPress = useLongPress({
+    onTrigger: () => setTemperature((v) => roundTenth(v - customStep)),
     disabled: isSaving,
   });
 
@@ -334,7 +375,8 @@ export default function HaccpTemperatureModule({
         .insert({
           restaurant_id: restaurantId,
           user_id: user?.id ?? null,
-          module_type: moduleType,
+          module_type: recordModuleType,
+          custom_module_id: customModuleId ?? null,
           equipment_id: activeEquipment.id,
           temperature,
           recorded_at: recordedAt,
@@ -393,7 +435,7 @@ export default function HaccpTemperatureModule({
           equipments={equipments}
           loading={loadingEquipments}
           mode={mode}
-          moduleType={moduleType}
+          editBasePath={editBasePath}
           onPick={enterRecord}
           onAdd={handleAddEquipment}
           onDelete={handleDeleteEquipment}
@@ -413,10 +455,13 @@ export default function HaccpTemperatureModule({
           correctionAction={correctionAction}
           onCorrectionActionChange={setCorrectionAction}
           correctionRequired={correctionRequired}
+          stepLayout={stepLayout}
           incOnePress={incOnePress}
           incTenthPress={incTenthPress}
           decOnePress={decOnePress}
           decTenthPress={decTenthPress}
+          incCustomPress={incCustomPress}
+          decCustomPress={decCustomPress}
           onSetTemperature={setTemperature}
           opmerking={opmerking}
           onOpmerkingChange={setOpmerking}
@@ -444,9 +489,9 @@ type ListViewProps = {
   equipments: Equipment[];
   loading: boolean;
   mode: "manage" | "record";
-  moduleType: ModuleType;
+  editBasePath: string;
   onPick: (eq: Equipment) => void;
-  onAdd: () => void;
+  onAdd: (name: string) => Promise<void> | void;
   onDelete: (eq: Equipment) => void;
   errorMessage: string | null;
   restaurantReady: boolean;
@@ -457,7 +502,7 @@ function ListView({
   equipments,
   loading,
   mode,
-  moduleType,
+  editBasePath,
   onPick,
   onAdd,
   onDelete,
@@ -520,7 +565,7 @@ function ListView({
                 {mode === "manage" ? (
                   <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                     <a
-                      href={`/taken/${moduleType}/edit/${eq.id}`}
+                      href={`${editBasePath}/${eq.id}`}
                       aria-label={`Bewerk ${eq.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                     >
@@ -544,16 +589,12 @@ function ListView({
 
       {/* Add button only in manage mode */}
       {mode === "manage" ? (
-        <SupercellButton
-          size="lg"
-          variant="neutral"
-          onClick={onAdd}
+        <InlineAddInput
+          label="Apparaat toevoegen"
+          placeholder="Naam van het apparaat"
+          onAdd={onAdd}
           disabled={!restaurantReady}
-          className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
-        >
-          <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Apparaat toevoegen
-        </SupercellButton>
+        />
       ) : null}
     </div>
   );
@@ -574,10 +615,13 @@ type RecordViewProps = {
   correctionAction: string;
   onCorrectionActionChange: (v: string) => void;
   correctionRequired: boolean;
+  stepLayout: "double" | "single";
   incOnePress: ReturnType<typeof useLongPress>;
   incTenthPress: ReturnType<typeof useLongPress>;
   decOnePress: ReturnType<typeof useLongPress>;
   decTenthPress: ReturnType<typeof useLongPress>;
+  incCustomPress: ReturnType<typeof useLongPress>;
+  decCustomPress: ReturnType<typeof useLongPress>;
   onSetTemperature: (v: number) => void;
   opmerking: string;
   onOpmerkingChange: (v: string) => void;
@@ -605,10 +649,13 @@ function RecordView({
   correctionAction,
   onCorrectionActionChange,
   correctionRequired,
+  stepLayout,
   incOnePress,
   incTenthPress,
   decOnePress,
   decTenthPress,
+  incCustomPress,
+  decCustomPress,
   onSetTemperature,
   opmerking,
   onOpmerkingChange,
@@ -647,7 +694,20 @@ function RecordView({
 
   const photoSlotsLeft = MAX_PHOTOS - photoFiles.length;
 
-  const tempLabel = useMemo(() => `${temperature.toFixed(1)}°C`, [temperature]);
+  const unitLabel =
+    stepLayout === "single" && equipment?.unit ? equipment.unit : "°C";
+  const tempLabel = useMemo(
+    () => `${temperature.toFixed(1)}${unitLabel}`,
+    [temperature, unitLabel],
+  );
+  const stepLabel = (() => {
+    if (stepLayout !== "single") return "";
+    const s =
+      typeof equipment?.step === "number" && equipment.step > 0
+        ? equipment.step
+        : 0.1;
+    return String(s).replace(".", ",");
+  })();
 
   return (
     <div className="flex flex-col gap-6">
@@ -671,7 +731,7 @@ function RecordView({
       {/* Limit info */}
       {limitTemp !== null ? (
         <p className="text-center text-sm font-semibold text-slate-500">
-          Limiet: {limitTemp.toFixed(1)} °C
+          Limiet: {limitTemp.toFixed(1)} {unitLabel}
         </p>
       ) : null}
 
@@ -688,26 +748,39 @@ function RecordView({
           [ -1  ][-0.1]
       */}
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3">
-        <div className="flex w-full items-stretch gap-3">
+        {stepLayout === "double" ? (
+          <div className="flex w-full items-stretch gap-3">
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              {...incOnePress}
+              aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
+              className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
+            >
+              + 1°
+            </SupercellButton>
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              {...incTenthPress}
+              aria-label="0,1 graad hoger (houd ingedrukt voor sneller)"
+              className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
+            >
+              + 0,1°
+            </SupercellButton>
+          </div>
+        ) : (
           <SupercellButton
             size="lg"
             variant="neutral"
-            {...incOnePress}
-            aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
+            {...incCustomPress}
+            aria-label={`${stepLabel} ${unitLabel} hoger (houd ingedrukt voor sneller)`}
+            className="flex min-h-[96px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
           >
-            + 1°
+            + {stepLabel}
+            {unitLabel ? ` ${unitLabel}` : ""}
           </SupercellButton>
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            {...incTenthPress}
-            aria-label="0,1 graad hoger (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
-          >
-            + 0,1°
-          </SupercellButton>
-        </div>
+        )}
 
         <div className="flex w-full min-h-[6rem] items-center justify-center py-2">
           {isManualEdit ? (
@@ -742,26 +815,39 @@ function RecordView({
           )}
         </div>
 
-        <div className="flex w-full items-stretch gap-3">
+        {stepLayout === "double" ? (
+          <div className="flex w-full items-stretch gap-3">
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              {...decOnePress}
+              aria-label="Eén graad lager (houd ingedrukt voor sneller)"
+              className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
+            >
+              − 1°
+            </SupercellButton>
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              {...decTenthPress}
+              aria-label="0,1 graad lager (houd ingedrukt voor sneller)"
+              className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
+            >
+              − 0,1°
+            </SupercellButton>
+          </div>
+        ) : (
           <SupercellButton
             size="lg"
             variant="neutral"
-            {...decOnePress}
-            aria-label="Eén graad lager (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
+            {...decCustomPress}
+            aria-label={`${stepLabel} ${unitLabel} lager (houd ingedrukt voor sneller)`}
+            className="flex min-h-[96px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
           >
-            − 1°
+            − {stepLabel}
+            {unitLabel ? ` ${unitLabel}` : ""}
           </SupercellButton>
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            {...decTenthPress}
-            aria-label="0,1 graad lager (houd ingedrukt voor sneller)"
-            className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
-          >
-            − 0,1°
-          </SupercellButton>
-        </div>
+        )}
       </div>
 
       <p className="text-center text-sm text-slate-500">
@@ -782,7 +868,7 @@ function RecordView({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-base font-black text-red-700">
-                Temperatuur boven limiet ({limitTemp.toFixed(1)} °C)
+                Waarde boven limiet ({limitTemp.toFixed(1)} {unitLabel})
               </p>
               <p className="mt-1 text-sm font-semibold text-red-700/90">
                 Vul een corrigerende maatregel in om door te gaan.
