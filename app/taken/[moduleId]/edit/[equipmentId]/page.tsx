@@ -35,12 +35,10 @@ function EquipmentEditContent() {
 
   // Form state
   const [name, setName] = useState("");
-  const [hasDefaultValue, setHasDefaultValue] = useState(false);
   const [defaultValue, setDefaultValue] = useState(7);
   const [unit, setUnit] = useState("°C");
   const [step, setStep] = useState(0.5);
   const [stepText, setStepText] = useState("0.5");
-  const [hasLimit, setHasLimit] = useState(false);
   const [limitTemp, setLimitTemp] = useState(7);
 
   // Module title
@@ -76,13 +74,9 @@ function EquipmentEditContent() {
       const row = data as Equipment;
       setEquipment(row);
       setName(row.name);
-      const storedDefault = row.default_temp;
-      setHasDefaultValue(
-        storedDefault !== null && storedDefault !== undefined,
-      );
       setDefaultValue(
-        typeof storedDefault === "number"
-          ? storedDefault
+        typeof row.default_temp === "number"
+          ? row.default_temp
           : typeof row.last_temp === "number"
             ? row.last_temp
             : defaultTemp,
@@ -90,10 +84,8 @@ function EquipmentEditContent() {
       setUnit(row.unit ?? "°C");
       setStep(typeof row.step === "number" ? row.step : 0.5);
       setStepText(String(typeof row.step === "number" ? row.step : 0.5));
-      const storedLimit = row.limit_temp;
-      setHasLimit(storedLimit !== null && storedLimit !== undefined);
       setLimitTemp(
-        typeof storedLimit === "number" ? storedLimit : defaultTemp,
+        typeof row.limit_temp === "number" ? row.limit_temp : defaultTemp,
       );
       setLoading(false);
     }
@@ -113,10 +105,10 @@ function EquipmentEditContent() {
 
     const updates: Record<string, unknown> = {
       name: trimmedName,
-      default_temp: hasDefaultValue ? defaultValue : null,
+      default_temp: defaultValue,
       unit: unit.trim() || "°C",
       step: step || 0.5,
-      limit_temp: hasLimit ? limitTemp : null,
+      limit_temp: limitTemp,
     };
 
     let { error } = await supabase
@@ -133,7 +125,6 @@ function EquipmentEditContent() {
       if (maybeMissingOptionalCols) {
         const minimal = {
           name: trimmedName,
-          default_temp: hasDefaultValue ? defaultValue : null,
         };
         ({ error } = await supabase
           .from("haccp_equipments")
@@ -150,7 +141,7 @@ function EquipmentEditContent() {
     }
 
     router.push(`/taken/${moduleIdParam}`);
-  }, [name, hasDefaultValue, defaultValue, unit, step, hasLimit, limitTemp, equipmentId, moduleIdParam, router]);
+  }, [name, defaultValue, unit, step, limitTemp, equipmentId, moduleIdParam, router]);
 
   if (!isValidModule) {
     notFound();
@@ -242,197 +233,141 @@ function EquipmentEditContent() {
             />
           </label>
 
-          {/* Default value toggle */}
+          {/* Default value */}
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <label className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-lg font-bold text-slate-800">
-                Standaardwaarde instellen
+                Standaardwaarde
               </span>
-              <button
-                type="button"
-                onClick={() => setHasDefaultValue(!hasDefaultValue)}
-                className={[
-                  "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
-                  hasDefaultValue
-                    ? "border-blue-700 bg-blue-500"
-                    : "border-slate-400 bg-slate-200",
-                ].join(" ")}
-                aria-pressed={hasDefaultValue}
-              >
-                <span
-                  className={[
-                    "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
-                    hasDefaultValue ? "translate-x-7" : "translate-x-1",
-                  ].join(" ")}
-                />
-              </button>
-            </label>
+            </div>
 
-            {/* Always visible when toggle is on */}
-            {hasDefaultValue ? (
-              <>
-                <p className="text-sm text-slate-500">
-                  Bij elke nieuwe registratie start de waarde op{" "}
-                  {defaultValue}
-                  {unit}.
-                </p>
+            <p className="text-sm text-slate-500">
+              Bij elke nieuwe registratie start de waarde op {defaultValue}
+              {unit}.
+            </p>
 
-                {/* Temperature preview */}
-                <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
-                  <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
-                    Voorbeeld
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <SupercellButton
-                      type="button"
-                      size="lg"
-                      variant="neutral"
-                      onClick={() => adjustValue(-1)}
-                      className="flex h-20 flex-1 items-center justify-center"
-                    >
-                      <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                    </SupercellButton>
-
-                    <div className="flex-[1.5] text-center">
-                      <p className="text-5xl font-black tabular-nums text-blue-600">
-                        {defaultValue.toFixed(1)}
-                        {unit}
-                      </p>
-                    </div>
-
-                    <SupercellButton
-                      type="button"
-                      size="lg"
-                      variant="neutral"
-                      onClick={() => adjustValue(1)}
-                      className="flex h-20 flex-1 items-center justify-center"
-                    >
-                      <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                    </SupercellButton>
-                  </div>
-                </div>
-
-                {/* Step and unit settings */}
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="flex flex-col gap-2">
-                    <span className="text-sm font-bold text-slate-500">
-                      Stapgrootte
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={stepText}
-                      onChange={(e) => setStepText(e.target.value)}
-                      onBlur={() => {
-                        const parsed = Number.parseFloat(
-                          stepText.replace(",", "."),
-                        );
-                        if (Number.isFinite(parsed) && parsed > 0) {
-                          setStep(parsed);
-                          setStepText(stepText);
-                        } else {
-                          setStep(0.5);
-                          setStepText("0.5");
-                        }
-                      }}
-                      className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-2">
-                    <span className="text-sm font-bold text-slate-500">
-                      Eenheid
-                    </span>
-                    <input
-                      type="text"
-                      value={unit}
-                      onChange={(e) => setUnit(e.target.value)}
-                      className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
-                    />
-                  </label>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Bij elke nieuwe registratie start de waarde op{" "}
-                {defaultTemp}
-                {unit} (standaard).
+            {/* Temperature preview */}
+            <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
+              <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
+                Voorbeeld
               </p>
-            )}
+              <div className="flex items-center gap-3">
+                <SupercellButton
+                  type="button"
+                  size="lg"
+                  variant="neutral"
+                  onClick={() => adjustValue(-1)}
+                  className="flex h-20 flex-1 items-center justify-center"
+                >
+                  <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                </SupercellButton>
+
+                <div className="flex-[1.5] text-center">
+                  <p className="text-5xl font-black tabular-nums text-blue-600">
+                    {defaultValue.toFixed(1)}
+                    {unit}
+                  </p>
+                </div>
+
+                <SupercellButton
+                  type="button"
+                  size="lg"
+                  variant="neutral"
+                  onClick={() => adjustValue(1)}
+                  className="flex h-20 flex-1 items-center justify-center"
+                >
+                  <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                </SupercellButton>
+              </div>
+            </div>
+
+            {/* Step and unit settings */}
+            <div className="grid grid-cols-2 gap-4">
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-bold text-slate-500">
+                  Stapgrootte
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={stepText}
+                  onChange={(e) => setStepText(e.target.value)}
+                  onBlur={() => {
+                    const parsed = Number.parseFloat(
+                      stepText.replace(",", "."),
+                    );
+                    if (Number.isFinite(parsed) && parsed > 0) {
+                      setStep(parsed);
+                      setStepText(stepText);
+                    } else {
+                      setStep(0.5);
+                      setStepText("0.5");
+                    }
+                  }}
+                  className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-bold text-slate-500">
+                  Eenheid
+                </span>
+                <input
+                  type="text"
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
+                />
+              </label>
+            </div>
           </div>
 
-          {/* Limit temp toggle */}
+          {/* Limit temperature */}
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <label className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-lg font-bold text-slate-800">
-                Limiet temperatuur instellen
+                Limiet temperatuur
               </span>
-              <button
-                type="button"
-                onClick={() => setHasLimit(!hasLimit)}
-                className={[
-                  "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
-                  hasLimit
-                    ? "border-blue-700 bg-blue-500"
-                    : "border-slate-400 bg-slate-200",
-                ].join(" ")}
-                aria-pressed={hasLimit}
-              >
-                <span
-                  className={[
-                    "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
-                    hasLimit ? "translate-x-7" : "translate-x-1",
-                  ].join(" ")}
-                />
-              </button>
-            </label>
+            </div>
 
-            {/* Always visible when toggle is on */}
-            {hasLimit ? (
-              <>
-                <p className="text-sm text-slate-500">
-                  Boven deze temperatuur moet een corrigerende maatregel worden
-                  ingevuld.
-                </p>
-                <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
-                  <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
-                    Limiet
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <SupercellButton
-                      type="button"
-                      size="lg"
-                      variant="neutral"
-                      onClick={() => adjustLimit(-1)}
-                      className="flex h-20 flex-1 items-center justify-center"
-                    >
-                      <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                    </SupercellButton>
+            <p className="text-sm text-slate-500">
+              Boven deze temperatuur moet een corrigerende maatregel worden
+              ingevuld.
+            </p>
 
-                    <div className="flex-[1.5] text-center">
-                      <p className="text-5xl font-black tabular-nums text-blue-600">
-                        {limitTemp.toFixed(1)}
-                        {unit}
-                      </p>
-                    </div>
-
-                    <SupercellButton
-                      type="button"
-                      size="lg"
-                      variant="neutral"
-                      onClick={() => adjustLimit(1)}
-                      className="flex h-20 flex-1 items-center justify-center"
-                    >
-                      <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                    </SupercellButton>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Geen limiet ingesteld. Corrigerende maatregelen zijn optioneel.
+            <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
+              <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
+                Limiet
               </p>
-            )}
+              <div className="flex items-center gap-3">
+                <SupercellButton
+                  type="button"
+                  size="lg"
+                  variant="neutral"
+                  onClick={() => adjustLimit(-1)}
+                  className="flex h-20 flex-1 items-center justify-center"
+                >
+                  <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                </SupercellButton>
+
+                <div className="flex-[1.5] text-center">
+                  <p className="text-5xl font-black tabular-nums text-blue-600">
+                    {limitTemp.toFixed(1)}
+                    {unit}
+                  </p>
+                </div>
+
+                <SupercellButton
+                  type="button"
+                  size="lg"
+                  variant="neutral"
+                  onClick={() => adjustLimit(1)}
+                  className="flex h-20 flex-1 items-center justify-center"
+                >
+                  <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                </SupercellButton>
+              </div>
+            </div>
           </div>
 
           {/* Save button */}
