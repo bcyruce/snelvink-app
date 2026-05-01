@@ -15,6 +15,7 @@ type Equipment = {
   unit?: string | null;
   step?: number | null;
   last_temp?: number | null;
+  limit_temp?: number | null;
 };
 
 function EquipmentEditContent() {
@@ -38,8 +39,9 @@ function EquipmentEditContent() {
   const [defaultValue, setDefaultValue] = useState(7);
   const [unit, setUnit] = useState("°C");
   const [step, setStep] = useState(0.5);
-  // stepText manages the input display — allows the user to fully clear/delete the field
   const [stepText, setStepText] = useState("0.5");
+  const [hasLimit, setHasLimit] = useState(false);
+  const [limitTemp, setLimitTemp] = useState(7);
 
   // Module title
   const moduleTitle =
@@ -57,7 +59,6 @@ function EquipmentEditContent() {
         return;
       }
 
-      // Gebruik * zodat ontbrekende optionele kolommen (vóór migratie 0011) de query niet breken.
       const { data, error } = await supabase
         .from("haccp_equipments")
         .select("*")
@@ -89,6 +90,11 @@ function EquipmentEditContent() {
       setUnit(row.unit ?? "°C");
       setStep(typeof row.step === "number" ? row.step : 0.5);
       setStepText(String(typeof row.step === "number" ? row.step : 0.5));
+      const storedLimit = row.limit_temp;
+      setHasLimit(storedLimit !== null && storedLimit !== undefined);
+      setLimitTemp(
+        typeof storedLimit === "number" ? storedLimit : defaultTemp,
+      );
       setLoading(false);
     }
 
@@ -110,6 +116,7 @@ function EquipmentEditContent() {
       default_temp: hasDefaultValue ? defaultValue : null,
       unit: unit.trim() || "°C",
       step: step || 0.5,
+      limit_temp: hasLimit ? limitTemp : null,
     };
 
     let { error } = await supabase
@@ -120,13 +127,17 @@ function EquipmentEditContent() {
     if (error) {
       const msg = error.message ?? "";
       const maybeMissingOptionalCols =
-        /default_temp|\bunit\b|\bstep\b|column|does not exist|42703|PGRST204/i.test(
+        /default_temp|\bunit\b|\bstep\b|limit_temp|column|does not exist|42703|PGRST204/i.test(
           msg,
         );
       if (maybeMissingOptionalCols) {
+        const minimal = {
+          name: trimmedName,
+          default_temp: hasDefaultValue ? defaultValue : null,
+        };
         ({ error } = await supabase
           .from("haccp_equipments")
-          .update({ name: trimmedName })
+          .update(minimal)
           .eq("id", equipmentId));
       }
     }
@@ -139,7 +150,7 @@ function EquipmentEditContent() {
     }
 
     router.push(`/taken/${moduleIdParam}`);
-  }, [name, hasDefaultValue, defaultValue, unit, step, equipmentId, moduleIdParam, router]);
+  }, [name, hasDefaultValue, defaultValue, unit, step, hasLimit, limitTemp, equipmentId, moduleIdParam, router]);
 
   if (!isValidModule) {
     notFound();
@@ -150,6 +161,10 @@ function EquipmentEditContent() {
       const effectiveStep = step > 0 ? step : 0.5;
       return Math.round((v + delta * effectiveStep) * 10) / 10;
     });
+  };
+
+  const adjustLimit = (delta: number) => {
+    setLimitTemp((v) => Math.round((v + delta) * 10) / 10);
   };
 
   const handleStepChange = (raw: string) => {
@@ -238,7 +253,9 @@ function EquipmentEditContent() {
                 onClick={() => setHasDefaultValue(!hasDefaultValue)}
                 className={[
                   "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
-                  hasDefaultValue ? "border-blue-700 bg-blue-500" : "border-slate-400 bg-slate-200",
+                  hasDefaultValue
+                    ? "border-blue-700 bg-blue-500"
+                    : "border-slate-400 bg-slate-200",
                 ].join(" ")}
                 aria-pressed={hasDefaultValue}
               >
@@ -251,13 +268,16 @@ function EquipmentEditContent() {
               </button>
             </label>
 
+            {/* Always visible when toggle is on */}
             {hasDefaultValue ? (
               <>
                 <p className="text-sm text-slate-500">
-                  Bij elke nieuwe registratie start de waarde op {defaultValue}{unit}.
+                  Bij elke nieuwe registratie start de waarde op{" "}
+                  {defaultValue}
+                  {unit}.
                 </p>
 
-                {/* Temperature preview (like record view) */}
+                {/* Temperature preview */}
                 <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
                   <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
                     Voorbeeld
@@ -275,7 +295,8 @@ function EquipmentEditContent() {
 
                     <div className="flex-[1.5] text-center">
                       <p className="text-5xl font-black tabular-nums text-blue-600">
-                        {defaultValue.toFixed(1)}{unit}
+                        {defaultValue.toFixed(1)}
+                        {unit}
                       </p>
                     </div>
 
@@ -303,7 +324,9 @@ function EquipmentEditContent() {
                       value={stepText}
                       onChange={(e) => setStepText(e.target.value)}
                       onBlur={() => {
-                        const parsed = Number.parseFloat(stepText.replace(",", "."));
+                        const parsed = Number.parseFloat(
+                          stepText.replace(",", "."),
+                        );
                         if (Number.isFinite(parsed) && parsed > 0) {
                           setStep(parsed);
                           setStepText(stepText);
@@ -329,7 +352,87 @@ function EquipmentEditContent() {
                   </label>
                 </div>
               </>
-            ) : null}
+            ) : (
+              <p className="text-sm text-slate-400">
+                Bij elke nieuwe registratie start de waarde op{" "}
+                {defaultTemp}
+                {unit} (standaard).
+              </p>
+            )}
+          </div>
+
+          {/* Limit temp toggle */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-lg font-bold text-slate-800">
+                Limiet temperatuur instellen
+              </span>
+              <button
+                type="button"
+                onClick={() => setHasLimit(!hasLimit)}
+                className={[
+                  "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+                  hasLimit
+                    ? "border-blue-700 bg-blue-500"
+                    : "border-slate-400 bg-slate-200",
+                ].join(" ")}
+                aria-pressed={hasLimit}
+              >
+                <span
+                  className={[
+                    "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
+                    hasLimit ? "translate-x-7" : "translate-x-1",
+                  ].join(" ")}
+                />
+              </button>
+            </label>
+
+            {/* Always visible when toggle is on */}
+            {hasLimit ? (
+              <>
+                <p className="text-sm text-slate-500">
+                  Boven deze temperatuur moet een corrigerende maatregel worden
+                  ingevuld.
+                </p>
+                <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
+                  <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
+                    Limiet
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <SupercellButton
+                      type="button"
+                      size="lg"
+                      variant="neutral"
+                      onClick={() => adjustLimit(-1)}
+                      className="flex h-20 flex-1 items-center justify-center"
+                    >
+                      <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                    </SupercellButton>
+
+                    <div className="flex-[1.5] text-center">
+                      <p className="text-5xl font-black tabular-nums text-blue-600">
+                        {limitTemp.toFixed(1)}
+                        {unit}
+                      </p>
+                    </div>
+
+                    <SupercellButton
+                      type="button"
+                      size="lg"
+                      variant="neutral"
+                      onClick={() => adjustLimit(1)}
+                      className="flex h-20 flex-1 items-center justify-center"
+                    >
+                      <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
+                    </SupercellButton>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">
+                Geen limiet ingesteld. Corrigerende maatregelen zijn optioneel.
+              </p>
+            )}
           </div>
 
           {/* Save button */}

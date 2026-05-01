@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Pencil,
   Plus,
-  Thermometer,
   Trash2,
   X,
 } from "lucide-react";
@@ -83,7 +82,6 @@ export default function HaccpTemperatureModule({
   );
   const [temperature, setTemperature] = useState<number>(defaultTemperature);
   const [opmerking, setOpmerking] = useState("");
-  const [correctiveAction, setCorrectiveAction] = useState("");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -92,14 +90,7 @@ export default function HaccpTemperatureModule({
 
   // ---------- derived ----------
   const tempColorClass = "text-slate-900";
-  const overLimit =
-    activeEquipment?.limit_temp != null &&
-    temperature > activeEquipment.limit_temp;
-  const canSave =
-    !isSaving &&
-    !!restaurantId &&
-    !!activeEquipment &&
-    (!overLimit || correctiveAction.trim().length > 0);
+  const canSave = !isSaving && !!restaurantId && !!activeEquipment;
 
   // ---------- load equipments ----------
   const loadEquipments = useCallback(async () => {
@@ -183,38 +174,6 @@ export default function HaccpTemperatureModule({
     if (data) setEquipments((prev) => [...prev, data as Equipment]);
   }, [restaurantId, moduleType, equipments.length, firstEquipmentName]);
 
-  const handleSetLimit = useCallback(
-    async (eq: Equipment) => {
-      const input = window.prompt(
-        `Stel de maximale temperatuur in voor "${eq.name}" (in °C)`,
-        eq.limit_temp != null ? eq.limit_temp.toFixed(1) : "",
-      );
-      if (input === null) return;
-      const trimmed = input.trim();
-      const parsed = Number.parseFloat(trimmed.replace(",", "."));
-      const newLimit =
-        trimmed === "" ? null : Number.isFinite(parsed) ? parsed : eq.limit_temp;
-      if (newLimit === eq.limit_temp) return;
-
-      const { error } = await supabase
-        .from("haccp_equipments")
-        .update({ limit_temp: newLimit })
-        .eq("id", eq.id);
-
-      if (error) {
-        console.error("Limit instellen mislukt:", error);
-        setErrorMessage("Limiet instellen mislukt.");
-        return;
-      }
-      setEquipments((prev) =>
-        prev.map((p) =>
-          p.id === eq.id ? { ...p, limit_temp: newLimit } : p,
-        ),
-      );
-    },
-    [],
-  );
-
   const handleDeleteEquipment = useCallback(
     async (eq: Equipment) => {
       const ok = window.confirm(
@@ -246,7 +205,6 @@ export default function HaccpTemperatureModule({
         typeof eq.last_temp === "number" ? eq.last_temp : defaultTemperature,
       );
       setOpmerking("");
-      setCorrectiveAction("");
       setPhotoFiles([]);
       setPhotoPreviews((prev) => {
         prev.forEach((u) => URL.revokeObjectURL(u));
@@ -327,7 +285,6 @@ export default function HaccpTemperatureModule({
   // ---------- save ----------
   const handleSave = async () => {
     if (!restaurantId || !activeEquipment) return;
-    if (overLimit && !correctiveAction.trim()) return;
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -365,10 +322,7 @@ export default function HaccpTemperatureModule({
           temperature,
           recorded_at: recordedAt,
           image_urls: uploadedUrls,
-          opmerking:
-            overLimit && correctiveAction.trim()
-              ? correctiveAction.trim()
-              : opmerking.trim() || null,
+          opmerking: opmerking.trim() || null,
         });
 
       if (insertError) {
@@ -423,7 +377,6 @@ export default function HaccpTemperatureModule({
           onPick={enterRecord}
           onAdd={handleAddEquipment}
           onDelete={handleDeleteEquipment}
-          onSetLimit={handleSetLimit}
           errorMessage={errorMessage}
           restaurantReady={!!restaurantId}
         />
@@ -442,8 +395,6 @@ export default function HaccpTemperatureModule({
           onSetTemperature={setTemperature}
           opmerking={opmerking}
           onOpmerkingChange={setOpmerking}
-          correctiveAction={correctiveAction}
-          onCorrectiveActionChange={setCorrectiveAction}
           photoFiles={photoFiles}
           photoPreviews={photoPreviews}
           onPickPhotos={handlePickPhotos}
@@ -472,7 +423,6 @@ type ListViewProps = {
   onPick: (eq: Equipment) => void;
   onAdd: () => void;
   onDelete: (eq: Equipment) => void;
-  onSetLimit: (eq: Equipment) => void;
   errorMessage: string | null;
   restaurantReady: boolean;
 };
@@ -486,7 +436,6 @@ function ListView({
   onPick,
   onAdd,
   onDelete,
-  onSetLimit,
   errorMessage,
   restaurantReady,
 }: ListViewProps) {
@@ -534,7 +483,7 @@ function ListView({
                     />
                   </button>
                 ) : (
-                  /* Manage mode: display name with action buttons */
+                  /* Manage mode: display name with edit/delete buttons */
                   <div className="flex flex-1 flex-col gap-1">
                     <span className="text-xl font-bold text-slate-900 truncate">
                       {eq.name}
@@ -542,37 +491,26 @@ function ListView({
                   </div>
                 )}
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
-                  {mode === "manage" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => onSetLimit(eq)}
-                        aria-label={`Standaardwaarde instellen voor ${eq.name}`}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-blue-600 transition-colors hover:bg-blue-50 active:bg-blue-100"
-                        title="Standaardwaarde instellen"
-                      >
-                        <Thermometer className="h-5 w-5" aria-hidden />
-                      </button>
-                      <a
-                        href={`/taken/${moduleType}/edit/${eq.id}`}
-                        aria-label={`Bewerk ${eq.name}`}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
-                      >
-                        <Pencil className="h-5 w-5" aria-hidden />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(eq)}
-                        aria-label={`Verwijder ${eq.name}`}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
-                      >
-                        <Trash2 className="h-5 w-5" aria-hidden />
-                      </button>
-                    </>
-                  ) : null}
-                </div>
+                {/* Right: edit and delete buttons - only in manage mode */}
+                {mode === "manage" ? (
+                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                    <a
+                      href={`/taken/${moduleType}/edit/${eq.id}`}
+                      aria-label={`Bewerk ${eq.name}`}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                    >
+                      <Pencil className="h-5 w-5" aria-hidden />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(eq)}
+                      aria-label={`Verwijder ${eq.name}`}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                    >
+                      <Trash2 className="h-5 w-5" aria-hidden />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </li>
           ))}
@@ -613,8 +551,6 @@ type RecordViewProps = {
   onSetTemperature: (v: number) => void;
   opmerking: string;
   onOpmerkingChange: (v: string) => void;
-  correctiveAction: string;
-  onCorrectiveActionChange: (v: string) => void;
   photoFiles: File[];
   photoPreviews: string[];
   onPickPhotos: () => void;
@@ -641,8 +577,6 @@ function RecordView({
   onSetTemperature,
   opmerking,
   onOpmerkingChange,
-  correctiveAction,
-  onCorrectiveActionChange,
   photoFiles,
   photoPreviews,
   onPickPhotos,
@@ -654,12 +588,10 @@ function RecordView({
   onSave,
   errorMessage,
 }: RecordViewProps) {
+  // Manueel typen via klik op de temperatuur
   const [isManualEdit, setIsManualEdit] = useState(false);
   const [manualText, setManualText] = useState("");
   const manualInputRef = useRef<HTMLInputElement>(null);
-
-  const overLimit =
-    equipment?.limit_temp != null && temperature > equipment.limit_temp;
 
   useEffect(() => {
     if (isManualEdit) {
@@ -679,6 +611,7 @@ function RecordView({
   };
 
   const photoSlotsLeft = MAX_PHOTOS - photoFiles.length;
+
   const tempLabel = useMemo(() => `${temperature.toFixed(1)}°C`, [temperature]);
 
   return (
@@ -713,16 +646,12 @@ function RecordView({
         </p>
       ) : null}
 
-      {/* Over-limit warning */}
-      {overLimit ? (
-        <div className="rounded-2xl border-2 border-red-300 bg-red-50 p-4">
-          <p className="text-center text-base font-bold text-red-700">
-            Temperatuur overschreden! Voer een corrigerende maatregel in.
-          </p>
-        </div>
-      ) : null}
-
-      {/* Temperatuur-blok */}
+      {/*
+        Temperatuur-blok – verticale layout:
+          [ +1  ][+0.1]   <- groot & klein, allebei met long-press
+              <temp>
+          [ -1  ][-0.1]
+      */}
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3">
         <div className="flex w-full items-stretch gap-3">
           <SupercellButton
@@ -805,51 +734,19 @@ function RecordView({
         handmatig in te voeren.
       </p>
 
-      {/* Corrective action (shown when over limit, always visible) */}
-      {equipment?.limit_temp != null ? (
-        <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-2">
-            <span
-              className={`text-sm font-bold uppercase tracking-wide ${
-                overLimit ? "text-red-600" : "text-slate-500"
-              }`}
-            >
-              {overLimit
-                ? "Corrigerende maatregel (verplicht)"
-                : "Corrigerende maatregel (optioneel)"}
-            </span>
-            <textarea
-              value={correctiveAction}
-              onChange={(e) => onCorrectiveActionChange(e.target.value)}
-              placeholder="Beschrijf de genomen maatregel..."
-              rows={3}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-            />
-          </label>
-          {overLimit && (
-            <p className="text-center text-xs text-red-500">
-              Temperatuur overschrijdt de ingestelde limiet. Corrigeer en noteer
-              de genomen maatregel.
-            </p>
-          )}
-        </div>
-      ) : null}
-
-      {/* Opmerking (only shown when no limit is set) */}
-      {equipment?.limit_temp == null ? (
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Opmerking (optioneel)
-          </span>
-          <textarea
-            value={opmerking}
-            onChange={(e) => onOpmerkingChange(e.target.value)}
-            placeholder="Voeg een opmerking toe..."
-            rows={3}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
-          />
-        </label>
-      ) : null}
+      {/* Opmerking */}
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+          Opmerking (optioneel)
+        </span>
+        <textarea
+          value={opmerking}
+          onChange={(e) => onOpmerkingChange(e.target.value)}
+          placeholder="Voeg een opmerking toe..."
+          rows={3}
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+        />
+      </label>
 
       {/* Foto-knop */}
       <input
