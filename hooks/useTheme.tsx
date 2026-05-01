@@ -92,7 +92,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       return "pine";
     }
-  }, []);
+  });
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, themeName);
