@@ -9,7 +9,7 @@ import {
 } from "@/lib/restaurantHours";
 import { WEEKDAYS, type Weekday } from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarClock, ChevronRight, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function RestaurantTab() {
@@ -28,6 +28,50 @@ export default function RestaurantTab() {
     () => normalizeClosedDays(restaurant?.closed_days),
     [restaurant?.closed_days],
   );
+  const [view, setView] = useState<"overview" | "hours">("overview");
+
+  if (view === "overview") {
+    return (
+      <div className="mt-2 flex flex-col gap-5">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <p className="text-sm font-black uppercase tracking-wide text-slate-500">
+            Mijn restaurant
+          </p>
+          <h2 className="mt-2 text-2xl font-black text-slate-900">
+            {restaurant?.name ?? "Restaurant"}
+          </h2>
+          <p className="mt-2 text-sm font-semibold text-slate-500">
+            Beheer je restaurantgegevens en instellingen.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setView("hours")}
+          className="flex min-h-[88px] w-full items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <CalendarClock className="h-6 w-6" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xl font-black text-slate-900">
+              Openingstijden
+            </span>
+            <span className="mt-1 block text-sm font-semibold text-slate-500">
+              Openingstijden en sluitingsdagen beheren
+            </span>
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
+        </button>
+
+        {!isOwner ? (
+          <p className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-sm">
+            Alleen de eigenaar kan restaurantinstellingen aanpassen.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <RestaurantHoursForm
@@ -38,6 +82,7 @@ export default function RestaurantTab() {
       initialHours={initialHours}
       initialClosedDays={initialClosedDays}
       onSaved={refresh}
+      onBack={() => setView("overview")}
     />
   );
 }
@@ -49,6 +94,7 @@ function RestaurantHoursForm({
   initialHours,
   initialClosedDays,
   onSaved,
+  onBack,
 }: {
   restaurantName: string;
   restaurantId: string | null;
@@ -56,6 +102,7 @@ function RestaurantHoursForm({
   initialHours: OpeningHours;
   initialClosedDays: string[];
   onSaved: () => Promise<void>;
+  onBack: () => void;
 }) {
   const [hours, setHours] = useState<OpeningHours>(initialHours);
   const [closedDays, setClosedDays] = useState<string[]>(initialClosedDays);
@@ -108,9 +155,20 @@ function RestaurantHoursForm({
 
   return (
     <div className="mt-2 flex flex-col gap-5">
+      <SupercellButton
+        type="button"
+        size="lg"
+        variant="neutral"
+        onClick={onBack}
+        className="flex min-h-[72px] w-full items-center justify-center gap-3 text-xl"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        Terug naar restaurant
+      </SupercellButton>
+
       <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
         <p className="text-sm font-black uppercase tracking-wide text-slate-500">
-          Mijn restaurant
+          Openingstijden
         </p>
         <h2 className="mt-2 text-2xl font-black text-slate-900">
           {restaurantName}
