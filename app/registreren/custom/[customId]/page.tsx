@@ -4,6 +4,7 @@ import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import SupercellButton from "@/components/SupercellButton";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { useLongPress } from "@/hooks/useLongPress";
 import { getModuleIcon } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Camera, Check, Wrench, X } from "lucide-react";
@@ -342,31 +343,6 @@ function CustomModuleContent() {
     });
   }, []);
 
-  const updateValue = useCallback(
-    (field: NumberInputConfig, direction: "up" | "down") => {
-      setValues((current) => {
-        const currentValue = current[field.id] ?? field.defaultValue;
-        const delta = direction === "up" ? field.step : -field.step;
-        return {
-          ...current,
-          [field.id]: roundTenth(currentValue + delta),
-        };
-      });
-    },
-    [],
-  );
-
-  const setManualValue = useCallback(
-    (field: NumberInputConfig, rawValue: string) => {
-      const parsed = Number.parseFloat(rawValue);
-      setValues((current) => ({
-        ...current,
-        [field.id]: Number.isFinite(parsed) ? parsed : field.defaultValue,
-      }));
-    },
-    [],
-  );
-
   const toggleField = useCallback((fieldId: string) => {
     setEnabledFields((current) => ({
       ...current,
@@ -659,104 +635,22 @@ function CustomModuleContent() {
                 ) : null}
 
                 {module.moduleType === "temperature" &&
-                  (fieldSettings as NumberInputConfig[]).map((setting) => {
-                    const value = values[setting.id] ?? setting.defaultValue;
-                    const enabled = enabledFields[setting.id] ?? true;
-
-                    return (
-                      <div
-                        key={setting.id}
-                        className={[
-                          "mb-6 rounded-3xl border p-5 shadow-sm transition-all duration-300",
-                          enabled
-                            ? "border-slate-100 bg-white"
-                            : "border-slate-200 bg-slate-50 opacity-75",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <h2 className="pt-2 text-xl font-bold text-slate-900">
-                            {setting.name}
-                          </h2>
-                      <SupercellButton
-                        variant={enabled ? "primary" : "neutral"}
-                        size="icon"
-                        onClick={() => toggleField(setting.id)}
-                        aria-pressed={enabled}
-                        aria-label={
-                          enabled
-                            ? `${setting.name} niet registreren`
-                            : `${setting.name} registreren`
-                        }
-                        className="h-14 w-14 shrink-0"
-                      >
-                        <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
-                      </SupercellButton>
-                        </div>
-
-                        <div className="mt-5 flex items-center gap-3">
-                          <SupercellButton
-                            variant="neutral"
-                            size="icon"
-                            disabled={!enabled}
-                            onClick={() => updateValue(setting, "down")}
-                            className="h-14 w-14 shrink-0"
-                            aria-label={`${setting.name} verlagen`}
-                          >
-                            -
-                          </SupercellButton>
-
-                          <div className="min-w-0 flex-1 text-center">
-                            <label className="block">
-                              <span className="sr-only">
-                                Waarde voor {setting.name}
-                              </span>
-                              <input
-                                type="number"
-                                inputMode="decimal"
-                                disabled={!enabled}
-                                step={setting.step || "any"}
-                                value={value}
-                                onChange={(event) =>
-                                  setManualValue(setting, event.target.value)
-                                }
-                                className="w-full appearance-none border-0 bg-transparent text-center text-3xl font-black tabular-nums text-slate-900 outline-none transition-opacity disabled:cursor-not-allowed disabled:opacity-40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                              <span className="ml-1 text-3xl">
-                                {setting.unit}
-                              </span>
-                            </label>
-                          </div>
-
-                          <SupercellButton
-                            variant="primary"
-                            size="icon"
-                            disabled={!enabled}
-                            onClick={() => updateValue(setting, "up")}
-                            className="h-14 w-14 shrink-0"
-                            aria-label={`${setting.name} verhogen`}
-                          >
-                            +
-                          </SupercellButton>
-                        </div>
-
-                        {setting.hasRemark ? (
-                          <textarea
-                            value={remarks[setting.id] ?? ""}
-                            disabled={!enabled}
-                            onChange={(event) =>
-                              setRemarks((current) => ({
-                                ...current,
-                                [setting.id]: event.target.value,
-                              }))
-                            }
-                            placeholder="Opmerking toevoegen..."
-                            rows={3}
-                            className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
-                          />
-                        ) : null}
-                      </div>
-                    );
-                  })}
+                  (fieldSettings as NumberInputConfig[]).map((setting) => (
+                    <NumberFieldCard
+                      key={setting.id}
+                      setting={setting}
+                      value={values[setting.id] ?? setting.defaultValue}
+                      enabled={enabledFields[setting.id] ?? true}
+                      onToggleEnabled={() => toggleField(setting.id)}
+                      onChangeValue={(next) =>
+                        setValues((cur) => ({ ...cur, [setting.id]: next }))
+                      }
+                      remark={remarks[setting.id] ?? ""}
+                      onChangeRemark={(text) =>
+                        setRemarks((cur) => ({ ...cur, [setting.id]: text }))
+                      }
+                    />
+                  ))}
 
                 {module.moduleType === "boolean" &&
                   (fieldSettings as BooleanInputConfig[]).map((setting) => {
@@ -794,9 +688,8 @@ function CustomModuleContent() {
                         </div>
 
                         <div className="mt-5 grid grid-cols-2 gap-3">
-                          <SupercellButton
-                            variant={selected === "goedgekeurd" ? "success" : "neutral"}
-                            size="lg"
+                          <button
+                            type="button"
                             disabled={!enabled}
                             onClick={() =>
                               setBooleanValues((current) => ({
@@ -804,13 +697,19 @@ function CustomModuleContent() {
                                 [setting.id]: "goedgekeurd",
                               }))
                             }
-                            className="min-h-[88px] text-xl"
+                            aria-pressed={selected === "goedgekeurd"}
+                            className={[
+                              "flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-4 transition-all disabled:cursor-not-allowed disabled:opacity-40",
+                              selected === "goedgekeurd"
+                                ? "border-emerald-700 bg-emerald-500 text-white"
+                                : "border-emerald-300 bg-emerald-50 text-emerald-700 active:bg-emerald-100",
+                            ].join(" ")}
                           >
-                            Goedgekeurd
-                          </SupercellButton>
-                          <SupercellButton
-                            variant={selected === "afgekeurd" ? "danger" : "neutral"}
-                            size="lg"
+                            <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
+                            <span className="text-lg font-black">Goedgekeurd</span>
+                          </button>
+                          <button
+                            type="button"
                             disabled={!enabled}
                             onClick={() =>
                               setBooleanValues((current) => ({
@@ -818,10 +717,17 @@ function CustomModuleContent() {
                                 [setting.id]: "afgekeurd",
                               }))
                             }
-                            className="min-h-[88px] text-xl"
+                            aria-pressed={selected === "afgekeurd"}
+                            className={[
+                              "flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-4 transition-all disabled:cursor-not-allowed disabled:opacity-40",
+                              selected === "afgekeurd"
+                                ? "border-red-700 bg-red-500 text-white"
+                                : "border-red-300 bg-red-50 text-red-700 active:bg-red-100",
+                            ].join(" ")}
                           >
-                            Afgekeurd
-                          </SupercellButton>
+                            <X className="h-9 w-9" strokeWidth={3} aria-hidden />
+                            <span className="text-lg font-black">Afgekeurd</span>
+                          </button>
                         </div>
 
                         {setting.hasRemark ? (
@@ -844,40 +750,53 @@ function CustomModuleContent() {
                   })}
 
                 {module.moduleType === "list" && listSettings ? (
-                  <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-                    <div className="flex flex-col gap-3">
+                  <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
+                    <h3 className="mb-3 text-lg font-black text-emerald-800">
+                      Items afvinken
+                    </h3>
+                    <ul className="flex flex-col gap-2">
                       {listSettings.items.map((item) => {
                         const checked = listChecked[item.id] === true;
                         return (
-                          <SupercellButton
-                            key={item.id}
-                            size="lg"
-                            onClick={() =>
-                              setListChecked((current) => ({
-                                ...current,
-                                [item.id]: !checked,
-                              }))
-                            }
-                            aria-pressed={checked}
-                            variant={checked ? "success" : "neutral"}
-                            className="flex min-h-[72px] w-full items-center gap-4 px-5 text-left text-xl normal-case"
-                          >
-                            <span
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setListChecked((current) => ({
+                                  ...current,
+                                  [item.id]: !checked,
+                                }))
+                              }
+                              aria-pressed={checked}
                               className={[
-                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 transition-colors",
+                                "flex w-full items-center justify-between gap-3 rounded-xl border-2 border-b-4 px-4 py-4 text-left text-lg font-bold transition-all",
                                 checked
-                                  ? "border-green-600 bg-green-600 text-white"
-                                  : "border-slate-300 bg-white text-transparent",
+                                  ? "border-emerald-700 bg-emerald-500 text-white"
+                                  : "border-emerald-200 bg-white text-slate-800 active:bg-emerald-50",
                               ].join(" ")}
-                              aria-hidden
                             >
-                              <Check className="h-6 w-6" strokeWidth={3} />
-                            </span>
-                            <span className="flex-1">{item.name}</span>
-                          </SupercellButton>
+                              <span className="flex-1 truncate">{item.name}</span>
+                              {checked ? (
+                                <Check
+                                  className="h-6 w-6 shrink-0"
+                                  strokeWidth={3}
+                                  aria-hidden
+                                />
+                              ) : (
+                                <span className="h-6 w-6 shrink-0 rounded-full border-2 border-current opacity-30" />
+                              )}
+                            </button>
+                          </li>
                         );
                       })}
-                    </div>
+                    </ul>
+
+                    {listCheckedCount > 0 ? (
+                      <p className="mt-4 text-sm font-bold text-emerald-800">
+                        {listCheckedCount} item
+                        {listCheckedCount === 1 ? "" : "s"} aangevinkt
+                      </p>
+                    ) : null}
 
                     {listSettings.hasRemark ? (
                       <textarea
@@ -885,7 +804,7 @@ function CustomModuleContent() {
                         onChange={(event) => setListRemark(event.target.value)}
                         placeholder="Opmerking toevoegen..."
                         rows={3}
-                        className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+                        className="mt-4 w-full resize-none rounded-2xl border-2 border-emerald-200 bg-white px-4 py-4 text-base font-semibold text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
                       />
                     ) : null}
                   </div>
@@ -1033,6 +952,169 @@ function CustomModuleContent() {
 
       <FloatingMenu active="registreren" onChange={handleMenuNav} />
     </>
+  );
+}
+
+// =========================================================================
+// NumberFieldCard — koeling-stijl invoer voor één getalveld in een
+// Aangepast onderdeel. Verticale layout met één + boven en één - onder
+// de waarde. Tap op de waarde voor handmatige invoer. Long-press op de
+// knoppen herhaalt automatisch.
+// =========================================================================
+type NumberFieldCardProps = {
+  setting: NumberInputConfig;
+  value: number;
+  enabled: boolean;
+  onToggleEnabled: () => void;
+  onChangeValue: (next: number) => void;
+  remark: string;
+  onChangeRemark: (text: string) => void;
+};
+
+function NumberFieldCard({
+  setting,
+  value,
+  enabled,
+  onToggleEnabled,
+  onChangeValue,
+  remark,
+  onChangeRemark,
+}: NumberFieldCardProps) {
+  const [isManual, setIsManual] = useState(false);
+  const [manualText, setManualText] = useState(String(value));
+  const manualInputRef = useRef<HTMLInputElement>(null);
+
+  const step = setting.step > 0 ? setting.step : 0.1;
+  const unit = setting.unit ?? "";
+
+  const incPress = useLongPress({
+    onTrigger: () => onChangeValue(roundTenth(value + step)),
+    disabled: !enabled,
+  });
+  const decPress = useLongPress({
+    onTrigger: () => onChangeValue(roundTenth(value - step)),
+    disabled: !enabled,
+  });
+
+  useEffect(() => {
+    if (isManual) {
+      manualInputRef.current?.focus();
+      manualInputRef.current?.select?.();
+    }
+  }, [isManual]);
+
+  const startManual = () => {
+    if (!enabled) return;
+    setManualText(value.toFixed(1));
+    setIsManual(true);
+  };
+  const commitManual = () => {
+    const parsed = Number.parseFloat(manualText.replace(",", "."));
+    if (Number.isFinite(parsed)) onChangeValue(roundTenth(parsed));
+    setIsManual(false);
+  };
+
+  const stepLabel = `${step}`.replace(".", ",");
+
+  return (
+    <div
+      className={[
+        "mb-6 rounded-3xl border p-5 shadow-sm transition-all duration-300",
+        enabled
+          ? "border-slate-100 bg-white"
+          : "border-slate-200 bg-slate-50 opacity-75",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <h2 className="pt-2 text-xl font-bold text-slate-900">
+          {setting.name}
+        </h2>
+        <SupercellButton
+          variant={enabled ? "primary" : "neutral"}
+          size="icon"
+          onClick={onToggleEnabled}
+          aria-pressed={enabled}
+          aria-label={
+            enabled
+              ? `${setting.name} niet registreren`
+              : `${setting.name} registreren`
+          }
+          className="h-14 w-14 shrink-0"
+        >
+          <Check className="h-8 w-8" strokeWidth={3} aria-hidden />
+        </SupercellButton>
+      </div>
+
+      <div className="mx-auto mt-5 flex w-full max-w-md flex-col items-center gap-3">
+        <SupercellButton
+          size="lg"
+          variant="neutral"
+          {...incPress}
+          aria-label={`${setting.name} verhogen met ${stepLabel} ${unit}`}
+          className="flex min-h-[80px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
+        >
+          + {stepLabel}
+          {unit ? ` ${unit}` : ""}
+        </SupercellButton>
+
+        <div className="flex w-full min-h-[5.5rem] items-center justify-center py-1">
+          {isManual ? (
+            <input
+              ref={manualInputRef}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              value={manualText}
+              onChange={(e) => setManualText(e.target.value)}
+              onBlur={commitManual}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitManual();
+                }
+                if (e.key === "Escape") setIsManual(false);
+              }}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center text-6xl font-black tabular-nums leading-none text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+              aria-label={`Waarde voor ${setting.name} handmatig invoeren`}
+            />
+          ) : (
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              onClick={startManual}
+              disabled={!enabled}
+              aria-label={`Huidige waarde ${value.toFixed(1)}${unit}, tik om handmatig in te voeren`}
+              className="min-h-[88px] w-full rounded-3xl border border-slate-100 px-2 py-3 text-center text-6xl tabular-nums leading-none text-slate-900 normal-case"
+            >
+              {value.toFixed(1)}
+              {unit ? <span className="ml-2 text-3xl">{unit}</span> : null}
+            </SupercellButton>
+          )}
+        </div>
+
+        <SupercellButton
+          size="lg"
+          variant="neutral"
+          {...decPress}
+          aria-label={`${setting.name} verlagen met ${stepLabel} ${unit}`}
+          className="flex min-h-[80px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
+        >
+          − {stepLabel}
+          {unit ? ` ${unit}` : ""}
+        </SupercellButton>
+      </div>
+
+      {setting.hasRemark ? (
+        <textarea
+          value={remark}
+          disabled={!enabled}
+          onChange={(event) => onChangeRemark(event.target.value)}
+          placeholder="Opmerking toevoegen..."
+          rows={3}
+          className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-lg font-semibold text-slate-900 outline-none transition-opacity focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:opacity-40"
+        />
+      ) : null}
+    </div>
   );
 }
 

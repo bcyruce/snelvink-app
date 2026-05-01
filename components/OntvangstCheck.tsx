@@ -198,7 +198,24 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
     setOpmerking("");
   };
 
+  const isAndersOption = (reason: string) => reason.trim() === "Anders";
+  const isAndersEntry = (entry: string) =>
+    entry === "Anders" || entry.startsWith("Anders:") || entry.startsWith("Anders ");
+
   const toggleReason = (reason: string) => {
+    if (isAndersOption(reason)) {
+      setSelectedReasons((prev) => {
+        const existing = prev.find(isAndersEntry);
+        if (existing) {
+          return prev.filter((r) => !isAndersEntry(r));
+        }
+        const input = window.prompt("Beschrijf de reden (optioneel)") ?? "";
+        const trimmed = input.trim();
+        const entry = trimmed.length > 0 ? `Anders: ${trimmed}` : "Anders";
+        return [...prev, entry];
+      });
+      return;
+    }
     setSelectedReasons((prev) =>
       prev.includes(reason)
         ? prev.filter((r) => r !== reason)
@@ -500,7 +517,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
         >
           <h3
             className={[
-              "mb-1 text-lg font-black",
+              "mb-3 text-lg font-black",
               status === "goedgekeurd" ? "text-emerald-800" : "text-red-800",
             ].join(" ")}
           >
@@ -508,15 +525,6 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
               ? "Redenen voor goedkeuring"
               : "Redenen voor afkeuring"}
           </h3>
-          <p
-            className={[
-              "mb-4 text-sm font-semibold",
-              status === "goedgekeurd" ? "text-emerald-700" : "text-red-700",
-            ].join(" ")}
-          >
-            Tik op een of meerdere redenen. Geselecteerde redenen worden samen
-            met de registratie opgeslagen.
-          </p>
 
           {reasonsForStatus.length === 0 ? (
             <p className="rounded-xl bg-white px-4 py-4 text-center text-sm font-semibold text-slate-500">
@@ -525,7 +533,16 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
           ) : (
             <ul className="flex flex-col gap-2">
               {reasonsForStatus.map((r) => {
-                const isSelected = selectedReasons.includes(r);
+                const andersEntry = isAndersOption(r)
+                  ? selectedReasons.find(isAndersEntry) ?? null
+                  : null;
+                const isSelected = isAndersOption(r)
+                  ? andersEntry !== null
+                  : selectedReasons.includes(r);
+                const customAndersText =
+                  andersEntry && andersEntry.startsWith("Anders:")
+                    ? andersEntry.slice("Anders:".length).trim()
+                    : "";
                 const accent =
                   status === "goedgekeurd"
                     ? isSelected
@@ -545,7 +562,23 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                         accent,
                       ].join(" ")}
                     >
-                      <span className="flex-1 truncate">{r}</span>
+                      <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                        <span className="truncate">{r}</span>
+                        {isAndersOption(r) && customAndersText ? (
+                          <span
+                            className={[
+                              "truncate text-sm font-semibold",
+                              isSelected
+                                ? "text-white/90"
+                                : status === "goedgekeurd"
+                                  ? "text-emerald-700"
+                                  : "text-red-700",
+                            ].join(" ")}
+                          >
+                            “{customAndersText}”
+                          </span>
+                        ) : null}
+                      </span>
                       {isSelected ? (
                         <Check
                           className="h-6 w-6 shrink-0"

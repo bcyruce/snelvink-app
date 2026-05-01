@@ -3,7 +3,7 @@
 import SupercellButton from "@/components/SupercellButton";
 import { useUser, UserProvider } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Minus, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -12,8 +12,6 @@ type Equipment = {
   name: string;
   type: "koeling" | "kerntemperatuur";
   default_temp?: number | null;
-  unit?: string | null;
-  step?: number | null;
   last_temp?: number | null;
   limit_temp?: number | null;
 };
@@ -33,19 +31,17 @@ function EquipmentEditContent() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Form state
   const [name, setName] = useState("");
   const [hasDefaultValue, setHasDefaultValue] = useState(false);
   const [defaultValue, setDefaultValue] = useState(7);
-  const [unit, setUnit] = useState("°C");
-  const [step, setStep] = useState(0.5);
-  const [stepText, setStepText] = useState("0.5");
+  const [defaultValueText, setDefaultValueText] = useState("7");
   const [limitTemp, setLimitTemp] = useState(7);
+  const [limitTempText, setLimitTempText] = useState("7");
 
-  // Module title
   const moduleTitle =
     moduleIdParam === "koeling" ? "Koeling" : "Kerntemperatuur";
   const defaultTemp = moduleIdParam === "koeling" ? 7 : 75;
+  const unit = "°C";
 
   useEffect(() => {
     async function loadEquipment() {
@@ -79,19 +75,18 @@ function EquipmentEditContent() {
       setHasDefaultValue(
         storedDefault !== null && storedDefault !== undefined,
       );
-      setDefaultValue(
+      const initialDefault =
         typeof storedDefault === "number"
           ? storedDefault
           : typeof row.last_temp === "number"
             ? row.last_temp
-            : defaultTemp,
-      );
-      setUnit(row.unit ?? "°C");
-      setStep(typeof row.step === "number" ? row.step : 0.5);
-      setStepText(String(typeof row.step === "number" ? row.step : 0.5));
-      setLimitTemp(
-        typeof row.limit_temp === "number" ? row.limit_temp : defaultTemp,
-      );
+            : defaultTemp;
+      setDefaultValue(initialDefault);
+      setDefaultValueText(String(initialDefault));
+      const initialLimit =
+        typeof row.limit_temp === "number" ? row.limit_temp : defaultTemp;
+      setLimitTemp(initialLimit);
+      setLimitTempText(String(initialLimit));
       setLoading(false);
     }
 
@@ -111,8 +106,6 @@ function EquipmentEditContent() {
     const updates: Record<string, unknown> = {
       name: trimmedName,
       default_temp: hasDefaultValue ? defaultValue : null,
-      unit: unit.trim() || "°C",
-      step: step || 0.5,
       limit_temp: limitTemp,
     };
 
@@ -124,7 +117,7 @@ function EquipmentEditContent() {
     if (error) {
       const msg = error.message ?? "";
       const maybeMissingOptionalCols =
-        /default_temp|\bunit\b|\bstep\b|limit_temp|column|does not exist|42703|PGRST204/i.test(
+        /default_temp|limit_temp|column|does not exist|42703|PGRST204/i.test(
           msg,
         );
       if (maybeMissingOptionalCols) {
@@ -146,26 +139,32 @@ function EquipmentEditContent() {
     }
 
     router.push(`/taken/${moduleIdParam}`);
-  }, [name, hasDefaultValue, defaultValue, unit, step, limitTemp, equipmentId, moduleIdParam, router]);
+  }, [name, hasDefaultValue, defaultValue, limitTemp, equipmentId, moduleIdParam, router]);
 
   if (!isValidModule) {
     notFound();
   }
 
-  const adjustValue = (delta: number) => {
-    setDefaultValue((v) => {
-      const effectiveStep = step > 0 ? step : 0.5;
-      return Math.round((v + delta * effectiveStep) * 10) / 10;
-    });
+  const commitDefaultValue = () => {
+    const parsed = Number.parseFloat(defaultValueText.replace(",", "."));
+    if (Number.isFinite(parsed)) {
+      const rounded = Math.round(parsed * 10) / 10;
+      setDefaultValue(rounded);
+      setDefaultValueText(String(rounded));
+    } else {
+      setDefaultValueText(String(defaultValue));
+    }
   };
 
-  const adjustLimit = (delta: number) => {
-    setLimitTemp((v) => Math.round((v + delta) * 10) / 10);
-  };
-
-  const handleStepChange = (raw: string) => {
-    const parsed = Number.parseFloat(raw);
-    setStep(Number.isFinite(parsed) && parsed > 0 ? parsed : 0.5);
+  const commitLimitTemp = () => {
+    const parsed = Number.parseFloat(limitTempText.replace(",", "."));
+    if (Number.isFinite(parsed)) {
+      const rounded = Math.round(parsed * 10) / 10;
+      setLimitTemp(rounded);
+      setLimitTempText(String(rounded));
+    } else {
+      setLimitTempText(String(limitTemp));
+    }
   };
 
   if (loading) {
@@ -265,84 +264,32 @@ function EquipmentEditContent() {
             </div>
 
             <p className="text-sm text-slate-500">
-              Bij elke nieuwe registratie start de waarde op {defaultValue}
-              {unit}.
+              {hasDefaultValue
+                ? `Bij elke nieuwe registratie start de waarde op ${defaultValue.toFixed(1)} ${unit}.`
+                : "Bij elke nieuwe registratie start de waarde op de laatst opgeslagen meting."}
             </p>
 
-            {/* Temperature preview */}
-            <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
-                Voorbeeld
-              </p>
-              <div className="flex items-center gap-3">
-                <SupercellButton
-                  type="button"
-                  size="lg"
-                  variant="neutral"
-                  onClick={() => adjustValue(-1)}
-                  className="flex h-20 flex-1 items-center justify-center"
-                >
-                  <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                </SupercellButton>
-
-                <div className="flex-[1.5] text-center">
-                  <p className="text-5xl font-black tabular-nums text-blue-600">
-                    {defaultValue.toFixed(1)}
-                    {unit}
-                  </p>
-                </div>
-
-                <SupercellButton
-                  type="button"
-                  size="lg"
-                  variant="neutral"
-                  onClick={() => adjustValue(1)}
-                  className="flex h-20 flex-1 items-center justify-center"
-                >
-                  <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                </SupercellButton>
-              </div>
-            </div>
-
-            {/* Step and unit settings */}
-            <div className="grid grid-cols-2 gap-4">
+            {hasDefaultValue ? (
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-bold text-slate-500">
-                  Stapgrootte
+                <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                  Standaardwaarde ({unit})
                 </span>
                 <input
                   type="text"
                   inputMode="decimal"
-                  value={stepText}
-                  onChange={(e) => setStepText(e.target.value)}
-                  onBlur={() => {
-                    const parsed = Number.parseFloat(
-                      stepText.replace(",", "."),
-                    );
-                    if (Number.isFinite(parsed) && parsed > 0) {
-                      setStep(parsed);
-                      setStepText(stepText);
-                    } else {
-                      setStep(0.5);
-                      setStepText("0.5");
+                  value={defaultValueText}
+                  onChange={(e) => setDefaultValueText(e.target.value)}
+                  onBlur={commitDefaultValue}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      commitDefaultValue();
                     }
                   }}
-                  className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
+                  className="min-h-[72px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-5 text-center text-3xl font-black tabular-nums text-blue-600 outline-none focus:border-blue-500 focus:border-b-blue-700"
                 />
               </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-sm font-bold text-slate-500">
-                  Eenheid
-                </span>
-                <input
-                  type="text"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className="min-h-[56px] w-full rounded-xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-lg font-black text-slate-900 outline-none focus:border-blue-500"
-                />
-              </label>
-            </div>
+            ) : null}
           </div>
 
           {/* Limit temperature */}
@@ -358,39 +305,25 @@ function EquipmentEditContent() {
               ingevuld.
             </p>
 
-            <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-center text-sm font-bold uppercase tracking-wide text-slate-500">
-                Limiet
-              </p>
-              <div className="flex items-center gap-3">
-                <SupercellButton
-                  type="button"
-                  size="lg"
-                  variant="neutral"
-                  onClick={() => adjustLimit(-1)}
-                  className="flex h-20 flex-1 items-center justify-center"
-                >
-                  <Minus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                </SupercellButton>
-
-                <div className="flex-[1.5] text-center">
-                  <p className="text-5xl font-black tabular-nums text-blue-600">
-                    {limitTemp.toFixed(1)}
-                    {unit}
-                  </p>
-                </div>
-
-                <SupercellButton
-                  type="button"
-                  size="lg"
-                  variant="neutral"
-                  onClick={() => adjustLimit(1)}
-                  className="flex h-20 flex-1 items-center justify-center"
-                >
-                  <Plus className="h-8 w-8" strokeWidth={2.5} aria-hidden />
-                </SupercellButton>
-              </div>
-            </div>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+                Limiet ({unit})
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={limitTempText}
+                onChange={(e) => setLimitTempText(e.target.value)}
+                onBlur={commitLimitTemp}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitLimitTemp();
+                  }
+                }}
+                className="min-h-[72px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-5 text-center text-3xl font-black tabular-nums text-blue-600 outline-none focus:border-blue-500 focus:border-b-blue-700"
+              />
+            </label>
           </div>
 
           {/* Save button */}
