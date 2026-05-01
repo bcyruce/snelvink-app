@@ -47,6 +47,7 @@ type PlannedTask = {
   title: string;
   subtitle: string;
   route: string;
+  moduleLabel: string;
   completed: boolean;
   requiredCount: number;
   completedCount: number;
@@ -71,6 +72,21 @@ function startOfDay(date: Date) {
 function monthLabel(date: Date) {
   return date.toLocaleDateString("nl-NL", { month: "long", year: "numeric" });
 }
+
+const MONTH_NAMES = [
+  "Januari",
+  "Februari",
+  "Maart",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Augustus",
+  "September",
+  "Oktober",
+  "November",
+  "December",
+];
 
 function countRecordsForDate(
   item: ScheduledItem,
@@ -127,6 +143,7 @@ function buildPlannedTasks(
           .filter(Boolean)
           .join(" · "),
         route: item.route,
+        moduleLabel: item.moduleLabel,
         completed,
         requiredCount: occurrence.requiredCount,
         completedCount,
@@ -193,6 +210,32 @@ function TaskList({
         </li>
       ))}
     </ul>
+  );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={[
+        "rounded-full border-2 px-3 py-1.5 text-xs font-black uppercase tracking-wide transition-colors",
+        active
+          ? "border-blue-700 bg-blue-500 text-white"
+          : "border-slate-200 bg-white text-slate-600",
+      ].join(" ")}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -407,6 +450,7 @@ export default function ScheduleReminderList() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [monthIndex, setMonthIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [moduleFilter, setModuleFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -541,13 +585,44 @@ export default function ScheduleReminderList() {
     [items, records, restaurant?.opening_hours, restaurant?.closed_days],
   );
 
-  const todayTasks = tasksForDate(plannedTasks, today).filter(
+  const moduleLabels = useMemo(() => {
+    const seen = new Set<string>();
+    for (const task of plannedTasks) seen.add(task.moduleLabel);
+    return Array.from(seen).sort((a, b) => a.localeCompare(b, "nl-NL"));
+  }, [plannedTasks]);
+
+  const filteredTasks = useMemo(() => {
+    if (moduleFilter === "all") return plannedTasks;
+    return plannedTasks.filter((task) => task.moduleLabel === moduleFilter);
+  }, [plannedTasks, moduleFilter]);
+
+  const todayTasks = tasksForDate(filteredTasks, today).filter(
     (task) => !task.completed,
   );
-  const tomorrowTasks = tasksForDate(plannedTasks, tomorrow);
-  const weekTasks = tasksForRange(plannedTasks, today, nextWeek);
+  const tomorrowTasks = tasksForDate(filteredTasks, tomorrow);
+  const weekTasks = tasksForRange(filteredTasks, today, nextWeek);
   const calendarMonth = addMonths(today, monthIndex);
   const maxMonthIndex = 23;
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: maxMonthIndex + 1 }, (_, index) => {
+        const date = addMonths(today, index);
+        return {
+          index,
+          year: date.getFullYear(),
+          month: date.getMonth(),
+        };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  const yearOptions = useMemo(
+    () => Array.from(new Set(monthOptions.map((option) => option.year))),
+    [monthOptions],
+  );
+  const monthsForYear = monthOptions.filter(
+    (option) => option.year === calendarMonth.getFullYear(),
+  );
 
   if (!restaurantId) return null;
 
@@ -568,6 +643,29 @@ export default function ScheduleReminderList() {
         </p>
       ) : (
         <>
+          {moduleLabels.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-black uppercase tracking-wide text-slate-500">
+                Filter op type
+              </span>
+              <div className="-mx-1 flex flex-wrap gap-2">
+                <FilterChip
+                  active={moduleFilter === "all"}
+                  onClick={() => setModuleFilter("all")}
+                  label="Alle"
+                />
+                {moduleLabels.map((label) => (
+                  <FilterChip
+                    key={label}
+                    active={moduleFilter === label}
+                    onClick={() => setModuleFilter(label)}
+                    label={label}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <ReminderSection
             title="Vandaag"
             tasks={todayTasks}
@@ -586,39 +684,77 @@ export default function ScheduleReminderList() {
           />
 
           <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
-                Alle planning
-              </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMonthIndex((value) => Math.max(0, value - 1))}
-                  disabled={monthIndex === 0}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
-                  aria-label="Vorige maand"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMonthIndex((value) => Math.min(maxMonthIndex, value + 1))
-                  }
-                  disabled={monthIndex === maxMonthIndex}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
-                  aria-label="Volgende maand"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
+            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
+              Alle planning
+            </h3>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMonthIndex((value) => Math.max(0, value - 1))}
+                disabled={monthIndex === 0}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
+                aria-label="Vorige maand"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <select
+                value={calendarMonth.getMonth()}
+                onChange={(event) => {
+                  const target = monthOptions.find(
+                    (option) =>
+                      option.year === calendarMonth.getFullYear() &&
+                      option.month === Number(event.target.value),
+                  );
+                  if (target) setMonthIndex(target.index);
+                }}
+                aria-label="Maand kiezen"
+                className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2 text-base font-black capitalize text-slate-900 shadow-sm"
+              >
+                {monthsForYear.map((option) => (
+                  <option key={option.index} value={option.month}>
+                    {MONTH_NAMES[option.month]}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={calendarMonth.getFullYear()}
+                onChange={(event) => {
+                  const year = Number(event.target.value);
+                  const target =
+                    monthOptions.find(
+                      (option) =>
+                        option.year === year &&
+                        option.month === calendarMonth.getMonth(),
+                    ) ?? monthOptions.find((option) => option.year === year);
+                  if (target) setMonthIndex(target.index);
+                }}
+                aria-label="Jaar kiezen"
+                className="rounded-xl bg-white px-3 py-2 text-base font-black text-slate-900 shadow-sm"
+              >
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() =>
+                  setMonthIndex((value) => Math.min(maxMonthIndex, value + 1))
+                }
+                disabled={monthIndex === maxMonthIndex}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
+                aria-label="Volgende maand"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
             </div>
             <p className="text-center text-base font-black capitalize text-slate-900">
               {monthLabel(calendarMonth)}
             </p>
             <CalendarMonth
               month={calendarMonth}
-              tasks={plannedTasks}
+              tasks={filteredTasks}
               onSelectDate={(date) => setSelectedDate(date)}
             />
           </section>
@@ -628,7 +764,7 @@ export default function ScheduleReminderList() {
       {selectedDate ? (
         <DayPreviewModal
           date={selectedDate}
-          tasks={tasksForDate(plannedTasks, selectedDate)}
+          tasks={tasksForDate(filteredTasks, selectedDate)}
           onClose={() => setSelectedDate(null)}
         />
       ) : null}

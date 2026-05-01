@@ -247,13 +247,6 @@ export default function SchoonmaakCheck({
     });
   };
 
-  // ---------- reset helpers ----------
-  const resetLocation = () => {
-    setSelectedLocation(null);
-    setCheckedTaskIds(new Set());
-    setOpmerking("");
-  };
-
   // ---------- photos ----------
   useEffect(() => {
     return () => {
@@ -472,17 +465,6 @@ export default function SchoonmaakCheck({
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
             Kies een {groupSingularLower}
           </h3>
-          {selectedLocation ? (
-            <SupercellButton
-              size="sm"
-              variant="neutral"
-              onClick={resetLocation}
-              className="flex h-10 items-center gap-1.5 rounded-full border-b-[4px] px-3 text-sm normal-case"
-            >
-              <Pencil className="h-4 w-4" aria-hidden />
-              Wijzigen
-            </SupercellButton>
-          ) : null}
         </div>
 
         {selectedLocation ? (
