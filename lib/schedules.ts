@@ -28,6 +28,13 @@ export type CustomReminder = {
   dateTime: string;
 };
 
+export type ScheduleOccurrence = {
+  date: string;
+  time?: string;
+  requiredCount: number;
+  source: "scheduled" | "quota";
+};
+
 export type FrequencySchedule =
   | {
       cadence: "daily";
@@ -181,6 +188,9 @@ export function normalizeSchedule(value: unknown): FrequencySchedule | null {
 export function validateSchedule(schedule: FrequencySchedule | null): string | null {
   if (!schedule) return null;
   if (schedule.cadence === "custom") {
+    if (schedule.reminders.length === 0) {
+      return "Voeg minimaal één herinnering toe.";
+    }
     return schedule.reminders.every((item) => item.dateTime.trim())
       ? null
       : "Vul voor elke herinnering een datum en tijd in.";
@@ -249,4 +259,187 @@ export function getPeriodRange(
 
 export function scheduleToJson(schedule: FrequencySchedule | null): unknown {
   return schedule;
+}
+
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function startOfDay(date: Date): Date {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function addDays(date: Date, amount: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+
+function weekdayForDate(date: Date): Weekday {
+  const day = date.getDay();
+  return (day === 0 ? 7 : day) as Weekday;
+}
+
+function inRange(date: Date, start: Date, end: Date): boolean {
+  return date >= start && date < end;
+}
+
+function dateFromParts(year: number, month: number, day: number): Date | null {
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+export function generateScheduleOccurrences(
+  schedule: FrequencySchedule,
+  start: Date,
+  end: Date,
+  isOpenDate: (date: Date) => boolean = () => true,
+): ScheduleOccurrence[] {
+  const startDay = startOfDay(start);
+  const endDay = startOfDay(end);
+  const occurrences: ScheduleOccurrence[] = [];
+
+  if (schedule.cadence === "custom") {
+    for (const reminder of schedule.reminders) {
+      const date = new Date(reminder.dateTime);
+      if (Number.isNaN(date.getTime()) || !inRange(date, startDay, endDay)) {
+        continue;
+      }
+      occurrences.push({
+        date: toIsoDate(date),
+        time: reminder.dateTime.slice(11, 16) || undefined,
+        requiredCount: 1,
+        source: "scheduled",
+      });
+    }
+    return occurrences;
+  }
+
+  if (schedule.cadence === "daily") {
+    const times = schedule.assignTimes ? schedule.times : [];
+    for (let cursor = startDay; cursor < endDay; cursor = addDays(cursor, 1)) {
+      if (!isOpenDate(cursor)) continue;
+      occurrences.push({
+        date: toIsoDate(cursor),
+        time: times[0] || undefined,
+        requiredCount: schedule.frequency,
+        source: "scheduled",
+      });
+    }
+    return occurrences;
+  }
+
+  if (schedule.cadence === "weekly") {
+    if (schedule.assignTimes && schedule.days.length > 0) {
+      for (let cursor = startDay; cursor < endDay; cursor = addDays(cursor, 1)) {
+        const day = schedule.days.find(
+          (item) => item.weekday === weekdayForDate(cursor),
+        );
+        if (!day) continue;
+        occurrences.push({
+          date: toIsoDate(cursor),
+          time: day.time || undefined,
+          requiredCount: 1,
+          source: "scheduled",
+        });
+      }
+      return occurrences;
+    }
+
+    for (let cursor = startDay; cursor < endDay; cursor = addDays(cursor, 1)) {
+      if (cursor.getTime() !== startDay.getTime() && weekdayForDate(cursor) !== 1) {
+        continue;
+      }
+      occurrences.push({
+        date: toIsoDate(cursor),
+        requiredCount: schedule.frequency,
+        source: "quota",
+      });
+    }
+    return occurrences;
+  }
+
+  if (schedule.cadence === "monthly") {
+    if (schedule.assignTimes && schedule.days.length > 0) {
+      for (let cursor = startDay; cursor < endDay; cursor = addDays(cursor, 1)) {
+        const day = schedule.days.find((item) => item.day === cursor.getDate());
+        if (!day) continue;
+        occurrences.push({
+          date: toIsoDate(cursor),
+          time: day.time || undefined,
+          requiredCount: 1,
+          source: "scheduled",
+        });
+      }
+      return occurrences;
+    }
+
+    occurrences.push({
+      date: toIsoDate(startDay),
+      requiredCount: schedule.frequency,
+      source: "quota",
+    });
+    for (
+      let cursor = new Date(startDay.getFullYear(), startDay.getMonth() + 1, 1);
+      cursor < endDay;
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
+    ) {
+      occurrences.push({
+        date: toIsoDate(cursor),
+        requiredCount: schedule.frequency,
+        source: "quota",
+      });
+    }
+    return occurrences;
+  }
+
+  const years = new Set<number>();
+  for (let cursor = startDay; cursor < endDay; cursor = addDays(cursor, 366)) {
+    years.add(cursor.getFullYear());
+    years.add(cursor.getFullYear() + 1);
+  }
+
+  if (schedule.assignTimes && schedule.dates.length > 0) {
+    for (const year of years) {
+      for (const item of schedule.dates) {
+        const date = dateFromParts(year, item.month, item.day);
+        if (!date || !inRange(date, startDay, endDay)) continue;
+        occurrences.push({
+          date: toIsoDate(date),
+          time: item.time || undefined,
+          requiredCount: 1,
+          source: "scheduled",
+        });
+      }
+    }
+    return occurrences;
+  }
+
+  occurrences.push({
+    date: toIsoDate(startDay),
+    requiredCount: schedule.frequency,
+    source: "quota",
+  });
+  for (const year of years) {
+    const date = new Date(year + 1, 0, 1);
+    if (!inRange(date, startDay, endDay)) continue;
+    occurrences.push({
+      date: toIsoDate(date),
+      requiredCount: schedule.frequency,
+      source: "quota",
+    });
+  }
+  return occurrences;
 }

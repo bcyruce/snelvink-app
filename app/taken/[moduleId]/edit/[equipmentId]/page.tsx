@@ -141,6 +141,7 @@ function EquipmentEditContent() {
       if (maybeMissingOptionalCols) {
         const minimal = {
           name: trimmedName,
+          schedule: scheduleToJson(schedule),
         };
         ({ error } = await supabase
           .from("haccp_equipments")

@@ -26,6 +26,8 @@ export type AppRestaurant = {
   plan: string | null;
   plan_status: string | null;
   plan_period_end: string | null;
+  opening_hours: unknown | null;
+  closed_days: unknown | null;
 };
 
 export type UserContextValue = {
@@ -98,7 +100,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         supabase
           .from("profiles")
           .select(
-            "role, restaurant_id, is_email_verified, restaurants(name, plan_type, invite_code, plan, plan_status, plan_period_end)",
+            "role, restaurant_id, is_email_verified, restaurants(name, plan_type, invite_code, plan, plan_status, plan_period_end, opening_hours, closed_days)",
           )
           .eq("id", authUser.id)
           .maybeSingle(),
@@ -140,7 +142,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
               supabase
                 .from("restaurants")
                 .select(
-                  "name, plan_type, invite_code, plan, plan_status, plan_period_end",
+                  "name, plan_type, invite_code, plan, plan_status, plan_period_end, opening_hours, closed_days",
                 )
                 .eq("id", row.restaurant_id)
                 .maybeSingle(),

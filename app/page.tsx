@@ -3,6 +3,7 @@
 import AddModuleModal from "@/components/AddModuleModal";
 import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import HistoryList from "@/components/HistoryList";
+import RestaurantTab from "@/components/RestaurantTab";
 import SettingsTab from "@/components/SettingsTab";
 import SortableModuleCard from "@/components/SortableModuleCard";
 import ThemePicker from "@/components/ThemePicker";
@@ -32,7 +33,7 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Pencil, Plus, Users, User, Store, Construction } from "lucide-react";
+import { Construction, Pencil, Plus, User, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
@@ -402,30 +403,9 @@ function HomeContent() {
             </div>
           ) : null}
 
-          {/* Mijn restaurant placeholder */}
           {activeTab === "restaurant" ? (
             <div onClick={stopEditingExit} className="pt-4">
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div
-                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
-                  style={{ background: `${theme.primary}15` }}
-                >
-                  <Store className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
-                </div>
-                <h2 className="text-xl font-black" style={{ color: theme.fg }}>
-                  Mijn restaurant
-                </h2>
-                <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
-                  Beheer je restaurantgegevens en instellingen
-                </p>
-                <div
-                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
-                  style={{ background: `${theme.primary}15`, color: theme.primary }}
-                >
-                  <Construction className="h-4 w-4" strokeWidth={2.5} />
-                  Binnenkort beschikbaar
-                </div>
-              </div>
+              <RestaurantTab />
             </div>
           ) : null}
         </div>
