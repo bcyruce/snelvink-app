@@ -315,7 +315,7 @@ export default function OntvangstCheck({ mode = "record" }: Props) {
                       {p.name}
                     </span>
                   </div>
-<div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                     <a
                       href={`/taken/ontvangst/edit/${p.id}`}
                       aria-label={`Bewerk ${p.name}`}
