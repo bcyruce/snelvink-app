@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import {
   isRestaurantOpenOn,
@@ -14,6 +15,7 @@ import {
   type FrequencySchedule,
 } from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
+import { densePressClass } from "@/lib/uiMotion";
 import {
   AlertCircle,
   CalendarClock,
@@ -69,24 +71,9 @@ function startOfDay(date: Date) {
   return next;
 }
 
-function monthLabel(date: Date) {
-  return date.toLocaleDateString("nl-NL", { month: "long", year: "numeric" });
+function monthLabel(date: Date, locale: string) {
+  return date.toLocaleDateString(locale, { month: "long", year: "numeric" });
 }
-
-const MONTH_NAMES = [
-  "Januari",
-  "Februari",
-  "Maart",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Augustus",
-  "September",
-  "Oktober",
-  "November",
-  "December",
-];
 
 function countRecordsForDate(
   item: ScheduledItem,
@@ -228,7 +215,8 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={[
-        "rounded-full border-2 px-3 py-1.5 text-xs font-black uppercase tracking-wide transition-colors",
+        "rounded-full border-2 px-3 py-1.5 text-xs font-black uppercase tracking-wide",
+        densePressClass,
         active
           ? "border-blue-700 bg-blue-500 text-white"
           : "border-slate-200 bg-white text-slate-600",
@@ -258,7 +246,10 @@ function ReminderSection({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm"
+        className={[
+          "flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm",
+          densePressClass,
+        ].join(" ")}
       >
         <span className="flex items-center gap-2">
           <span className="text-sm font-black uppercase tracking-wide text-slate-500">
@@ -286,13 +277,16 @@ function DayPreviewModal({
   date,
   tasks,
   onClose,
+  locale,
 }: {
   date: Date;
   tasks: PlannedTask[];
   onClose: () => void;
+  locale: string;
 }) {
   const router = useRouter();
-  const titleLabel = date.toLocaleDateString("nl-NL", {
+  const { t } = useTranslation();
+  const titleLabel = date.toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -303,7 +297,7 @@ function DayPreviewModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
       <button
         type="button"
-        aria-label="Sluiten"
+        aria-label={t("close")}
         onClick={onClose}
         className="absolute inset-0 h-full w-full"
       />
@@ -316,15 +310,18 @@ function DayPreviewModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Sluiten"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+            aria-label={t("close")}
+            className={[
+              "flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100",
+              densePressClass,
+            ].join(" ")}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
         {tasks.length === 0 ? (
           <p className="rounded-2xl bg-slate-50 px-4 py-5 text-center text-sm font-semibold text-slate-500">
-            Geen geplande taken op deze dag.
+            {t("noPlannedTasksOnDay")}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -368,10 +365,12 @@ function CalendarMonth({
   month,
   tasks,
   onSelectDate,
+  weekdays,
 }: {
   month: Date;
   tasks: PlannedTask[];
   onSelectDate: (date: Date) => void;
+  weekdays: string[];
 }) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const firstOffset = (first.getDay() + 6) % 7;
@@ -381,7 +380,7 @@ function CalendarMonth({
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
       <div className="grid grid-cols-7 gap-1 pb-2 text-center text-[10px] font-black uppercase text-slate-400">
-        {["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"].map((day) => (
+        {weekdays.map((day) => (
           <span key={day}>{day}</span>
         ))}
       </div>
@@ -395,7 +394,8 @@ function CalendarMonth({
               type="button"
               onClick={() => onSelectDate(date)}
               className={[
-                "flex min-h-[76px] flex-col rounded-xl border p-1 text-left transition-colors active:bg-slate-100",
+                "flex min-h-[76px] flex-col rounded-xl border p-1 text-left active:bg-slate-100",
+                densePressClass,
                 isCurrentMonth
                   ? "border-slate-100 bg-slate-50"
                   : "border-transparent bg-transparent opacity-40",
@@ -435,6 +435,10 @@ function CalendarMonth({
 
 export default function ScheduleReminderList() {
   const { profile, restaurant } = useUser();
+  const { t, language } = useTranslation();
+  const locale = language === "en" ? "en-GB" : "nl-NL";
+  const monthNames = t("months").split("|");
+  const weekdayNames = t("weekdaysShort").split("|");
   const restaurantId = profile?.restaurant_id ?? null;
   const openingHours = useMemo(
     () => normalizeOpeningHours(restaurant?.opening_hours),
@@ -485,7 +489,7 @@ export default function ScheduleReminderList() {
           "Herinneringen laden mislukt:",
           equipments.error ?? products.error ?? locations.error,
         );
-        setErrorMessage("Herinneringen laden mislukt.");
+        setErrorMessage(t("remindersLoadFailed"));
         setLoading(false);
         return;
       }
@@ -501,7 +505,7 @@ export default function ScheduleReminderList() {
           title: row.name ?? "Item",
           moduleLabel:
             customName ??
-            (row.type === "kerntemperatuur" ? "Kerntemperatuur" : "Koeling"),
+            (row.type === "kerntemperatuur" ? t("kerntemperatuur") : t("koeling")),
           route: row.custom_module_id
             ? `/registreren/custom/${row.custom_module_id}`
             : `/registreren/${row.type}`,
@@ -517,7 +521,7 @@ export default function ScheduleReminderList() {
         nextItems.push({
           id: String(row.id),
           title: row.name ?? "Item",
-          moduleLabel: customName ?? "Ontvangst",
+          moduleLabel: customName ?? t("ontvangst"),
           route: row.custom_module_id
             ? `/registreren/custom/${row.custom_module_id}`
             : "/registreren/ontvangst",
@@ -533,7 +537,7 @@ export default function ScheduleReminderList() {
         nextItems.push({
           id: String(row.id),
           title: row.name ?? "Item",
-          moduleLabel: customName ?? "Schoonmaak",
+          moduleLabel: customName ?? t("schoonmaak"),
           route: row.custom_module_id
             ? `/registreren/custom/${row.custom_module_id}`
             : "/registreren/schoonmaak",
@@ -556,7 +560,7 @@ export default function ScheduleReminderList() {
           "Registraties voor herinneringen laden mislukt:",
           recordResult.error,
         );
-        setErrorMessage("Registraties laden mislukt.");
+        setErrorMessage(t("recordsLoadFailed"));
         setLoading(false);
         return;
       }
@@ -570,7 +574,7 @@ export default function ScheduleReminderList() {
     return () => {
       ignore = true;
     };
-  }, [restaurantId]);
+  }, [restaurantId, t]);
 
   const today = startOfDay(new Date());
   const tomorrow = addDays(today, 1);
@@ -588,8 +592,8 @@ export default function ScheduleReminderList() {
   const moduleLabels = useMemo(() => {
     const seen = new Set<string>();
     for (const task of plannedTasks) seen.add(task.moduleLabel);
-    return Array.from(seen).sort((a, b) => a.localeCompare(b, "nl-NL"));
-  }, [plannedTasks]);
+    return Array.from(seen).sort((a, b) => a.localeCompare(b, locale));
+  }, [plannedTasks, locale]);
 
   const filteredTasks = useMemo(() => {
     if (moduleFilter === "all") return plannedTasks;
@@ -630,12 +634,12 @@ export default function ScheduleReminderList() {
     <section className="mt-6 flex flex-col gap-5">
       <div className="flex items-center gap-2">
         <CalendarClock className="h-5 w-5 text-slate-500" />
-        <h2 className="text-lg font-black text-slate-900">Herinneringen</h2>
+        <h2 className="text-lg font-black text-slate-900">{t("reminders")}</h2>
       </div>
 
       {loading ? (
         <p className="rounded-2xl bg-white px-4 py-5 text-center text-sm font-semibold text-slate-500 shadow-sm">
-          Herinneringen laden...
+          {t("loadingReminders")}
         </p>
       ) : errorMessage ? (
         <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center text-sm font-semibold text-red-700">
@@ -644,36 +648,36 @@ export default function ScheduleReminderList() {
       ) : (
         <>
           <ReminderSection
-            title="Vandaag"
+            title={t("today")}
             tasks={todayTasks}
-            emptyText="Vandaag zijn alle taken voltooid!"
+            emptyText={t("todayAllDone")}
           />
           <ReminderSection
-            title="Morgen"
+            title={t("tomorrow")}
             tasks={tomorrowTasks}
-            emptyText="Morgen staan er geen taken gepland."
+            emptyText={t("noTasksTomorrow")}
           />
           <ReminderSection
-            title="Deze week"
+            title={t("thisWeek")}
             tasks={weekTasks}
-            emptyText="Deze week staan er geen taken gepland."
+            emptyText={t("noTasksThisWeek")}
             defaultOpen={false}
           />
 
           <section className="flex flex-col gap-3">
             <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
-              Alle planning
+              {t("allPlanning")}
             </h3>
             {moduleLabels.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-black uppercase tracking-wide text-slate-500">
-                  Filter op type
+                  {t("filterByType")}
                 </span>
                 <div className="-mx-1 flex flex-wrap gap-2">
                   <FilterChip
                     active={moduleFilter === "all"}
                     onClick={() => setModuleFilter("all")}
-                    label="Alle"
+                    label={t("all")}
                   />
                   {moduleLabels.map((label) => (
                     <FilterChip
@@ -692,7 +696,7 @@ export default function ScheduleReminderList() {
                 onClick={() => setMonthIndex((value) => Math.max(0, value - 1))}
                 disabled={monthIndex === 0}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
-                aria-label="Vorige maand"
+                aria-label={t("previousMonth")}
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -706,12 +710,12 @@ export default function ScheduleReminderList() {
                   );
                   if (target) setMonthIndex(target.index);
                 }}
-                aria-label="Maand kiezen"
+                aria-label={t("chooseMonth")}
                 className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2 text-base font-black capitalize text-slate-900 shadow-sm"
               >
                 {monthsForYear.map((option) => (
                   <option key={option.index} value={option.month}>
-                    {MONTH_NAMES[option.month]}
+                    {monthNames[option.month]}
                   </option>
                 ))}
               </select>
@@ -727,7 +731,7 @@ export default function ScheduleReminderList() {
                     ) ?? monthOptions.find((option) => option.year === year);
                   if (target) setMonthIndex(target.index);
                 }}
-                aria-label="Jaar kiezen"
+                aria-label={t("chooseYear")}
                 className="rounded-xl bg-white px-3 py-2 text-base font-black text-slate-900 shadow-sm"
               >
                 {yearOptions.map((year) => (
@@ -743,18 +747,19 @@ export default function ScheduleReminderList() {
                 }
                 disabled={monthIndex === maxMonthIndex}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
-                aria-label="Volgende maand"
+                aria-label={t("nextMonth")}
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
             <p className="text-center text-base font-black capitalize text-slate-900">
-              {monthLabel(calendarMonth)}
+              {monthLabel(calendarMonth, locale)}
             </p>
             <CalendarMonth
               month={calendarMonth}
               tasks={filteredTasks}
               onSelectDate={(date) => setSelectedDate(date)}
+              weekdays={weekdayNames}
             />
           </section>
         </>
@@ -765,6 +770,7 @@ export default function ScheduleReminderList() {
           date={selectedDate}
           tasks={tasksForDate(filteredTasks, selectedDate)}
           onClose={() => setSelectedDate(null)}
+          locale={locale}
         />
       ) : null}
     </section>

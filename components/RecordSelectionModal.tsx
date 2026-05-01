@@ -1,6 +1,8 @@
 "use client";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
+import { densePressClass } from "@/lib/uiMotion";
 import { getModuleIcon, loadLayout, type TaskModule } from "@/lib/taskModules";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight } from "lucide-react";
@@ -17,12 +19,9 @@ export default function RecordSelectionModal({
   onClose,
 }: RecordSelectionModalProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
-  const [modules, setModules] = useState<TaskModule[]>([]);
-
-  useEffect(() => {
-    setModules(loadLayout());
-  }, [open]);
+  const [modules] = useState<TaskModule[]>(() => loadLayout());
 
   const handleSelectModule = (module: TaskModule) => {
     onClose();
@@ -32,6 +31,14 @@ export default function RecordSelectionModal({
     } else {
       router.push(`/registreren/${module.id}`);
     }
+  };
+
+  const moduleName = (module: TaskModule) => {
+    if (module.id === "koeling") return t("koeling");
+    if (module.id === "ontvangst") return t("ontvangst");
+    if (module.id === "schoonmaak") return t("schoonmaak");
+    if (module.id === "kerntemperatuur") return t("kerntemperatuur");
+    return module.name;
   };
 
   // Close on escape key
@@ -85,14 +92,14 @@ export default function RecordSelectionModal({
                 className="text-xl font-black"
                 style={{ color: theme.fg }}
               >
-                Kies een module
+                {t("chooseModule")}
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 className="flex h-10 w-10 items-center justify-center rounded-full transition-colors"
                 style={{ background: `${theme.muted}20` }}
-                aria-label="Sluiten"
+                aria-label={t("close")}
               >
                 <X className="h-5 w-5" style={{ color: theme.muted }} />
               </button>
@@ -108,7 +115,10 @@ export default function RecordSelectionModal({
                       <button
                         type="button"
                         onClick={() => handleSelectModule(module)}
-                        className="flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left transition-all active:scale-[0.98]"
+                        className={[
+                          "flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left",
+                          densePressClass,
+                        ].join(" ")}
                         style={{
                           background: theme.bg,
                           border: `1.5px solid ${theme.cardBorder}`,
@@ -128,7 +138,7 @@ export default function RecordSelectionModal({
                           className="flex-1 text-lg font-bold"
                           style={{ color: theme.fg }}
                         >
-                          {module.name}
+                          {moduleName(module)}
                         </span>
                         <ChevronRight
                           className="h-5 w-5"

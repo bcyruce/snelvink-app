@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import {
   normalizeClosedDays,
@@ -9,11 +10,13 @@ import {
 } from "@/lib/restaurantHours";
 import { WEEKDAYS, type Weekday } from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
+import { densePressClass } from "@/lib/uiMotion";
 import { ArrowLeft, CalendarClock, ChevronRight, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function RestaurantTab() {
   const { profile, restaurant, refresh } = useUser();
+  const { t } = useTranslation();
   const restaurantId = profile?.restaurant_id ?? null;
   const isOwner =
     profile?.role === "owner" ||
@@ -35,30 +38,33 @@ export default function RestaurantTab() {
       <div className="mt-2 flex flex-col gap-5">
         <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
           <p className="text-sm font-black uppercase tracking-wide text-slate-500">
-            Mijn restaurant
+            {t("navRestaurant")}
           </p>
           <h2 className="mt-2 text-2xl font-black text-slate-900">
             {restaurant?.name ?? "Restaurant"}
           </h2>
           <p className="mt-2 text-sm font-semibold text-slate-500">
-            Beheer je restaurantgegevens en instellingen.
+            {t("restaurantManageIntro")}
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setView("hours")}
-          className="flex min-h-[88px] w-full items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 text-left shadow-sm transition-transform active:scale-[0.98]"
+          className={[
+            "flex min-h-[88px] w-full items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 text-left shadow-sm",
+            densePressClass,
+          ].join(" ")}
         >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
             <CalendarClock className="h-6 w-6" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xl font-black text-slate-900">
-              Openingstijden
+              {t("openingHours")}
             </span>
             <span className="mt-1 block text-sm font-semibold text-slate-500">
-              Openingstijden en sluitingsdagen beheren
+              {t("openingHoursManage")}
             </span>
           </span>
           <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
@@ -66,7 +72,7 @@ export default function RestaurantTab() {
 
         {!isOwner ? (
           <p className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-sm">
-            Alleen de eigenaar kan restaurantinstellingen aanpassen.
+            {t("ownerOnlyRestaurantSettings")}
           </p>
         ) : null}
       </div>
@@ -83,6 +89,7 @@ export default function RestaurantTab() {
       initialClosedDays={initialClosedDays}
       onSaved={refresh}
       onBack={() => setView("overview")}
+      t={t}
     />
   );
 }
@@ -95,6 +102,7 @@ function RestaurantHoursForm({
   initialClosedDays,
   onSaved,
   onBack,
+  t,
 }: {
   restaurantName: string;
   restaurantId: string | null;
@@ -103,6 +111,7 @@ function RestaurantHoursForm({
   initialClosedDays: string[];
   onSaved: () => Promise<void>;
   onBack: () => void;
+  t: ReturnType<typeof useTranslation>["t"];
 }) {
   const [hours, setHours] = useState<OpeningHours>(initialHours);
   const [closedDays, setClosedDays] = useState<string[]>(initialClosedDays);
@@ -143,13 +152,13 @@ function RestaurantHoursForm({
 
     if (error) {
       console.error("Openingstijden opslaan mislukt:", error);
-      setMessage("Opslaan mislukt.");
+      setMessage(t("saveFailed"));
       setSaving(false);
       return;
     }
 
     await onSaved();
-    setMessage("Restaurantinstellingen opgeslagen.");
+    setMessage(t("restaurantSettingsSaved"));
     setSaving(false);
   };
 
@@ -163,30 +172,29 @@ function RestaurantHoursForm({
         className="flex min-h-[72px] w-full items-center justify-center gap-3 text-xl"
       >
         <ArrowLeft className="h-5 w-5" />
-        Terug naar restaurant
+        {t("backToRestaurant")}
       </SupercellButton>
 
       <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
         <p className="text-sm font-black uppercase tracking-wide text-slate-500">
-          Openingstijden
+          {t("openingHours")}
         </p>
         <h2 className="mt-2 text-2xl font-black text-slate-900">
           {restaurantName}
         </h2>
         <p className="mt-2 text-sm font-semibold text-slate-500">
-          Stel hier de openingstijden in. Dagelijkse taken worden niet gepland op
-          dagen waarop het restaurant gesloten is.
+          {t("openingHoursIntro")}
         </p>
         {!isOwner ? (
           <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-            Alleen de eigenaar kan openingstijden aanpassen.
+            {t("ownerOnlyRestaurantSettings")}
           </p>
         ) : null}
       </div>
 
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
-          Openingstijden
+          {t("openingHours")}
         </h3>
         {WEEKDAYS.map((day) => {
           const config = hours[day.value];
@@ -203,13 +211,14 @@ function RestaurantHoursForm({
                   onClick={() => updateDay(day.value, { open: !config.open })}
                   className={[
                     "rounded-full border px-3 py-1 text-xs font-black",
+                    densePressClass,
                     config.open
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : "border-slate-200 bg-slate-50 text-slate-500",
                     !isOwner ? "opacity-60" : "",
                   ].join(" ")}
                 >
-                  {config.open ? "Open" : "Gesloten"}
+                  {config.open ? t("open") : t("closed")}
                 </button>
               </div>
 
@@ -217,7 +226,7 @@ function RestaurantHoursForm({
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-xs font-bold uppercase text-slate-400">
-                      Van
+                      {t("from")}
                     </span>
                     <input
                       type="time"
@@ -231,7 +240,7 @@ function RestaurantHoursForm({
                   </label>
                   <label className="flex flex-col gap-1">
                     <span className="text-xs font-bold uppercase text-slate-400">
-                      Tot
+                      {t("to")}
                     </span>
                     <input
                       type="time"
@@ -252,12 +261,12 @@ function RestaurantHoursForm({
 
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
-          Sluitingsdagen
+          {t("closedDays")}
         </h3>
         <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           {closedDays.length === 0 ? (
             <p className="text-sm font-semibold text-slate-500">
-              Geen extra sluitingsdagen ingesteld.
+              {t("noClosedDays")}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -271,8 +280,11 @@ function RestaurantHoursForm({
                     <button
                       type="button"
                       onClick={() => removeClosedDay(day)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
-                      aria-label={`${day} verwijderen`}
+                      aria-label={t("closedDayRemove", { date: day })}
+                      className={[
+                        "flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50",
+                        densePressClass,
+                      ].join(" ")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -293,8 +305,11 @@ function RestaurantHoursForm({
               <button
                 type="button"
                 onClick={addClosedDay}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white"
-                aria-label="Sluitingsdag toevoegen"
+                className={[
+                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white",
+                  densePressClass,
+                ].join(" ")}
+                aria-label={t("closedDayAdd")}
               >
                 <Plus className="h-5 w-5" />
               </button>
@@ -319,7 +334,7 @@ function RestaurantHoursForm({
           className="flex min-h-[72px] w-full items-center justify-center gap-2 text-xl"
         >
           <Save className="h-5 w-5" />
-          {saving ? "Opslaan..." : "Opslaan"}
+          {saving ? t("saving") : t("save")}
         </SupercellButton>
       ) : null}
     </div>

@@ -2,6 +2,8 @@
 
 import { useRef, useEffect, useState } from "react";
 import { useTheme, themes, themeOrder } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
+import { densePressClass } from "@/lib/uiMotion";
 
 // 扁平化调色盘 SVG 图标
 export function PaletteIcon({ colors, size = 22 }: { colors: string[]; size?: number }) {
@@ -28,6 +30,7 @@ function ThemePickerPopup({
   onClose: () => void;
 }) {
   const { themeName, setThemeName, paletteColors } = useTheme();
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,7 +61,7 @@ function ThemePickerPopup({
       <div className="flex items-center gap-1.5 mb-3 px-0.5">
         <PaletteIcon colors={paletteColors} size={14} />
         <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.22em", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>
-          Thema
+          {t("theme")}
         </span>
       </div>
 
@@ -71,8 +74,10 @@ function ThemePickerPopup({
             return (
               <button
                 key={key}
+                type="button"
                 onClick={() => { setThemeName(key); onClose(); }}
                 title={th.label}
+                className={densePressClass}
                 style={{
                   width: 28, height: 28, borderRadius: "50%",
                   background: th.primary,
@@ -97,11 +102,13 @@ function ThemePickerPopup({
 // 调色盘按钮（带弹窗）
 export default function ThemePicker() {
   const { paletteColors } = useTheme();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
     <div style={{ position: "relative" }}>
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         style={{
           padding: 4,
@@ -114,7 +121,8 @@ export default function ThemePicker() {
           opacity: open ? 1 : 0.75,
           transition: "opacity 0.15s",
         }}
-        aria-label="Thema wijzigen"
+        className={densePressClass}
+        aria-label={t("changeTheme")}
       >
         <PaletteIcon colors={paletteColors} size={24} />
       </button>

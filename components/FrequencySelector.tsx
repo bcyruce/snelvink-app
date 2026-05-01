@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   createDefaultSchedule,
   type CustomReminder,
@@ -9,6 +10,7 @@ import {
   type Weekday,
   WEEKDAYS,
 } from "@/lib/schedules";
+import { densePressClass } from "@/lib/uiMotion";
 import { Plus, Trash2 } from "lucide-react";
 
 type Props = {
@@ -16,25 +18,34 @@ type Props = {
   onChange: (next: FrequencySchedule | null) => void;
 };
 
-const CADENCES: readonly { value: ScheduleCadence; label: string }[] = [
-  { value: "daily", label: "Dagelijks" },
-  { value: "weekly", label: "Wekelijks" },
-  { value: "monthly", label: "Maandelijks" },
-  { value: "yearly", label: "Jaarlijks" },
-  { value: "custom", label: "Aangepast" },
+const CADENCES: readonly {
+  value: ScheduleCadence;
+  labelKey: "daily" | "weekly" | "monthly" | "yearly" | "custom";
+}[] = [
+  { value: "daily", labelKey: "daily" },
+  { value: "weekly", labelKey: "weekly" },
+  { value: "monthly", labelKey: "monthly" },
+  { value: "yearly", labelKey: "yearly" },
+  { value: "custom", labelKey: "custom" },
 ];
-
-const ordinalLabels = ["Eerste", "Tweede", "Derde", "Vierde", "Vijfde"];
-
-function ordinalLabel(index: number) {
-  return ordinalLabels[index] ?? `${index + 1}e`;
-}
 
 function resizeArray<T>(items: T[], length: number, makeItem: (index: number) => T) {
   return Array.from({ length }, (_, index) => items[index] ?? makeItem(index));
 }
 
 export default function FrequencySelector({ value, onChange }: Props) {
+  const { t } = useTranslation();
+  const weekdays = t("weekdaysFull").split("|");
+  const ordinalLabel = (index: number) => {
+    const key = `ordinal${index + 1}` as
+      | "ordinal1"
+      | "ordinal2"
+      | "ordinal3"
+      | "ordinal4"
+      | "ordinal5";
+    if (index < 5) return t(key);
+    return t("ordinalN", { n: index + 1 });
+  };
   const updateFrequency = (frequencyText: string) => {
     if (!value || value.cadence === "custom") return;
     const parsed = Number.parseInt(frequencyText, 10);
@@ -84,11 +95,10 @@ export default function FrequencySelector({ value, onChange }: Props) {
     <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-2">
         <span className="text-lg font-bold text-slate-800">
-          Frequentie
+          {t("frequency")}
         </span>
         <p className="text-sm text-slate-500">
-          Als deze taak niet periodiek is, klik dan direct op Nieuwe Registratie
-          in Registreren.
+          {t("frequencyIntro")}
         </p>
       </div>
 
@@ -98,13 +108,14 @@ export default function FrequencySelector({ value, onChange }: Props) {
           onClick={() => onChange(null)}
           aria-pressed={!value}
           className={[
-            "min-h-[56px] rounded-xl border-2 border-b-4 px-3 text-sm font-black transition-all",
+            "min-h-[56px] rounded-xl border-2 border-b-4 px-3 text-sm font-black",
+            densePressClass,
             !value
               ? "border-slate-800 bg-slate-800 text-white"
               : "border-slate-200 bg-slate-50 text-slate-700",
           ].join(" ")}
         >
-          Niet periodiek
+          {t("notPeriodic")}
         </button>
         {CADENCES.map((cadence) => (
           <button
@@ -113,13 +124,14 @@ export default function FrequencySelector({ value, onChange }: Props) {
             onClick={() => onChange(createDefaultSchedule(cadence.value))}
             aria-pressed={value?.cadence === cadence.value}
             className={[
-              "min-h-[56px] rounded-xl border-2 border-b-4 px-3 text-sm font-black transition-all",
+              "min-h-[56px] rounded-xl border-2 border-b-4 px-3 text-sm font-black",
+              densePressClass,
               value?.cadence === cadence.value
                 ? "border-blue-700 bg-blue-500 text-white"
                 : "border-slate-200 bg-slate-50 text-slate-700",
             ].join(" ")}
           >
-            {cadence.label}
+            {t(cadence.labelKey)}
           </button>
         ))}
       </div>
@@ -130,7 +142,7 @@ export default function FrequencySelector({ value, onChange }: Props) {
         <>
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Frequentie
+              {t("frequency")}
             </span>
             <input
               type="number"
@@ -143,17 +155,17 @@ export default function FrequencySelector({ value, onChange }: Props) {
 
           <div className="flex flex-col gap-3 rounded-xl bg-slate-50 p-3">
             <span className="text-sm font-bold text-slate-700">
-              Tijdstippen toewijzen?
+              {t("assignTimes")}
             </span>
             <div className="grid grid-cols-2 gap-2">
               <SmallChoice
                 selected={!value.assignTimes}
-                label="Nee"
+                label={t("no")}
                 onClick={() => setAssignTimes(false)}
               />
               <SmallChoice
                 selected={value.assignTimes}
-                label="Ja"
+                label={t("yes")}
                 onClick={() => setAssignTimes(true)}
               />
             </div>
@@ -161,13 +173,25 @@ export default function FrequencySelector({ value, onChange }: Props) {
 
           {value.assignTimes ? (
             value.cadence === "daily" ? (
-              <DailyFields schedule={value} onChange={onChange} />
+              <DailyFields
+                schedule={value}
+                onChange={onChange}
+                ordinalLabel={ordinalLabel}
+              />
             ) : value.cadence === "weekly" ? (
-              <WeeklyFields schedule={value} onChange={onChange} />
+              <WeeklyFields
+                schedule={value}
+                onChange={onChange}
+                weekdayLabels={weekdays}
+              />
             ) : value.cadence === "monthly" ? (
               <MonthlyFields schedule={value} onChange={onChange} />
             ) : (
-              <YearlyFields schedule={value} onChange={onChange} />
+              <YearlyFields
+                schedule={value}
+                onChange={onChange}
+                ordinalLabel={ordinalLabel}
+              />
             )
           ) : null}
         </>
@@ -191,6 +215,7 @@ function SmallChoice({
       onClick={onClick}
       className={[
         "min-h-[48px] rounded-xl border-2 border-b-4 text-sm font-black",
+        densePressClass,
         selected
           ? "border-blue-700 bg-blue-500 text-white"
           : "border-slate-200 bg-white text-slate-700",
@@ -201,12 +226,24 @@ function SmallChoice({
   );
 }
 
+function TranslatedRegistrationTime({ ordinal }: { ordinal: string }) {
+  const { t } = useTranslation();
+  return <>{t("registrationTime", { ordinal })}</>;
+}
+
+function TranslatedRegistrationDate({ ordinal }: { ordinal: string }) {
+  const { t } = useTranslation();
+  return <>{t("registrationDate", { ordinal })}</>;
+}
+
 function DailyFields({
   schedule,
   onChange,
+  ordinalLabel,
 }: {
   schedule: Extract<FrequencySchedule, { cadence: "daily" }>;
   onChange: (next: FrequencySchedule | null) => void;
+  ordinalLabel: (index: number) => string;
 }) {
   const times = resizeArray(schedule.times, schedule.frequency, () => "");
   return (
@@ -214,7 +251,7 @@ function DailyFields({
       {times.map((time, index) => (
         <label key={index} className="flex flex-col gap-2">
           <span className="text-sm font-bold text-slate-600">
-            {ordinalLabel(index)} registratietijd
+            <TranslatedRegistrationTime ordinal={ordinalLabel(index)} />
           </span>
           <input
             type="time"
@@ -235,9 +272,11 @@ function DailyFields({
 function WeeklyFields({
   schedule,
   onChange,
+  weekdayLabels,
 }: {
   schedule: Extract<FrequencySchedule, { cadence: "weekly" }>;
   onChange: (next: FrequencySchedule | null) => void;
+  weekdayLabels: string[];
 }) {
   const toggleDay = (weekday: Weekday) => {
     const exists = schedule.days.some((item) => item.weekday === weekday);
@@ -254,12 +293,12 @@ function WeeklyFields({
   };
   return (
     <div className="flex flex-col gap-2">
-      {WEEKDAYS.map((day) => {
+      {WEEKDAYS.map((day, index) => {
         const selected = schedule.days.find((item) => item.weekday === day.value);
         return (
           <CheckTimeRow
             key={day.value}
-            label={day.label}
+            label={weekdayLabels[index] ?? day.label}
             checked={!!selected}
             time={selected?.time ?? ""}
             onToggle={() => toggleDay(day.value)}
@@ -298,7 +337,7 @@ function MonthlyFields({
         return (
           <CheckTimeRow
             key={day}
-            label={`${day}e dag`}
+            label={`${day}`}
             checked={!!selected}
             time={selected?.time ?? ""}
             onToggle={() => toggleDay(day)}
@@ -313,10 +352,13 @@ function MonthlyFields({
 function YearlyFields({
   schedule,
   onChange,
+  ordinalLabel,
 }: {
   schedule: Extract<FrequencySchedule, { cadence: "yearly" }>;
   onChange: (next: FrequencySchedule | null) => void;
+  ordinalLabel: (index: number) => string;
 }) {
+  const { t } = useTranslation();
   const dates = resizeArray<ScheduledYearDate>(
     schedule.dates,
     schedule.frequency,
@@ -328,7 +370,7 @@ function YearlyFields({
         <div key={index} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold text-slate-600">
-              {ordinalLabel(index)} registratiedatum
+              <TranslatedRegistrationDate ordinal={ordinalLabel(index)} />
             </span>
             <input
               type="date"
@@ -352,7 +394,7 @@ function YearlyFields({
               next[index] = { ...next[index], time: event.target.value };
               onChange({ ...schedule, dates: next });
             }}
-            placeholder="Optioneel"
+            placeholder={t("optional")}
             className="min-h-[48px] rounded-xl border border-slate-200 px-4 text-base font-semibold placeholder:text-slate-300"
           />
         </div>
@@ -368,6 +410,7 @@ function CustomReminderFields({
   schedule: Extract<FrequencySchedule, { cadence: "custom" }>;
   onChange: (next: FrequencySchedule | null) => void;
 }) {
+  const { t } = useTranslation();
   const addReminder = () => {
     const next: CustomReminder = { id: crypto.randomUUID(), dateTime: "" };
     onChange({ ...schedule, reminders: [...schedule.reminders, next] });
@@ -399,8 +442,11 @@ function CustomReminderFields({
           <button
             type="button"
             onClick={() => removeReminder(reminder.id)}
-            aria-label="Herinnering verwijderen"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-red-500 hover:bg-red-50"
+            aria-label={t("removeReminder")}
+            className={[
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-red-500 hover:bg-red-50",
+              densePressClass,
+            ].join(" ")}
           >
             <Trash2 className="h-5 w-5" />
           </button>
@@ -409,10 +455,13 @@ function CustomReminderFields({
       <button
         type="button"
         onClick={addReminder}
-        className="flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-base font-black text-slate-700"
+        className={[
+          "flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 text-base font-black text-slate-700",
+          densePressClass,
+        ].join(" ")}
       >
         <Plus className="h-5 w-5" />
-        Herinnering toevoegen
+        {t("addReminder")}
       </button>
     </div>
   );
@@ -431,6 +480,7 @@ function CheckTimeRow({
   onToggle: () => void;
   onChangeTime: (time: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl bg-slate-50 p-3">
       <label className="flex min-h-[44px] items-center gap-3">
@@ -447,7 +497,7 @@ function CheckTimeRow({
           type="time"
           value={time}
           onChange={(event) => onChangeTime(event.target.value)}
-          placeholder="Optioneel"
+          placeholder={t("optional")}
           className="mt-2 min-h-[48px] w-full rounded-xl border border-slate-200 px-4 text-base font-semibold placeholder:text-slate-300"
         />
       ) : null}

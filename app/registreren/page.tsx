@@ -7,6 +7,7 @@ import SupercellButton from "@/components/SupercellButton";
 import ThemePicker from "@/components/ThemePicker";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,7 @@ function RegistrerenContent() {
   const router = useRouter();
   const { user, isLoading } = useUser();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -28,7 +30,7 @@ function RegistrerenContent() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-bold" style={{ color: theme.muted }}>
-          SnelVink laden...
+          {t("loadingApp")}
         </p>
       </div>
     );
@@ -92,7 +94,7 @@ function RegistrerenContent() {
           className="mb-4 text-[11px] font-black uppercase tracking-widest"
           style={{ color: theme.muted }}
         >
-          Registreren
+          {t("registrerenTitle")}
         </span>
 
         {/* Nieuwe Registratie */}
@@ -108,7 +110,7 @@ function RegistrerenContent() {
           }}
         >
           <Plus className="h-7 w-7" strokeWidth={2.5} />
-          <span>Nieuwe Registratie</span>
+          <span>{t("newRegistration")}</span>
         </SupercellButton>
 
         {/* Info text */}
@@ -116,7 +118,7 @@ function RegistrerenContent() {
           className="mt-4 text-center text-sm font-medium"
           style={{ color: theme.muted }}
         >
-          Tik op de knop hierboven om een nieuwe registratie te starten.
+          {t("newRegistrationHint")}
         </p>
 
         <ScheduleReminderList />

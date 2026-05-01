@@ -7,6 +7,8 @@ import {
   type TaskModule,
 } from "@/lib/taskModules";
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
+import { densePressClass } from "@/lib/uiMotion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
@@ -31,6 +33,7 @@ export default function SortableModuleCard({
   onEdit,
 }: SortableModuleCardProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   
   const {
     attributes,
@@ -62,6 +65,16 @@ export default function SortableModuleCard({
     ? "scale-100 opacity-100"
     : "pointer-events-none scale-0 opacity-0";
   const isCustomModule = module.isCustom || !DEFAULT_MODULE_IDS.has(module.id);
+  const moduleName =
+    module.id === "koeling"
+      ? t("koeling")
+      : module.id === "kerntemperatuur"
+        ? t("kerntemperatuur")
+        : module.id === "ontvangst"
+          ? t("ontvangst")
+          : module.id === "schoonmaak"
+            ? t("schoonmaak")
+            : module.name;
   
   const moduleIcon = createElement(getModuleIcon(module.icon), {
     className: "h-10 w-10",
@@ -77,7 +90,7 @@ export default function SortableModuleCard({
         className="line-clamp-2 text-base font-black leading-tight"
         style={{ color: theme.fg }}
       >
-        {module.name}
+        {moduleName}
       </span>
     </>
   );
@@ -106,7 +119,10 @@ export default function SortableModuleCard({
           ) : (
             <Link
               href={module.href}
-              className="relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center transition-transform active:scale-95"
+              className={[
+                "relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center",
+                densePressClass,
+              ].join(" ")}
               style={cardStyle}
             >
               {content}
@@ -118,7 +134,7 @@ export default function SortableModuleCard({
             size="icon"
             variant="danger"
             onClick={() => onDelete(module.id)}
-            aria-label={`Verwijder ${module.name}`}
+            aria-label={`${t("remove")} ${moduleName}`}
             tabIndex={isEditing ? 0 : -1}
             className={`${controlBaseClass} -left-2 -top-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
             style={{ 
@@ -133,7 +149,7 @@ export default function SortableModuleCard({
             type="button"
             size="icon"
             variant="neutral"
-            aria-label={`Verplaats ${module.name}`}
+            aria-label={`${t("move")} ${moduleName}`}
             className={`${controlBaseClass} -right-2 -top-2 h-10 w-10 cursor-grab rounded-full ${controlVisibilityClass} active:cursor-grabbing`}
             style={{ 
               boxShadow: `0 0 0 4px ${theme.bg}`,
@@ -151,7 +167,7 @@ export default function SortableModuleCard({
               size="icon"
               variant="primary"
               onClick={() => onEdit(module)}
-              aria-label={`Bewerk ${module.name}`}
+              aria-label={`${t("edit")} ${moduleName}`}
               tabIndex={isEditing ? 0 : -1}
               className={`${controlBaseClass} -right-2 -bottom-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
               style={{ 

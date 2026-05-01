@@ -1,6 +1,8 @@
 "use client";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
+import { densePressClass } from "@/lib/uiMotion";
 import {
   Menu,
   X,
@@ -11,7 +13,6 @@ import {
   User,
   Store,
   Settings,
-  Calendar,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,19 +29,26 @@ export type MenuTab =
 
 type MenuItem = {
   id: MenuTab;
-  label: string;
+  labelKey:
+    | "navRegistreren"
+    | "navTaken"
+    | "navGeschiedenis"
+    | "navPersoneel"
+    | "navProfiel"
+    | "navRestaurant"
+    | "navInstellingen";
   Icon: typeof ClipboardCheck;
   disabled?: boolean;
 };
 
 const menuItems: MenuItem[] = [
-  { id: "registreren", label: "Registreren", Icon: ClipboardPen },
-  { id: "taken", label: "Taken", Icon: ClipboardCheck },
-  { id: "geschiedenis", label: "Geschiedenis", Icon: History },
-  { id: "personeel", label: "Personeelsbeheer", Icon: Users },
-  { id: "profiel", label: "Mijn profiel", Icon: User },
-  { id: "restaurant", label: "Mijn restaurant", Icon: Store },
-  { id: "instellingen", label: "Instellingen", Icon: Settings },
+  { id: "registreren", labelKey: "navRegistreren", Icon: ClipboardPen },
+  { id: "taken", labelKey: "navTaken", Icon: ClipboardCheck },
+  { id: "geschiedenis", labelKey: "navGeschiedenis", Icon: History },
+  { id: "personeel", labelKey: "navPersoneel", Icon: Users },
+  { id: "profiel", labelKey: "navProfiel", Icon: User },
+  { id: "restaurant", labelKey: "navRestaurant", Icon: Store },
+  { id: "instellingen", labelKey: "navInstellingen", Icon: Settings },
 ];
 
 type FloatingMenuProps = {
@@ -50,6 +58,7 @@ type FloatingMenuProps = {
 
 export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggle = useCallback(() => {
@@ -126,7 +135,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
             }}
           >
             <nav className="py-2">
-              {menuItems.map(({ id, label, Icon, disabled }) => {
+              {menuItems.map(({ id, labelKey, Icon, disabled }) => {
                 const isActive = active === id;
                 return (
                   <button
@@ -134,7 +143,10 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                     type="button"
                     onClick={() => handleSelect(id, disabled)}
                     disabled={disabled}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold transition-all"
+                    className={[
+                      "flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold",
+                      densePressClass,
+                    ].join(" ")}
                     style={{
                       background: isActive ? theme.primary : "transparent",
                       color: disabled
@@ -150,7 +162,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                       className="h-5 w-5 shrink-0"
                       strokeWidth={isActive ? 2.5 : 2}
                     />
-                    <span className="flex-1">{label}</span>
+                    <span className="flex-1">{t(labelKey)}</span>
                     {disabled && (
                       <span
                         className="text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-0.5"
@@ -159,7 +171,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                           color: theme.muted,
                         }}
                       >
-                        Binnenkort
+                        {t("comingSoon")}
                       </span>
                     )}
                   </button>
@@ -180,7 +192,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
           background: theme.primary,
           boxShadow: `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
         }}
-        aria-label={isOpen ? "Menu sluiten" : "Menu openen"}
+        aria-label={isOpen ? t("menuClose") : t("menuOpen")}
         aria-expanded={isOpen}
       >
         <AnimatePresence mode="wait">

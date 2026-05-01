@@ -11,8 +11,9 @@ import UndoToast from "@/components/UndoToast";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
+import { densePressClass } from "@/lib/uiMotion";
 import {
-  DEFAULT_MODULES,
   loadLayout,
   saveLayout,
   type TaskModule,
@@ -61,6 +62,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const { user, isLoading } = useUser();
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const initialTab: MenuTab = (() => {
     const t = searchParams.get("tab");
@@ -68,8 +70,7 @@ function HomeContent() {
   })();
 
   const [activeTab, setActiveTab] = useState<MenuTab>(initialTab);
-  const [modules, setModules] = useState<TaskModule[]>(DEFAULT_MODULES);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [modules, setModules] = useState<TaskModule[]>(() => loadLayout());
   const [isEditing, setIsEditing] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<TaskModule | null>(null);
@@ -81,14 +82,8 @@ function HomeContent() {
   );
 
   useEffect(() => {
-    setModules(loadLayout());
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
     saveLayout(modules);
-  }, [modules, isHydrated]);
+  }, [modules]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -213,7 +208,7 @@ function HomeContent() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-bold" style={{ color: theme.muted }}>
-          SnelVink laden...
+          {t("loadingApp")}
         </p>
       </div>
     );
@@ -272,11 +267,14 @@ function HomeContent() {
               className="text-[11px] font-black uppercase tracking-widest"
               style={{ color: theme.muted }}
             >
-              Taken
+              {t("navTaken")}
             </span>
             <button
               onClick={(e) => { e.stopPropagation(); toggleEditing(); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black transition-all"
+              className={[
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black",
+                densePressClass,
+              ].join(" ")}
               style={{
                 background: isEditing ? theme.primary : "transparent",
                 border: `1.5px solid ${isEditing ? theme.primary : theme.cardBorder}`,
@@ -285,7 +283,7 @@ function HomeContent() {
               }}
             >
               <Pencil className="h-3 w-3" strokeWidth={2.5} />
-              {isEditing ? "Klaar" : "Wijzigen"}
+              {isEditing ? t("done") : t("edit")}
             </button>
           </div>
         )}
@@ -324,7 +322,10 @@ function HomeContent() {
               <button
                 type="button"
                 onClick={handleOpenAddModule}
-                className="mt-3 flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl text-base font-black transition-transform active:scale-95"
+                className={[
+                  "mt-3 flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl text-base font-black",
+                  densePressClass,
+                ].join(" ")}
                 style={{
                   background: "rgba(0,0,0,0.04)",
                   border: `1.5px dashed ${theme.cardBorder}`,
@@ -332,7 +333,7 @@ function HomeContent() {
                 }}
               >
                 <Plus className="h-10 w-10" strokeWidth={1.75} />
-                Toevoegen
+                {t("add")}
               </button>
             </div>
           ) : null}
@@ -360,17 +361,17 @@ function HomeContent() {
                   <Users className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
                 </div>
                 <h2 className="text-xl font-black" style={{ color: theme.fg }}>
-                  Personeelsbeheer
+                  {t("navPersoneel")}
                 </h2>
                 <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
-                  Beheer je teamleden en hun toegangsrechten
+                  {t("staffIntro")}
                 </p>
                 <div
                   className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
                   style={{ background: `${theme.primary}15`, color: theme.primary }}
                 >
                   <Construction className="h-4 w-4" strokeWidth={2.5} />
-                  Binnenkort beschikbaar
+                  {t("comingSoon")}
                 </div>
               </div>
             </div>
@@ -387,17 +388,17 @@ function HomeContent() {
                   <User className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
                 </div>
                 <h2 className="text-xl font-black" style={{ color: theme.fg }}>
-                  Mijn profiel
+                  {t("navProfiel")}
                 </h2>
                 <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
-                  Bekijk en bewerk je persoonlijke gegevens
+                  {t("profileIntro")}
                 </p>
                 <div
                   className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
                   style={{ background: `${theme.primary}15`, color: theme.primary }}
                 >
                   <Construction className="h-4 w-4" strokeWidth={2.5} />
-                  Binnenkort beschikbaar
+                  {t("comingSoon")}
                 </div>
               </div>
             </div>
@@ -413,8 +414,8 @@ function HomeContent() {
 
       {pendingDelete ? (
         <UndoToast
-          message={`"${pendingDelete.module.name}" verwijderd`}
-          actionLabel="Ongedaan"
+          message={t("deletedMessage", { name: pendingDelete.module.name })}
+          actionLabel={t("undo")}
           durationMs={5000}
           onUndo={handleUndoDelete}
           onDismiss={handleDismissDelete}
@@ -446,10 +447,11 @@ function HomeContent() {
 }
 
 function HomeLoading() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <p className="text-center text-lg font-semibold text-slate-500">
-        SnelVink laden...
+        {t("loadingApp")}
       </p>
     </div>
   );
