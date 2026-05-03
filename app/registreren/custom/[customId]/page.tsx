@@ -9,6 +9,7 @@ import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
 import { ArrowLeft, Wrench } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -113,7 +114,14 @@ function CustomModuleRecordContent() {
           aria-label={t("back")}
           className="mb-4 rounded-full"
         >
-          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          <motion.span
+            initial={{ x: 0 }}
+            whileHover={{ x: -3 }}
+            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            className="inline-flex"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </motion.span>
         </SupercellButton>
 
         {module ? (

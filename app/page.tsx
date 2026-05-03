@@ -18,6 +18,7 @@ import {
   saveLayout,
   type TaskModule,
 } from "@/lib/taskModules";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   DndContext,
   type DragEndEvent,
@@ -234,22 +235,41 @@ function HomeContent() {
             >
               {t("navTaken")}
             </span>
-            <button
+            <motion.button
               onClick={(e) => { e.stopPropagation(); toggleEditing(); }}
+              whileHover={{ scale: 1.06, y: -1 }}
+              whileTap={{ scale: 0.92 }}
+              animate={{
+                background: isEditing ? theme.primary : "transparent",
+                color: isEditing ? "#fff" : theme.primary,
+                borderColor: isEditing ? theme.primary : theme.cardBorder,
+              }}
+              transition={{ type: "spring", stiffness: 380, damping: 22 }}
               className={[
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black border-[1.5px]",
                 densePressClass,
               ].join(" ")}
-              style={{
-                background: isEditing ? theme.primary : "transparent",
-                border: `1.5px solid ${isEditing ? theme.primary : theme.cardBorder}`,
-                color: isEditing ? "#fff" : theme.primary,
-                letterSpacing: "0.04em",
-              }}
+              style={{ letterSpacing: "0.04em" }}
             >
-              <Pencil className="h-3 w-3" strokeWidth={2.5} />
-              {isEditing ? t("done") : t("edit")}
-            </button>
+              <motion.span
+                animate={{ rotate: isEditing ? 180 : 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 20 }}
+                className="inline-flex"
+              >
+                <Pencil className="h-3 w-3" strokeWidth={2.5} />
+              </motion.span>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={isEditing ? "done" : "edit"}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {isEditing ? t("done") : t("edit")}
+                </motion.span>
+              </AnimatePresence>
+            </motion.button>
           </div>
         )}
 
@@ -282,26 +302,44 @@ function HomeContent() {
             </DndContext>
           ) : null}
 
-          {activeTab === "taken" && isEditing ? (
-            <div onClick={(event) => event.stopPropagation()}>
-              <button
-                type="button"
-                onClick={handleOpenAddModule}
-                className={[
-                  "mt-3 flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl text-base font-black",
-                  densePressClass,
-                ].join(" ")}
-                style={{
-                  background: "rgba(0,0,0,0.04)",
-                  border: `1.5px dashed ${theme.cardBorder}`,
-                  color: theme.muted,
-                }}
+          <AnimatePresence>
+            {activeTab === "taken" && isEditing ? (
+              <motion.div
+                onClick={(event) => event.stopPropagation()}
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
               >
-                <Plus className="h-10 w-10" strokeWidth={1.75} />
-                {t("add")}
-              </button>
-            </div>
-          ) : null}
+                <motion.button
+                  type="button"
+                  onClick={handleOpenAddModule}
+                  whileHover={{
+                    scale: 1.02,
+                    y: -2,
+                    boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 24 }}
+                  className="mt-3 flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl text-base font-black"
+                  style={{
+                    background: "rgba(0,0,0,0.04)",
+                    border: `1.5px dashed ${theme.cardBorder}`,
+                    color: theme.muted,
+                  }}
+                >
+                  <motion.span
+                    animate={{ rotate: [0, 90, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="inline-flex"
+                  >
+                    <Plus className="h-10 w-10" strokeWidth={1.75} />
+                  </motion.span>
+                  {t("add")}
+                </motion.button>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           {activeTab === "geschiedenis" ? (
             <div onClick={stopEditingExit} className="pt-4">
@@ -377,15 +415,18 @@ function HomeContent() {
         </div>
       </section>
 
-      {pendingDelete ? (
-        <UndoToast
-          message={t("deletedMessage", { name: pendingDelete.module.name })}
-          actionLabel={t("undo")}
-          durationMs={5000}
-          onUndo={handleUndoDelete}
-          onDismiss={handleDismissDelete}
-        />
-      ) : null}
+      <AnimatePresence>
+        {pendingDelete ? (
+          <UndoToast
+            key={pendingDelete.module.id}
+            message={t("deletedMessage", { name: pendingDelete.module.name })}
+            actionLabel={t("undo")}
+            durationMs={5000}
+            onUndo={handleUndoDelete}
+            onDismiss={handleDismissDelete}
+          />
+        ) : null}
+      </AnimatePresence>
 
       <AddModuleModal
         open={isAddModalOpen}

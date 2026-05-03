@@ -3,9 +3,9 @@
 import { useRef, useEffect, useState } from "react";
 import { useTheme, themes, themeOrder } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
-import { densePressClass } from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
+import { popoverVariants } from "@/lib/uiMotion";
 
-// 扁平化调色盘 SVG 图标
 export function PaletteIcon({ colors, size = 22 }: { colors: string[]; size?: number }) {
   const slices = [
     { d: "M12 12 L12 2 A10 10 0 0 1 20.66 7 Z",       fill: colors[0] ?? "#ccc" },
@@ -23,7 +23,6 @@ export function PaletteIcon({ colors, size = 22 }: { colors: string[]; size?: nu
   );
 }
 
-// 主题选择弹窗
 function ThemePickerPopup({
   onClose,
 }: {
@@ -42,8 +41,12 @@ function ThemePickerPopup({
   }, [onClose]);
 
   return (
-    <div
+    <motion.div
       ref={ref}
+      variants={popoverVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       style={{
         position: "absolute",
         top: "calc(100% + 10px)",
@@ -55,9 +58,9 @@ function ThemePickerPopup({
         padding: "12px 12px 10px",
         backdropFilter: "blur(24px)",
         boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+        transformOrigin: "top right",
       }}
     >
-      {/* 顶部标题行 */}
       <div className="flex items-center gap-1.5 mb-3 px-0.5">
         <PaletteIcon colors={paletteColors} size={14} />
         <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.22em", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>
@@ -65,19 +68,34 @@ function ThemePickerPopup({
         </span>
       </div>
 
-      {/* 冷暖色两行 */}
-      {(["cool", "warm"] as const).map((temp) => (
-        <div key={temp} className="flex gap-2 mb-2 last:mb-0">
+      {(["cool", "warm"] as const).map((temp, rowIndex) => (
+        <motion.div
+          key={temp}
+          className="flex gap-2 mb-2 last:mb-0"
+          initial="initial"
+          animate="animate"
+          variants={{
+            initial: {},
+            animate: { transition: { staggerChildren: 0.03, delayChildren: rowIndex * 0.05 } },
+          }}
+        >
           {themeOrder.filter(k => themes[k].temp === temp).map((key) => {
             const th = themes[key];
             const isActive = themeName === key;
             return (
-              <button
+              <motion.button
                 key={key}
                 type="button"
                 onClick={() => { setThemeName(key); onClose(); }}
                 title={th.label}
-                className={densePressClass}
+                variants={{
+                  initial: { opacity: 0, scale: 0.5, y: 6 },
+                  animate: { opacity: 1, scale: isActive ? 1.15 : 1, y: 0 },
+                }}
+                whileHover={{ scale: isActive ? 1.2 : 1.12, rotate: 8 }}
+                whileTap={{ scale: 0.9, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                animate={{ scale: isActive ? 1.15 : 1 }}
                 style={{
                   width: 28, height: 28, borderRadius: "50%",
                   background: th.primary,
@@ -86,20 +104,17 @@ function ThemePickerPopup({
                     : "2.5px solid rgba(255,255,255,0.15)",
                   cursor: "pointer",
                   boxShadow: isActive ? `0 0 0 2px ${th.primary}55` : "none",
-                  transition: "border 0.15s, box-shadow 0.15s, transform 0.1s",
-                  transform: isActive ? "scale(1.15)" : "scale(1)",
                   flexShrink: 0,
                 }}
               />
             );
           })}
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
-// 调色盘按钮（带弹窗）
 export default function ThemePicker() {
   const { paletteColors } = useTheme();
   const { t } = useTranslation();
@@ -107,9 +122,12 @@ export default function ThemePicker() {
 
   return (
     <div style={{ position: "relative" }}>
-      <button
+      <motion.button
         type="button"
         onClick={() => setOpen(v => !v)}
+        whileHover={{ scale: 1.12, rotate: 12 }}
+        whileTap={{ scale: 0.92, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 18 }}
         style={{
           padding: 4,
           background: "transparent",
@@ -121,13 +139,20 @@ export default function ThemePicker() {
           opacity: open ? 1 : 0.75,
           transition: "opacity 0.15s",
         }}
-        className={densePressClass}
         aria-label={t("changeTheme")}
       >
-        <PaletteIcon colors={paletteColors} size={24} />
-      </button>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ type: "spring", stiffness: 280, damping: 22 }}
+          style={{ display: "inline-flex" }}
+        >
+          <PaletteIcon colors={paletteColors} size={24} />
+        </motion.span>
+      </motion.button>
 
-      {open && <ThemePickerPopup onClose={() => setOpen(false)} />}
+      <AnimatePresence>
+        {open && <ThemePickerPopup onClose={() => setOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, type ComponentType } from "react";
@@ -74,7 +75,14 @@ function ModuleContent() {
           aria-label={t("back")}
           className="mb-4 rounded-full"
         >
-          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          <motion.span
+            initial={{ x: 0 }}
+            whileHover={{ x: -3 }}
+            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            className="inline-flex"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </motion.span>
         </SupercellButton>
 
         {/* Always use record mode for registreren pages */}

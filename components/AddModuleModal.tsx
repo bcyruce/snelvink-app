@@ -10,6 +10,13 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTranslation } from "@/hooks/useTranslation";
+import {
+  listContainerVariants,
+  listItemVariants,
+  modalBackdropVariants,
+  modalSheetVariants,
+} from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
@@ -171,223 +178,289 @@ export default function AddModuleModal({
     ],
   );
 
-  if (!open) return null;
-
   const isValid = name.trim().length > 0;
   const existingIds = new Set(existingModuleIds);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="add-module-title"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="toast-slide-up max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-2 border-slate-200 bg-white px-6 pb-8 pt-6 sm:rounded-3xl sm:pb-6"
-      >
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h2
-            id="add-module-title"
-            className="text-3xl font-black tracking-tight text-slate-900"
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          key="modal"
+          variants={modalBackdropVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-module-title"
+          onClick={onClose}
+          style={{ backdropFilter: "blur(3px)" }}
+        >
+          <motion.div
+            variants={modalSheetVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-2 border-slate-200 bg-white px-6 pb-8 pt-6 sm:rounded-3xl sm:pb-6"
           >
-            {isEditing ? t("moduleEdit") : t("newModule")}
-          </h2>
-          <SupercellButton
-            size="icon"
-            variant="neutral"
-            onClick={onClose}
-            aria-label={t("close")}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
-          >
-            <X className="h-6 w-6" strokeWidth={2.75} aria-hidden />
-          </SupercellButton>
-        </div>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <h2
+                id="add-module-title"
+                className="text-3xl font-black tracking-tight text-slate-900"
+              >
+                {isEditing ? t("moduleEdit") : t("newModule")}
+              </h2>
+              <SupercellButton
+                size="icon"
+                variant="neutral"
+                onClick={onClose}
+                aria-label={t("close")}
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+              >
+                <X className="h-6 w-6" strokeWidth={2.75} aria-hidden />
+              </SupercellButton>
+            </div>
 
-        {!isEditing ? (
-          <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border-2 border-slate-200 bg-slate-100 p-1.5">
-            {(["standard", "custom"] as const).map((tab) => {
-              const active = activeTab === tab;
-              return (
-                <SupercellButton
-                  key={tab}
-                  size="md"
-                  variant={active ? "primary" : "neutral"}
-                  onClick={() => setActiveTab(tab)}
-                  textCase="normal"
-                  className="min-h-[56px] rounded-xl py-3 text-base"
-                >
-                  {tab === "standard" ? t("standard") : t("custom")}
-                </SupercellButton>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {activeTab === "standard" && !isEditing ? (
-          <div className="flex flex-col gap-3">
-            {DEFAULT_MODULES.map((preset) => {
-              const alreadyAdded = existingIds.has(preset.id);
-              return (
-                <SupercellButton
-                  key={preset.id}
-                  size="lg"
-                  variant={alreadyAdded ? "neutral" : "primary"}
-                  aria-disabled={alreadyAdded}
-                  disabled={alreadyAdded}
-                  onClick={() => {
-                    if (alreadyAdded) {
-                      window.alert(t("moduleAlreadyAdded"));
-                      return;
-                    }
-                    onCreate({ ...preset });
-                  }}
-                  className="flex min-h-[80px] w-full items-center gap-4 px-5 text-left text-xl normal-case"
-                >
-                  {createElement(getModuleIcon(preset.icon), {
-                    className: "h-8 w-8 shrink-0",
-                    strokeWidth: 2.25,
-                    "aria-hidden": true,
-                  })}
-                  <span className="flex-1">
-                    {preset.id === "koeling"
-                      ? t("koeling")
-                      : preset.id === "kerntemperatuur"
-                        ? t("kerntemperatuur")
-                        : preset.id === "ontvangst"
-                          ? t("ontvangst")
-                          : preset.id === "schoonmaak"
-                            ? t("schoonmaak")
-                            : preset.name}
-                  </span>
-                  {alreadyAdded ? (
-                    <span className="text-sm font-bold text-slate-400">
-                      {t("alreadyAdded")}
-                    </span>
-                  ) : null}
-                </SupercellButton>
-              );
-            })}
-          </div>
-        ) : (
-          <form onSubmit={handleSaveCustomModule} className="flex flex-col gap-6">
-            {errorMessage ? (
-              <p className="rounded-2xl border-2 border-red-300 border-b-4 border-b-red-400 bg-red-50 px-4 py-3 text-center text-base font-bold text-red-700">
-                {errorMessage}
-              </p>
-            ) : null}
-
-            <section className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="module-name"
-                  className="text-base font-bold text-slate-800"
-                >
-                  {t("moduleName")}
-                </label>
-                <input
-                  id="module-name"
-                  ref={inputRef}
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t("moduleNamePlaceholder")}
-                  maxLength={40}
-                  className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-bold text-slate-900 outline-none transition-colors focus:border-blue-500 focus:border-b-blue-700"
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <span className="text-base font-bold text-slate-800">
-                  {t("chooseIcon")}
-                </span>
-                <div className="grid grid-cols-4 gap-3">
-                  {AVAILABLE_ICONS.map((key) => {
-                    const selected = key === iconKey;
-                    return (
-                      <SupercellButton
-                        type="button"
-                        size="icon"
-                        variant={selected ? "primary" : "neutral"}
-                        key={key}
-                        onClick={() => setIconKey(key)}
-                        aria-pressed={selected}
-                        className="flex min-h-[64px] items-center justify-center"
-                      >
-                        {createElement(getModuleIcon(key), {
-                          className: "h-7 w-7",
-                          strokeWidth: 2.25,
-                          "aria-hidden": true,
-                        })}
-                      </SupercellButton>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-
-            <section className="flex flex-col gap-3">
-              <span className="text-base font-bold text-slate-800">
-                {t("moduleType")}
-              </span>
-              <div className="grid grid-cols-1 gap-3">
-                {[
-                  ["number", t("moduleTypeNumber")],
-                  ["boolean", t("moduleTypeBoolean")],
-                  ["list", t("moduleTypeList")],
-                ].map(([value, label]) => {
-                  const active = moduleType === value;
+            {!isEditing ? (
+              <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border-2 border-slate-200 bg-slate-100 p-1.5">
+                {(["standard", "custom"] as const).map((tab) => {
+                  const active = activeTab === tab;
                   return (
                     <SupercellButton
-                      key={value}
-                      type="button"
-                      size="lg"
+                      key={tab}
+                      size="md"
                       variant={active ? "primary" : "neutral"}
-                      onClick={() => setModuleType(value as ModuleType)}
-                      aria-pressed={active}
-                      className="min-h-[64px] px-5 text-left text-lg normal-case"
+                      onClick={() => setActiveTab(tab)}
+                      textCase="normal"
+                      className="min-h-[56px] rounded-xl py-3 text-base"
                     >
-                      {label}
+                      {tab === "standard" ? t("standard") : t("custom")}
                     </SupercellButton>
                   );
                 })}
               </div>
-            </section>
+            ) : null}
 
-            <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
-              {t("customModuleHelp")}
-            </p>
+            <AnimatePresence mode="wait">
+              {activeTab === "standard" && !isEditing ? (
+                <motion.div
+                  key="standard"
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <motion.div
+                    className="flex flex-col gap-3"
+                    variants={listContainerVariants}
+                    initial="initial"
+                    animate="animate"
+                  >
+                    {DEFAULT_MODULES.map((preset) => {
+                      const alreadyAdded = existingIds.has(preset.id);
+                      return (
+                        <motion.div key={preset.id} variants={listItemVariants}>
+                          <SupercellButton
+                            size="lg"
+                            variant={alreadyAdded ? "neutral" : "primary"}
+                            aria-disabled={alreadyAdded}
+                            disabled={alreadyAdded}
+                            onClick={() => {
+                              if (alreadyAdded) {
+                                window.alert(t("moduleAlreadyAdded"));
+                                return;
+                              }
+                              onCreate({ ...preset });
+                            }}
+                            className="flex min-h-[80px] w-full items-center gap-4 px-5 text-left text-xl normal-case"
+                          >
+                            {createElement(getModuleIcon(preset.icon), {
+                              className: "h-8 w-8 shrink-0",
+                              strokeWidth: 2.25,
+                              "aria-hidden": true,
+                            })}
+                            <span className="flex-1">
+                              {preset.id === "koeling"
+                                ? t("koeling")
+                                : preset.id === "kerntemperatuur"
+                                  ? t("kerntemperatuur")
+                                  : preset.id === "ontvangst"
+                                    ? t("ontvangst")
+                                    : preset.id === "schoonmaak"
+                                      ? t("schoonmaak")
+                                      : preset.name}
+                            </span>
+                            {alreadyAdded ? (
+                              <span className="text-sm font-bold text-slate-400">
+                                {t("alreadyAdded")}
+                              </span>
+                            ) : null}
+                          </SupercellButton>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="custom"
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 16 }}
+                  transition={{ duration: 0.2 }}
+                  onSubmit={handleSaveCustomModule}
+                  className="flex flex-col gap-6"
+                >
+                  <AnimatePresence>
+                    {errorMessage ? (
+                      <motion.p
+                        initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                        transition={{ type: "spring", stiffness: 360, damping: 24 }}
+                        className="rounded-2xl border-2 border-red-300 border-b-4 border-b-red-400 bg-red-50 px-4 py-3 text-center text-base font-bold text-red-700"
+                      >
+                        {errorMessage}
+                      </motion.p>
+                    ) : null}
+                  </AnimatePresence>
 
-            <div className="flex flex-col gap-3 pt-2">
-              <SupercellButton
-                type="submit"
-                size="lg"
-                variant="success"
-                disabled={!isValid || isSaving}
-                className="min-h-[64px] w-full text-xl normal-case"
-              >
-                {isSaving
-                  ? t("saving")
-                  : isEditing
-                    ? t("savingChanges")
-                    : t("save")}
-              </SupercellButton>
-              <SupercellButton
-                type="button"
-                size="lg"
-                variant="neutral"
-                onClick={onClose}
-                className="min-h-[64px] w-full text-lg normal-case"
-              >
-                {t("cancel")}
-              </SupercellButton>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+                  <section className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-2">
+                      <label
+                        htmlFor="module-name"
+                        className="text-base font-bold text-slate-800"
+                      >
+                        {t("moduleName")}
+                      </label>
+                      <input
+                        id="module-name"
+                        ref={inputRef}
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={t("moduleNamePlaceholder")}
+                        maxLength={40}
+                        className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-bold text-slate-900 outline-none transition-colors focus:border-blue-500 focus:border-b-blue-700"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <span className="text-base font-bold text-slate-800">
+                        {t("chooseIcon")}
+                      </span>
+                      <motion.div
+                        className="grid grid-cols-4 gap-3"
+                        variants={listContainerVariants}
+                        initial="initial"
+                        animate="animate"
+                      >
+                        {AVAILABLE_ICONS.map((key) => {
+                          const selected = key === iconKey;
+                          return (
+                            <motion.div key={key} variants={listItemVariants}>
+                              <SupercellButton
+                                type="button"
+                                size="icon"
+                                variant={selected ? "primary" : "neutral"}
+                                onClick={() => setIconKey(key)}
+                                aria-pressed={selected}
+                                className="flex min-h-[64px] w-full items-center justify-center"
+                              >
+                                <motion.span
+                                  animate={
+                                    selected
+                                      ? { scale: [1, 1.25, 1], rotate: [0, -8, 0] }
+                                      : { scale: 1, rotate: 0 }
+                                  }
+                                  transition={{ duration: 0.35 }}
+                                  className="inline-flex"
+                                >
+                                  {createElement(getModuleIcon(key), {
+                                    className: "h-7 w-7",
+                                    strokeWidth: 2.25,
+                                    "aria-hidden": true,
+                                  })}
+                                </motion.span>
+                              </SupercellButton>
+                            </motion.div>
+                          );
+                        })}
+                      </motion.div>
+                    </div>
+                  </section>
+
+                  <section className="flex flex-col gap-3">
+                    <span className="text-base font-bold text-slate-800">
+                      {t("moduleType")}
+                    </span>
+                    <motion.div
+                      className="grid grid-cols-1 gap-3"
+                      variants={listContainerVariants}
+                      initial="initial"
+                      animate="animate"
+                    >
+                      {[
+                        ["number", t("moduleTypeNumber")],
+                        ["boolean", t("moduleTypeBoolean")],
+                        ["list", t("moduleTypeList")],
+                      ].map(([value, label]) => {
+                        const active = moduleType === value;
+                        return (
+                          <motion.div key={value} variants={listItemVariants}>
+                            <SupercellButton
+                              type="button"
+                              size="lg"
+                              variant={active ? "primary" : "neutral"}
+                              onClick={() => setModuleType(value as ModuleType)}
+                              aria-pressed={active}
+                              className="min-h-[64px] w-full px-5 text-left text-lg normal-case"
+                            >
+                              {label}
+                            </SupercellButton>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  </section>
+
+                  <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
+                    {t("customModuleHelp")}
+                  </p>
+
+                  <div className="flex flex-col gap-3 pt-2">
+                    <SupercellButton
+                      type="submit"
+                      size="lg"
+                      variant="success"
+                      disabled={!isValid || isSaving}
+                      className="min-h-[64px] w-full text-xl normal-case"
+                    >
+                      {isSaving
+                        ? t("saving")
+                        : isEditing
+                          ? t("savingChanges")
+                          : t("save")}
+                    </SupercellButton>
+                    <SupercellButton
+                      type="button"
+                      size="lg"
+                      variant="neutral"
+                      onClick={onClose}
+                      className="min-h-[64px] w-full text-lg normal-case"
+                    >
+                      {t("cancel")}
+                    </SupercellButton>
+                  </div>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

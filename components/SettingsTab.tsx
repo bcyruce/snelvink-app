@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTranslation } from "@/hooks/useTranslation";
 import { planLabel, planStatusLabel } from "@/lib/plans";
+import { listContainerVariants, listItemVariants } from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, LogOut, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -142,27 +144,40 @@ export default function SettingsTab() {
   }, [router]);
 
   return (
-    <div className="mt-2">
-      <h2 className="mb-5 text-3xl font-black tracking-tight text-slate-900">
+    <motion.div
+      className="mt-2"
+      variants={listContainerVariants}
+      initial="initial"
+      animate="animate"
+    >
+      <motion.h2
+        variants={listItemVariants}
+        className="mb-5 text-3xl font-black tracking-tight text-slate-900"
+      >
         {t("settingsTitle")}
-      </h2>
+      </motion.h2>
 
-      <section className="mb-6 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
+      <motion.section
+        variants={listItemVariants}
+        className="mb-6 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5"
+      >
         <SupercellButton
           type="button"
           size="lg"
           variant="neutral"
           onClick={() => router.push("/instellingen/taal")}
           textCase="normal"
-          className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+          className="group flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <span
+            <motion.span
               aria-hidden
+              whileHover={{ scale: 1.12, rotate: -8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 18 }}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-2xl"
             >
               {languageMeta.flag}
-            </span>
+            </motion.span>
             <span className="min-w-0">
               <span className="block truncate text-base font-black text-slate-900">
                 {t("language")}
@@ -173,14 +188,17 @@ export default function SettingsTab() {
             </span>
           </span>
           <ChevronRight
-            className="h-6 w-6 shrink-0 text-blue-600 rtl:rotate-180"
+            className="h-6 w-6 shrink-0 text-blue-600 transition-transform duration-200 group-hover:translate-x-1 rtl:rotate-180"
             strokeWidth={2.75}
             aria-hidden
           />
         </SupercellButton>
-      </section>
+      </motion.section>
 
-      <div className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
+      <motion.div
+        variants={listItemVariants}
+        className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-wide text-slate-500">
@@ -275,10 +293,13 @@ export default function SettingsTab() {
             )}
           </div>
         ) : null}
-      </div>
+      </motion.div>
 
       {isOwner ? (
-        <div className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
+        <motion.div
+          variants={listItemVariants}
+          className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5"
+        >
           <h3 className="text-lg font-black text-slate-900">{t("staff")}</h3>
           <p className="mt-1 text-sm font-semibold text-slate-500">
             {t("linkedStaffIntro")}
@@ -288,50 +309,62 @@ export default function SettingsTab() {
           ) : staff.length === 0 ? (
             <p className="mt-4 text-sm font-bold text-slate-500">{t("noLinkedStaff")}</p>
           ) : (
-            <ul className="mt-4 space-y-3">
-              {staff.map((member) => (
-                <li
-                  key={member.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 px-3 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-black text-slate-900">
-                      {member.full_name?.trim() || t("unnamed")}
-                    </p>
-                    <p className="truncate text-xs font-semibold text-slate-500">
-                      {member.email ?? t("unknownEmail")}
-                    </p>
-                  </div>
-                  <SupercellButton
-                    type="button"
-                    size="sm"
-                    variant="danger"
-                    onClick={() => void handleDeleteStaff(member.id)}
-                    disabled={deletingStaffId === member.id}
-                    textCase="normal"
-                    className="shrink-0 rounded-xl px-3 py-2 text-sm"
+            <motion.ul
+              className="mt-4 space-y-3"
+              variants={listContainerVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <AnimatePresence>
+                {staff.map((member) => (
+                  <motion.li
+                    key={member.id}
+                    variants={listItemVariants}
+                    layout
+                    exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
+                    className="flex items-center justify-between gap-3 rounded-xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 px-3 py-3"
                   >
-                    {deletingStaffId === member.id ? t("busy") : t("delete")}
-                  </SupercellButton>
-                </li>
-              ))}
-            </ul>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-black text-slate-900">
+                        {member.full_name?.trim() || t("unnamed")}
+                      </p>
+                      <p className="truncate text-xs font-semibold text-slate-500">
+                        {member.email ?? t("unknownEmail")}
+                      </p>
+                    </div>
+                    <SupercellButton
+                      type="button"
+                      size="sm"
+                      variant="danger"
+                      onClick={() => void handleDeleteStaff(member.id)}
+                      disabled={deletingStaffId === member.id}
+                      textCase="normal"
+                      className="shrink-0 rounded-xl px-3 py-2 text-sm"
+                    >
+                      {deletingStaffId === member.id ? t("busy") : t("delete")}
+                    </SupercellButton>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
+            </motion.ul>
           )}
-        </div>
+        </motion.div>
       ) : null}
 
-      <SupercellButton
-        type="button"
-        size="lg"
-        variant="danger"
-        onClick={() => void handleSignOut()}
-        disabled={isSigningOut}
-        textCase="normal"
-        className="flex min-h-14 w-full items-center justify-center gap-2 px-4 py-3 text-base"
-      >
-        <LogOut className="h-5 w-5 shrink-0 text-white" strokeWidth={2.5} />
-        {isSigningOut ? t("signingOut") : t("signOut")}
-      </SupercellButton>
-    </div>
+      <motion.div variants={listItemVariants}>
+        <SupercellButton
+          type="button"
+          size="lg"
+          variant="danger"
+          onClick={() => void handleSignOut()}
+          disabled={isSigningOut}
+          textCase="normal"
+          className="flex min-h-14 w-full items-center justify-center gap-2 px-4 py-3 text-base"
+        >
+          <LogOut className="h-5 w-5 shrink-0 text-white" strokeWidth={2.5} />
+          {isSigningOut ? t("signingOut") : t("signOut")}
+        </SupercellButton>
+      </motion.div>
+    </motion.div>
   );
 }

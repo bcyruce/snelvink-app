@@ -2,7 +2,11 @@
 
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
-import { densePressClass } from "@/lib/uiMotion";
+import {
+  listContainerVariants,
+  listItemVariants,
+  modalBackdropVariants,
+} from "@/lib/uiMotion";
 import {
   Menu,
   X,
@@ -109,10 +113,10 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            variants={modalBackdropVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             className="fixed inset-0 z-40 bg-black/40 print:hidden"
             style={{ backdropFilter: "blur(4px)" }}
           />
@@ -124,29 +128,39 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
         {isOpen && (
           <motion.div
             data-floating-menu
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.85, y: 24, originX: 1, originY: 1 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            exit={{ opacity: 0, scale: 0.9, y: 16 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
             className="fixed bottom-24 right-4 z-50 w-56 overflow-hidden rounded-2xl shadow-2xl print:hidden"
             style={{
               background: theme.cardBg,
               border: `1.5px solid ${theme.cardBorder}`,
+              transformOrigin: "bottom right",
             }}
           >
-            <nav className="py-2">
+            <motion.nav
+              className="py-2"
+              variants={listContainerVariants}
+              initial="initial"
+              animate="animate"
+            >
               {menuItems.map(({ id, labelKey, Icon, disabled }) => {
                 const isActive = active === id;
                 return (
-                  <button
+                  <motion.button
                     key={id}
                     type="button"
+                    variants={listItemVariants}
+                    whileHover={
+                      disabled
+                        ? undefined
+                        : { x: 4, transition: { type: "spring", stiffness: 400, damping: 22 } }
+                    }
+                    whileTap={disabled ? undefined : { scale: 0.97 }}
                     onClick={() => handleSelect(id, disabled)}
                     disabled={disabled}
-                    className={[
-                      "flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold",
-                      densePressClass,
-                    ].join(" ")}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold transition-colors"
                     style={{
                       background: isActive ? theme.primary : "transparent",
                       color: disabled
@@ -158,10 +172,16 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                       cursor: disabled ? "not-allowed" : "pointer",
                     }}
                   >
-                    <Icon
-                      className="h-5 w-5 shrink-0"
-                      strokeWidth={isActive ? 2.5 : 2}
-                    />
+                    <motion.span
+                      animate={{ rotate: isActive ? [0, -8, 8, 0] : 0 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="inline-flex"
+                    >
+                      <Icon
+                        className="h-5 w-5 shrink-0"
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
+                    </motion.span>
                     <span className="flex-1">{t(labelKey)}</span>
                     {disabled && (
                       <span
@@ -174,51 +194,59 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                         {t("comingSoon")}
                       </span>
                     )}
-                  </button>
+                  </motion.button>
                 );
               })}
-            </nav>
+            </motion.nav>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Floating Action Button */}
-      <button
+      <motion.button
         data-floating-menu
         type="button"
         onClick={handleToggle}
-        className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 print:hidden"
-        style={{
-          background: theme.primary,
-          boxShadow: `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
+        whileHover={{ scale: 1.08, y: -2 }}
+        whileTap={{ scale: 0.92, y: 1 }}
+        animate={{
+          rotate: isOpen ? 180 : 0,
+          boxShadow: isOpen
+            ? `0 2px 0 ${theme.primaryDark}, 0 4px 12px rgba(0,0,0,0.18)`
+            : `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
         }}
+        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+        className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full print:hidden"
+        style={{ background: theme.primary }}
         aria-label={isOpen ? t("menuClose") : t("menuOpen")}
         aria-expanded={isOpen}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {isOpen ? (
-            <motion.div
+            <motion.span
               key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.18 }}
+              className="inline-flex"
             >
               <X className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </motion.div>
+            </motion.span>
           ) : (
-            <motion.div
+            <motion.span
               key="menu"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ rotate: 90, opacity: 0, scale: 0.6 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: -90, opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.18 }}
+              className="inline-flex"
             >
               <Menu className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </motion.div>
+            </motion.span>
           )}
         </AnimatePresence>
-      </button>
+      </motion.button>
     </>
   );
 }

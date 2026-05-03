@@ -31,6 +31,14 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  iconPressMotionProps,
+  listContainerVariants,
+  listItemVariants,
+  modalBackdropVariants,
+  modalSheetVariants,
+} from "@/lib/uiMotion";
 
 type ItemKind = "equipment" | "product" | "location";
 
@@ -496,14 +504,22 @@ export default function IncompleteTasksList() {
   return (
     <div className="mt-2">
       <div className="mb-4 flex items-center gap-3">
-        <button
+        <motion.button
+          {...iconPressMotionProps}
           type="button"
           onClick={() => router.back()}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:translate-y-0.5"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white text-slate-700"
           aria-label={t("back")}
         >
-          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-        </button>
+          <motion.span
+            initial={{ x: 0 }}
+            whileHover={{ x: -3 }}
+            transition={{ type: "spring", stiffness: 400, damping: 18 }}
+            className="inline-flex"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
+          </motion.span>
+        </motion.button>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
             {t("incompleteTasksTitle")}
@@ -522,16 +538,25 @@ export default function IncompleteTasksList() {
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
             {t("filterRecords")}
           </h3>
-          {filtersActive ? (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 active:scale-95"
-            >
-              <RotateCcw className="h-3 w-3" strokeWidth={2.75} aria-hidden />
-              {t("resetFilters")}
-            </button>
-          ) : null}
+          <AnimatePresence>
+            {filtersActive ? (
+              <motion.button
+                key="reset"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                whileHover={{ scale: 1.05, rotate: -3 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                type="button"
+                onClick={handleResetFilters}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-600"
+              >
+                <RotateCcw className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                {t("resetFilters")}
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -609,41 +634,82 @@ export default function IncompleteTasksList() {
       {!loading && restaurantId && visibleTasks.length > 0 ? (
         <>
           <div className="mb-3 overflow-hidden rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white">
-            <button
+            <motion.button
               type="button"
               onClick={toggleAll}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 active:bg-slate-100"
+              whileHover={{ backgroundColor: "rgba(241,245,249,1)" }}
+              whileTap={{ scale: 0.99 }}
+              transition={{ type: "spring", stiffness: 320, damping: 24 }}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
             >
               <span className="flex items-center gap-3">
-                {allVisibleSelected ? (
-                  <CheckSquare
-                    className="h-5 w-5 text-blue-600"
-                    strokeWidth={2.5}
-                  />
-                ) : (
-                  <Square className="h-5 w-5 text-slate-400" strokeWidth={2.5} />
-                )}
+                <AnimatePresence mode="wait" initial={false}>
+                  {allVisibleSelected ? (
+                    <motion.span
+                      key="checked"
+                      initial={{ scale: 0.6, rotate: -45, opacity: 0 }}
+                      animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                      exit={{ scale: 0.6, rotate: 45, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 480, damping: 22 }}
+                      className="inline-flex"
+                    >
+                      <CheckSquare
+                        className="h-5 w-5 text-blue-600"
+                        strokeWidth={2.5}
+                      />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="unchecked"
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.6, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 480, damping: 22 }}
+                      className="inline-flex"
+                    >
+                      <Square className="h-5 w-5 text-slate-400" strokeWidth={2.5} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
                 <span className="text-sm font-black uppercase tracking-wider text-slate-700">
                   {allVisibleSelected ? t("deselectAll") : t("selectAll")}
                 </span>
               </span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black tabular-nums text-slate-700">
+              <motion.span
+                key={`${selectedKeys.size}/${visibleTasks.length}`}
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 460, damping: 22 }}
+                className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black tabular-nums text-slate-700"
+              >
                 {selectedKeys.size}/{visibleTasks.length}
-              </span>
-            </button>
+              </motion.span>
+            </motion.button>
           </div>
 
-          <ul className="flex flex-col gap-1.5">
+          <motion.ul
+            className="flex flex-col gap-1.5"
+            variants={listContainerVariants}
+            initial="initial"
+            animate="animate"
+          >
             {visibleTasks.map((task) => {
               const checked = selectedKeys.has(task.key);
               const showRatio = task.requiredCount > 1;
               return (
-                <li key={task.key}>
-                  <button
+                <motion.li
+                  key={task.key}
+                  variants={listItemVariants}
+                  layout
+                >
+                  <motion.button
                     type="button"
                     onClick={() => toggleOne(task.key)}
+                    whileHover={{ y: -2, boxShadow: "0 8px 22px rgba(0,0,0,0.08)" }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 24 }}
                     className={[
-                      "group flex w-full items-stretch overflow-hidden rounded-xl border-2 text-left transition-all hover:shadow-md active:scale-[0.99]",
+                      "group flex w-full items-stretch overflow-hidden rounded-xl border-2 text-left",
                       checked
                         ? "border-blue-300 bg-blue-50/60"
                         : "border-slate-200 border-b-4 border-b-slate-300 bg-white",
@@ -652,14 +718,20 @@ export default function IncompleteTasksList() {
                     <span
                       aria-hidden
                       className={[
-                        "w-1.5 shrink-0",
+                        "w-1.5 shrink-0 transition-colors duration-200",
                         checked ? "bg-blue-400" : "bg-red-400",
                       ].join(" ")}
                     />
                     <div className="flex flex-1 items-start gap-3 p-3">
-                      <span
+                      <motion.span
+                        animate={
+                          checked
+                            ? { scale: [1, 1.25, 1], rotate: [0, -8, 0] }
+                            : { scale: 1, rotate: 0 }
+                        }
+                        transition={{ duration: 0.35 }}
                         className={[
-                          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
+                          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
                           checked
                             ? "bg-blue-600 text-white"
                             : "border-2 border-slate-300 bg-white text-transparent",
@@ -669,7 +741,7 @@ export default function IncompleteTasksList() {
                         {checked ? (
                           <CheckSquare className="h-4 w-4" strokeWidth={3} />
                         ) : null}
-                      </span>
+                      </motion.span>
 
                       <div className="min-w-0 flex-1">
                         <h4 className="truncate text-base font-black leading-tight text-slate-900">
@@ -704,53 +776,76 @@ export default function IncompleteTasksList() {
                         </div>
                       </div>
                     </div>
-                  </button>
-                </li>
+                  </motion.button>
+                </motion.li>
               );
             })}
-          </ul>
+          </motion.ul>
         </>
       ) : null}
 
-      {selectedKeys.size > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md">
-          <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
-            <span className="text-sm font-black text-slate-700">
-              {t("selectedCount", { count: selectedKeys.size })}
-            </span>
-            <SupercellButton
-              type="button"
-              size="lg"
-              variant="primary"
-              onClick={() => setShowConfirm(true)}
-              textCase="normal"
-              className="ml-auto h-12 flex-1 rounded-2xl text-base sm:flex-none sm:px-6"
-            >
-              <CheckCircle2
-                className="mr-2 inline h-5 w-5"
-                strokeWidth={2.5}
-                aria-hidden
-              />
-              {t("markAsCompleted")}
-            </SupercellButton>
-          </div>
-        </div>
-      ) : null}
-
-      {showConfirm ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 backdrop-blur-sm sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="mark-confirm-title"
-          onClick={() => {
-            if (!marking) setShowConfirm(false);
-          }}
-        >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            className="toast-slide-up flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+      <AnimatePresence>
+        {selectedKeys.size > 0 ? (
+          <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md"
           >
+            <div className="mx-auto flex w-full max-w-3xl items-center gap-3">
+              <motion.span
+                key={selectedKeys.size}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 460, damping: 22 }}
+                className="text-sm font-black text-slate-700"
+              >
+                {t("selectedCount", { count: selectedKeys.size })}
+              </motion.span>
+              <SupercellButton
+                type="button"
+                size="lg"
+                variant="primary"
+                onClick={() => setShowConfirm(true)}
+                textCase="normal"
+                className="ml-auto h-12 flex-1 rounded-2xl text-base sm:flex-none sm:px-6"
+              >
+                <CheckCircle2
+                  className="mr-2 inline h-5 w-5"
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+                {t("markAsCompleted")}
+              </SupercellButton>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showConfirm ? (
+          <motion.div
+            variants={modalBackdropVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 backdrop-blur-sm sm:items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mark-confirm-title"
+            onClick={() => {
+              if (!marking) setShowConfirm(false);
+            }}
+          >
+            <motion.div
+              variants={modalSheetVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={(event) => event.stopPropagation()}
+              className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+            >
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
@@ -766,7 +861,8 @@ export default function IncompleteTasksList() {
                   {t("markCompletedWarningTitle")}
                 </h2>
               </div>
-              <button
+              <motion.button
+                {...iconPressMotionProps}
                 type="button"
                 onClick={() => {
                   if (!marking) setShowConfirm(false);
@@ -776,7 +872,7 @@ export default function IncompleteTasksList() {
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-50"
               >
                 <X className="h-5 w-5" strokeWidth={2.5} />
-              </button>
+              </motion.button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4">
@@ -811,9 +907,10 @@ export default function IncompleteTasksList() {
                 {marking ? t("marking") : t("confirm")}
               </SupercellButton>
             </div>
-          </div>
-        </div>
-      ) : null}
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -12,6 +12,13 @@ import {
 import { supabase } from "@/lib/supabase";
 import { loadLayout, type TaskModule } from "@/lib/taskModules";
 import { useUser } from "@/hooks/useUser";
+import {
+  listContainerVariants,
+  listItemVariants,
+  modalBackdropVariants,
+  modalSheetVariants,
+} from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ChevronRight, Download, Eye, Filter, RotateCcw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
@@ -715,16 +722,25 @@ export default function HistoryList() {
               {t("filterRecords")}
             </h3>
           </div>
-          {filtersActive ? (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 active:scale-95"
-            >
-              <RotateCcw className="h-3 w-3" strokeWidth={2.75} aria-hidden />
-              {t("resetFilters")}
-            </button>
-          ) : null}
+          <AnimatePresence>
+            {filtersActive ? (
+              <motion.button
+                key="reset"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                whileHover={{ scale: 1.06, rotate: -3 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                type="button"
+                onClick={handleResetFilters}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-600"
+              >
+                <RotateCcw className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                {t("resetFilters")}
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
         </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -821,15 +837,23 @@ export default function HistoryList() {
                 <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
                   {group.label}
                 </div>
-                <ul className="divide-y divide-slate-100">
+                <motion.ul
+                  className="divide-y divide-slate-100"
+                  variants={listContainerVariants}
+                  initial="initial"
+                  animate="animate"
+                >
                   {group.rows.map((row) => (
-                    <li key={`mobile-${row.id}`}>
-                      <button
+                    <motion.li key={`mobile-${row.id}`} variants={listItemVariants}>
+                      <motion.button
                         type="button"
                         onClick={() => setDetailRow(row)}
-                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-slate-50"
+                        whileHover={{ backgroundColor: "rgba(248,250,252,1)", x: 2 }}
+                        whileTap={{ scale: 0.99 }}
+                        transition={{ type: "spring", stiffness: 380, damping: 24 }}
+                        className="group flex w-full items-center gap-3 px-3 py-2.5 text-left"
                       >
-                        <span className="flex h-11 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-slate-100 text-[13px] font-black tabular-nums leading-none text-slate-700">
+                        <span className="flex h-11 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-slate-100 text-[13px] font-black tabular-nums leading-none text-slate-700 transition-colors group-hover:bg-slate-200">
                           {formatLogTime(row.created_at, locale)}
                         </span>
 
@@ -844,7 +868,7 @@ export default function HistoryList() {
 
                         <span
                           className={[
-                            "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-black",
+                            "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-black transition-transform duration-150 group-hover:scale-105",
                             row.isOverLimit || row.status === "rejected"
                               ? "border-red-200 bg-red-50 text-red-700"
                               : row.status === "approved"
@@ -862,14 +886,14 @@ export default function HistoryList() {
                         ) : null}
 
                         <ChevronRight
-                          className="h-4 w-4 shrink-0 text-slate-400"
+                          className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-700"
                           strokeWidth={2.5}
                           aria-hidden
                         />
-                      </button>
-                    </li>
+                      </motion.button>
+                    </motion.li>
                   ))}
-                </ul>
+                </motion.ul>
               </section>
             ))}
           </div>
@@ -1025,29 +1049,45 @@ function DetailModal({ row, onClose, translate, t, locale }: DetailModalProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [row, onClose]);
 
-  if (!row) return null;
-
-  const dateLabel = new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(row.created_at));
+  const dateLabel = row
+    ? new Intl.DateTimeFormat(locale, {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(row.created_at))
+    : "";
 
   return (
-    <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 backdrop-blur-[2px] print:hidden sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="detail-modal-title"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="toast-slide-up flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
-      >
+    <AnimatePresence>
+      {row ? (
+        <motion.div
+          variants={modalBackdropVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 backdrop-blur-[2px] print:hidden sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="detail-modal-title"
+          onClick={onClose}
+        >
+          <motion.div
+            variants={modalSheetVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.4 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 80 || info.velocity.y > 600) onClose();
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-xl sm:rounded-3xl"
+          >
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-6 py-5">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -1133,24 +1173,34 @@ function DetailModal({ row, onClose, translate, t, locale }: DetailModalProps) {
               <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
                 {t("photos")} ({row.photoUrls.length})
               </h3>
-              <div className="mt-3 flex flex-col gap-4">
+              <motion.div
+                className="mt-3 flex flex-col gap-4"
+                variants={listContainerVariants}
+                initial="initial"
+                animate="animate"
+              >
                 {row.photoUrls.map((url, i) => (
-                  <a
+                  <motion.a
                     key={`${row.id}-detail-${i}`}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block overflow-hidden rounded-3xl border border-slate-100 bg-slate-50 shadow-sm transition-transform active:scale-[0.99]"
+                    variants={listItemVariants}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 320, damping: 24 }}
+                    className="group block overflow-hidden rounded-3xl border border-slate-100 bg-slate-50 shadow-sm"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={url}
                       alt={t("photoAlt", { number: i + 1 })}
                       className="h-72 w-full object-cover sm:h-80"
                       loading="lazy"
                     />
-                  </a>
+                  </motion.a>
                 ))}
-              </div>
+              </motion.div>
             </section>
           ) : null}
         </div>
@@ -1166,7 +1216,9 @@ function DetailModal({ row, onClose, translate, t, locale }: DetailModalProps) {
             {t("close")}
           </SupercellButton>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }

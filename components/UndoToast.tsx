@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { motion } from "framer-motion";
 import { Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -60,8 +61,12 @@ export default function UndoToast({
   };
 
   return (
-    <div
-      className="toast-slide-up fixed bottom-32 left-1/2 z-50 w-[min(calc(100%-2rem),28rem)] -translate-x-1/2"
+    <motion.div
+      initial={{ y: "120%", opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: "120%", opacity: 0 }}
+      transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.7 }}
+      className="fixed bottom-32 left-1/2 z-50 w-[min(calc(100%-2rem),28rem)] -translate-x-1/2"
       role="status"
       aria-live="polite"
     >
@@ -78,7 +83,13 @@ export default function UndoToast({
             textCase="normal"
             className="flex h-12 items-center gap-2 rounded-xl px-4 text-base sm:text-lg"
           >
-            <Undo2 className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+            <motion.span
+              animate={{ rotate: [0, -20, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.4 }}
+              className="inline-flex"
+            >
+              <Undo2 className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+            </motion.span>
             {actionLabel}
           </SupercellButton>
         </div>
@@ -89,6 +100,6 @@ export default function UndoToast({
           />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

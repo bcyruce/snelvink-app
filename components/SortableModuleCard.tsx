@@ -8,12 +8,14 @@ import {
 } from "@/lib/taskModules";
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
-import { densePressClass } from "@/lib/uiMotion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion } from "framer-motion";
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { createElement } from "react";
+
+const MotionLink = motion(Link);
 
 type SortableModuleCardProps = {
   module: TaskModule;
@@ -34,7 +36,7 @@ export default function SortableModuleCard({
 }: SortableModuleCardProps) {
   const { theme } = useTheme();
   const { t } = useTranslation();
-  
+
   const {
     attributes,
     listeners,
@@ -75,18 +77,25 @@ export default function SortableModuleCard({
           : module.id === "schoonmaak"
             ? t("schoonmaak")
             : module.name;
-  
+
   const moduleIcon = createElement(getModuleIcon(module.icon), {
     className: "h-10 w-10",
     strokeWidth: 1.75,
     style: { color: theme.primary },
     "aria-hidden": true,
   });
-  
+
   const content = (
     <>
-      {moduleIcon}
-      <span 
+      <motion.span
+        whileHover={{ scale: 1.08, rotate: -3 }}
+        whileTap={{ scale: 0.92 }}
+        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+        className="inline-flex"
+      >
+        {moduleIcon}
+      </motion.span>
+      <span
         className="line-clamp-2 text-base font-black leading-tight"
         style={{ color: theme.fg }}
       >
@@ -110,23 +119,29 @@ export default function SortableModuleCard({
       <div className={animationClass}>
         <div className="relative">
           {isEditing ? (
-            <div 
+            <motion.div
               className="relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center"
               style={cardStyle}
+              animate={isDragging ? { scale: 1.05 } : { scale: 1 }}
+              transition={{ type: "spring", stiffness: 320, damping: 22 }}
             >
               {content}
-            </div>
+            </motion.div>
           ) : (
-            <Link
+            <MotionLink
               href={module.href}
-              className={[
-                "relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center",
-                densePressClass,
-              ].join(" ")}
+              className="group relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center"
               style={cardStyle}
+              whileHover={{
+                y: -3,
+                scale: 1.02,
+                boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
+              }}
+              whileTap={{ scale: 0.96, y: 1 }}
+              transition={{ type: "spring", stiffness: 380, damping: 24 }}
             >
               {content}
-            </Link>
+            </MotionLink>
           )}
 
           <SupercellButton
@@ -137,7 +152,7 @@ export default function SortableModuleCard({
             aria-label={`${t("remove")} ${moduleName}`}
             tabIndex={isEditing ? 0 : -1}
             className={`${controlBaseClass} -left-2 -top-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
-            style={{ 
+            style={{
               boxShadow: `0 0 0 4px ${theme.bg}`,
             }}
           >
@@ -151,7 +166,7 @@ export default function SortableModuleCard({
             variant="neutral"
             aria-label={`${t("move")} ${moduleName}`}
             className={`${controlBaseClass} -right-2 -top-2 h-10 w-10 cursor-grab rounded-full ${controlVisibilityClass} active:cursor-grabbing`}
-            style={{ 
+            style={{
               boxShadow: `0 0 0 4px ${theme.bg}`,
             }}
             {...listeners}
@@ -170,7 +185,7 @@ export default function SortableModuleCard({
               aria-label={`${t("edit")} ${moduleName}`}
               tabIndex={isEditing ? 0 : -1}
               className={`${controlBaseClass} -right-2 -bottom-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
-              style={{ 
+              style={{
                 boxShadow: `0 0 0 4px ${theme.bg}`,
               }}
             >

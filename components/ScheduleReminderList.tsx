@@ -17,7 +17,14 @@ import {
 } from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
 import { loadLayout, type TaskModule } from "@/lib/taskModules";
-import { densePressClass } from "@/lib/uiMotion";
+import {
+  iconPressMotionProps,
+  listContainerVariants,
+  listItemVariants,
+  modalBackdropVariants,
+  modalSheetVariants,
+} from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarClock,
   CalendarDays,
@@ -218,94 +225,122 @@ function TaskCard({
   if (task.completed) {
     const detailsId = `task-details-${task.key}`;
     return (
-      <div
-        className="overflow-hidden rounded-lg border border-emerald-200/70 bg-emerald-50/40 transition-all"
-        style={{ animationDelay: `${index * 30}ms` }}
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03, type: "spring", stiffness: 320, damping: 24 }}
+        className="overflow-hidden rounded-lg border border-emerald-200/70 bg-emerald-50/40"
       >
         <div className="flex items-center gap-2 px-2 py-1.5">
-          <span
+          <motion.span
             aria-hidden
+            initial={{ scale: 0.6, rotate: -30 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 460, damping: 18, delay: index * 0.03 + 0.05 }}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white"
           >
             <Check className="h-4 w-4" strokeWidth={3} />
-          </span>
-          <button
+          </motion.span>
+          <motion.button
             type="button"
             onClick={onClick}
+            whileHover={{ x: 2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 420, damping: 22 }}
             className="min-w-0 flex-1 truncate text-left text-sm font-bold text-emerald-900/80 line-through decoration-emerald-400/60 underline-offset-2 hover:text-emerald-900"
             title={task.title}
           >
             {task.title}
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             onClick={() => setDetailsOpen((value) => !value)}
             aria-expanded={detailsOpen}
             aria-controls={detailsId}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
             className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100/60"
           >
             {t("details")}
-            <ChevronDown
-              className={[
-                "h-3.5 w-3.5 transition-transform",
-                detailsOpen ? "rotate-180" : "",
-              ].join(" ")}
-              strokeWidth={2.75}
-              aria-hidden
-            />
-          </button>
+            <motion.span
+              animate={{ rotate: detailsOpen ? 180 : 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 22 }}
+              className="inline-flex"
+            >
+              <ChevronDown
+                className="h-3.5 w-3.5"
+                strokeWidth={2.75}
+                aria-hidden
+              />
+            </motion.span>
+          </motion.button>
         </div>
-        {detailsOpen ? (
-          <div
-            id={detailsId}
-            className="border-t border-emerald-200/70 bg-white/70 px-3 py-2"
-          >
-            <p className="mb-1.5 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-800/80">
-              <Layers className="h-3 w-3 shrink-0" strokeWidth={2.75} />
-              <span className="truncate">{task.moduleLabel}</span>
-              {showRatio ? (
-                <span className="ml-auto rounded-md bg-emerald-100 px-1.5 py-0.5 tabular-nums text-emerald-700">
-                  {task.completedCount}/{task.requiredCount}
-                </span>
-              ) : null}
-            </p>
-            {dateLabel ? (
-              <p className="flex items-center gap-1 text-[11px] font-bold text-slate-600">
-                <CalendarDays className="h-3 w-3 shrink-0" strokeWidth={2.75} />
-                {dateLabel}
-              </p>
-            ) : null}
-            {task.completedRecords.length > 0 ? (
-              <ul className="mt-1.5 flex flex-wrap gap-1.5">
-                {task.completedRecords.map((record) => (
-                  <li
-                    key={record.id}
-                    className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-black tabular-nums text-emerald-800"
-                  >
-                    <Clock className="h-3 w-3" strokeWidth={2.75} aria-hidden />
-                    {record.time || "—"}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+        <AnimatePresence initial={false}>
+          {detailsOpen ? (
+            <motion.div
+              key="details"
+              id={detailsId}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden border-t border-emerald-200/70 bg-white/70"
+            >
+              <div className="px-3 py-2">
+                <p className="mb-1.5 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-800/80">
+                  <Layers className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+                  <span className="truncate">{task.moduleLabel}</span>
+                  {showRatio ? (
+                    <span className="ml-auto rounded-md bg-emerald-100 px-1.5 py-0.5 tabular-nums text-emerald-700">
+                      {task.completedCount}/{task.requiredCount}
+                    </span>
+                  ) : null}
+                </p>
+                {dateLabel ? (
+                  <p className="flex items-center gap-1 text-[11px] font-bold text-slate-600">
+                    <CalendarDays className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+                    {dateLabel}
+                  </p>
+                ) : null}
+                {task.completedRecords.length > 0 ? (
+                  <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                    {task.completedRecords.map((record) => (
+                      <li
+                        key={record.id}
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-black tabular-nums text-emerald-800"
+                      >
+                        <Clock className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                        {record.time || "—"}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </motion.div>
     );
   }
 
   // ── PENDING / TODO: friendly to-do card with an empty checkbox affordance ───
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
+      layout
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: index * 0.03, type: "spring", stiffness: 320, damping: 22 }}
+      whileHover={{ y: -2, boxShadow: "0 10px 24px rgba(0,0,0,0.08)" }}
+      whileTap={{ scale: 0.97 }}
       className={[
-        "group block w-full overflow-hidden rounded-xl border-2 text-left transition-all hover:shadow-md active:scale-[0.98]",
+        "group block w-full overflow-hidden rounded-xl border-2 text-left transition-colors",
         ratioPartial
           ? "border-amber-200 border-b-4 border-b-amber-300 bg-amber-50/50 hover:border-amber-300"
           : "border-[var(--theme-card-border)] border-b-4 border-b-slate-300 bg-[var(--theme-card-bg)] hover:border-[var(--theme-primary)]/40",
       ].join(" ")}
-      style={{ animationDelay: `${index * 30}ms` }}
     >
       <div className="flex items-start gap-3 p-3">
         <span
@@ -330,7 +365,7 @@ function TaskCard({
               {task.title}
             </h4>
             <ChevronRight
-              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5"
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform duration-200 group-hover:translate-x-1"
               strokeWidth={2.5}
             />
           </div>
@@ -373,7 +408,7 @@ function TaskCard({
           ) : null}
         </div>
       </div>
-    </button>
+    </motion.button>
   );
 }
 
@@ -457,40 +492,63 @@ function ReminderSection({
   const count = tasks.length;
   return (
     <section className="flex flex-col gap-2">
-      <button
+      <motion.button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className={[
-          "flex items-center justify-between gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-3 text-left transition-all hover:border-[var(--theme-primary)]/30",
-          densePressClass,
-        ].join(" ")}
+        whileHover={{ y: -1, boxShadow: "0 6px 14px rgba(0,0,0,0.06)" }}
+        whileTap={{ scale: 0.985 }}
+        transition={{ type: "spring", stiffness: 400, damping: 24 }}
+        className="flex items-center justify-between gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-3 text-left transition-colors hover:border-[var(--theme-primary)]/30"
       >
         <span className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
             {title}
           </span>
-          {count > 0 ? (
-            <span className="rounded-full bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-white">
-              {count}
-            </span>
-          ) : null}
+          <AnimatePresence>
+            {count > 0 ? (
+              <motion.span
+                key={count}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.6, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 460, damping: 22 }}
+                className="rounded-full bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-white"
+              >
+                {count}
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
         </span>
-        <ChevronDown
-          className={[
-            "h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform",
-            open ? "rotate-180" : "",
-          ].join(" ")}
-        />
-      </button>
-      {open ? (
-        <TaskList
-          tasks={tasks}
-          emptyText={emptyText}
-          showDate={showDate}
-          locale={locale}
-        />
-      ) : null}
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ type: "spring", stiffness: 320, damping: 22 }}
+          className="inline-flex"
+        >
+          <ChevronDown
+            className="h-4 w-4 shrink-0 text-[var(--theme-muted)]"
+          />
+        </motion.span>
+      </motion.button>
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <TaskList
+              tasks={tasks}
+              emptyText={emptyText}
+              showDate={showDate}
+              locale={locale}
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
@@ -516,39 +574,60 @@ function DayPreviewModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+    <motion.div
+      variants={modalBackdropVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+    >
       <button
         type="button"
         aria-label={t("close")}
         onClick={onClose}
         className="absolute inset-0 h-full w-full"
       />
-      <div className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-[var(--theme-bg)] p-5 shadow-2xl">
+      <motion.div
+        variants={modalSheetVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.4 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 80 || info.velocity.y > 600) onClose();
+        }}
+        className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-[var(--theme-bg)] p-5 shadow-2xl"
+      >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--theme-muted)]/30" />
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="text-base font-black capitalize text-[var(--theme-fg)]">
             {titleLabel}
           </h3>
-          <button
+          <motion.button
+            {...iconPressMotionProps}
             type="button"
             onClick={onClose}
             aria-label={t("close")}
-            className={[
-              "flex h-9 w-9 items-center justify-center rounded-full text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-card-bg)]",
-              densePressClass,
-            ].join(" ")}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-card-bg)]"
           >
             <X className="h-4 w-4" />
-          </button>
+          </motion.button>
         </div>
         {tasks.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
             {t("noPlannedTasksOnDay")}
           </p>
         ) : (
-          <ul className="flex flex-col gap-1.5">
+          <motion.ul
+            className="flex flex-col gap-1.5"
+            variants={listContainerVariants}
+            initial="initial"
+            animate="animate"
+          >
             {tasks.map((task, index) => (
-              <li key={task.key}>
+              <motion.li key={task.key} variants={listItemVariants}>
                 <TaskCard
                   task={task}
                   index={index}
@@ -557,12 +636,12 @@ function DayPreviewModal({
                     router.push(task.route);
                   }}
                 />
-              </li>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -590,20 +669,24 @@ function CalendarMonth({
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
-        {cells.map((date) => {
+        {cells.map((date, cellIndex) => {
           const dayTasks = tasksForDate(tasks, date);
           const isCurrentMonth = date.getMonth() === month.getMonth();
           return (
-            <button
+            <motion.button
               key={toIsoDate(date)}
               type="button"
               onClick={() => onSelectDate(date)}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: isCurrentMonth ? 1 : 0.3, scale: 1 }}
+              transition={{ delay: cellIndex * 0.005, duration: 0.18 }}
+              whileHover={isCurrentMonth ? { scale: 1.05, y: -1, zIndex: 1 } : undefined}
+              whileTap={isCurrentMonth ? { scale: 0.95 } : undefined}
               className={[
-                "flex min-h-[68px] flex-col rounded-lg border p-1 text-left transition-all hover:border-[var(--theme-primary)]/30",
-                densePressClass,
+                "flex min-h-[68px] flex-col rounded-lg border p-1 text-left transition-colors hover:border-[var(--theme-primary)]/30",
                 isCurrentMonth
                   ? "border-[var(--theme-card-border)] bg-white"
-                  : "border-transparent bg-transparent opacity-30",
+                  : "border-transparent bg-transparent",
               ].join(" ")}
             >
               <span className="text-[11px] font-bold text-[var(--theme-fg)]">
@@ -630,7 +713,7 @@ function CalendarMonth({
                   </span>
                 ) : null}
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -960,15 +1043,18 @@ export default function ScheduleReminderList() {
 
             {/* Month Navigation */}
             <div className="mb-3 flex items-center gap-2">
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setMonthIndex((value) => Math.max(0, value - 1))}
                 disabled={monthIndex === 0}
+                whileHover={monthIndex === 0 ? undefined : { scale: 1.1, x: -2 }}
+                whileTap={monthIndex === 0 ? undefined : { scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--theme-card-border)] bg-white text-[var(--theme-fg)] transition-colors hover:border-[var(--theme-primary)]/30 disabled:opacity-40"
                 aria-label={t("previousMonth")}
               >
                 <ChevronLeft className="h-4 w-4" />
-              </button>
+              </motion.button>
               <select
                 value={calendarMonth.getMonth()}
                 onChange={(event) => {
@@ -1009,41 +1095,65 @@ export default function ScheduleReminderList() {
                   </option>
                 ))}
               </select>
-              <button
+              <motion.button
                 type="button"
                 onClick={() =>
                   setMonthIndex((value) => Math.min(maxMonthIndex, value + 1))
                 }
                 disabled={monthIndex === maxMonthIndex}
+                whileHover={monthIndex === maxMonthIndex ? undefined : { scale: 1.1, x: 2 }}
+                whileTap={monthIndex === maxMonthIndex ? undefined : { scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--theme-card-border)] bg-white text-[var(--theme-fg)] transition-colors hover:border-[var(--theme-primary)]/30 disabled:opacity-40"
                 aria-label={t("nextMonth")}
               >
                 <ChevronRight className="h-4 w-4" />
-              </button>
+              </motion.button>
             </div>
 
-            <p className="mb-3 text-center text-sm font-bold capitalize text-[var(--theme-fg)]">
-              {monthLabel(calendarMonth, locale)}
-            </p>
-            
-            <CalendarMonth
-              month={calendarMonth}
-              tasks={filteredTasks}
-              onSelectDate={(date) => setSelectedDate(date)}
-              weekdays={weekdayNames}
-            />
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={monthIndex}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className="mb-3 text-center text-sm font-bold capitalize text-[var(--theme-fg)]"
+              >
+                {monthLabel(calendarMonth, locale)}
+              </motion.p>
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${monthIndex}-${moduleFilter}`}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <CalendarMonth
+                  month={calendarMonth}
+                  tasks={filteredTasks}
+                  onSelectDate={(date) => setSelectedDate(date)}
+                  weekdays={weekdayNames}
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </>
       )}
 
-      {selectedDate ? (
-        <DayPreviewModal
-          date={selectedDate}
-          tasks={tasksForDate(filteredTasks, selectedDate)}
-          onClose={() => setSelectedDate(null)}
-          locale={locale}
-        />
-      ) : null}
+      <AnimatePresence>
+        {selectedDate ? (
+          <DayPreviewModal
+            date={selectedDate}
+            tasks={tasksForDate(filteredTasks, selectedDate)}
+            onClose={() => setSelectedDate(null)}
+            locale={locale}
+          />
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
