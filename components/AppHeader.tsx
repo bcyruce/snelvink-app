@@ -15,7 +15,7 @@ export default function AppHeader() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Image
-            src="/logo-snelvink.png?v=2"
+            src="/logo-snelvink.png"
             alt="Snelvink"
             width={72}
             height={72}
