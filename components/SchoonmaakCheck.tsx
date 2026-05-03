@@ -42,12 +42,15 @@ type Props = {
   customModuleId?: string;
   /** Custom heeft een eigen titel (module-naam) in plaats van "Schoonmaak". */
   title?: string;
+  /** Wanneer gezet, selecteert de module direct de groep/locatie met dit id. */
+  initialItemId?: string;
 };
 
 export default function SchoonmaakCheck({
   mode = "record",
   customModuleId,
   title,
+  initialItemId,
 }: Props) {
   const isCustom = !!customModuleId;
   const editBasePath = isCustom
@@ -117,6 +120,19 @@ export default function SchoonmaakCheck({
   useEffect(() => {
     void loadLocations();
   }, [loadLocations]);
+
+  // Selecteer automatisch de groep/locatie wanneer er via een herinnering een
+  // initialItemId is meegegeven.
+  const autoSelectedRef = useRef(false);
+  useEffect(() => {
+    if (autoSelectedRef.current) return;
+    if (mode !== "record" || !initialItemId) return;
+    if (loadingLocations) return;
+    const target = locations.find((l) => l.id === initialItemId);
+    if (!target) return;
+    autoSelectedRef.current = true;
+    setSelectedLocation(target);
+  }, [initialItemId, loadingLocations, locations, mode]);
 
   const handleAddLocation = useCallback(
     async (name: string) => {

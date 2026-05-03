@@ -5,9 +5,13 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 type Props = {
   mode?: "manage" | "record";
+  initialItemId?: string;
 };
 
-export default function KerntemperatuurCheck({ mode = "record" }: Props) {
+export default function KerntemperatuurCheck({
+  mode = "record",
+  initialItemId,
+}: Props) {
   const { t } = useTranslation();
   return (
     <HaccpTemperatureModule
@@ -16,6 +20,7 @@ export default function KerntemperatuurCheck({ mode = "record" }: Props) {
       defaultTemperature={75}
       firstEquipmentName={t("kerntemperatuur")}
       mode={mode}
+      initialItemId={initialItemId}
     />
   );
 }

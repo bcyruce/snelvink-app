@@ -58,12 +58,15 @@ type Props = {
   customModuleId?: string;
   /** Custom heeft een eigen titel ("module naam") in plaats van "Ontvangst". */
   title?: string;
+  /** Wanneer gezet, selecteert de module direct het product met dit id. */
+  initialItemId?: string;
 };
 
 export default function OntvangstCheck({
   mode = "record",
   customModuleId,
   title,
+  initialItemId,
 }: Props) {
   const isCustom = !!customModuleId;
   const editBasePath = isCustom
@@ -130,6 +133,19 @@ export default function OntvangstCheck({
   useEffect(() => {
     void loadProducts();
   }, [loadProducts, restaurantId]);
+
+  // Selecteer automatisch het product wanneer er via een herinnering een
+  // initialItemId is meegegeven.
+  const autoSelectedRef = useRef(false);
+  useEffect(() => {
+    if (autoSelectedRef.current) return;
+    if (mode !== "record" || !initialItemId) return;
+    if (loadingProducts) return;
+    const target = products.find((p) => p.id === initialItemId);
+    if (!target) return;
+    autoSelectedRef.current = true;
+    setSelectedProduct(target);
+  }, [initialItemId, loadingProducts, products, mode]);
 
   // ---------- product CRUD ----------
   const handleAddProduct = useCallback(

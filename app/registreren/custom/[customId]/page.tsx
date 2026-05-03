@@ -10,8 +10,8 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Wrench } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 type CustomModuleType = "number" | "boolean" | "list";
 
@@ -30,7 +30,9 @@ function normalizeModuleType(value: unknown): CustomModuleType {
 function CustomModuleRecordContent() {
   const router = useRouter();
   const params = useParams<{ customId: string }>();
+  const searchParams = useSearchParams();
   const customId = params?.customId ?? "";
+  const initialItemId = searchParams?.get("item") ?? undefined;
   const { user, isLoading } = useUser();
   const { t } = useTranslation();
 
@@ -124,18 +126,21 @@ function CustomModuleRecordContent() {
               mode="record"
               customModuleId={module.id}
               stepLayout="single"
+              initialItemId={initialItemId}
             />
           ) : module.moduleType === "boolean" ? (
             <OntvangstCheck
               mode="record"
               customModuleId={module.id}
               title={module.name}
+              initialItemId={initialItemId}
             />
           ) : (
             <SchoonmaakCheck
               mode="record"
               customModuleId={module.id}
               title={module.name}
+              initialItemId={initialItemId}
             />
           )
         ) : (
@@ -160,10 +165,20 @@ function CustomModuleRecordContent() {
   );
 }
 
+function CustomModuleRecordLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <p className="text-center text-lg font-semibold text-slate-500" />
+    </div>
+  );
+}
+
 export default function CustomModuleRecordPage() {
   return (
     <UserProvider>
-      <CustomModuleRecordContent />
+      <Suspense fallback={<CustomModuleRecordLoading />}>
+        <CustomModuleRecordContent />
+      </Suspense>
     </UserProvider>
   );
 }

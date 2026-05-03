@@ -52,6 +52,11 @@ type Props = {
    * "single" → +<step><unit>/−<step><unit> per item (custom Getal).
    */
   stepLayout?: "double" | "single";
+  /**
+   * Wanneer gezet, springt de module direct in de record-view voor het
+   * apparaat met dit id (na het laden van de lijst).
+   */
+  initialItemId?: string;
 };
 
 const MAX_PHOTOS = 5;
@@ -82,6 +87,7 @@ export default function HaccpTemperatureModule({
   mode = "record",
   customModuleId,
   stepLayout = "double",
+  initialItemId,
 }: Props) {
   const isCustom = !!customModuleId;
   const editBasePath = isCustom
@@ -295,6 +301,18 @@ export default function HaccpTemperatureModule({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Spring direct naar de record-view wanneer initialItemId is meegegeven.
+  const autoEnteredRef = useRef(false);
+  useEffect(() => {
+    if (autoEnteredRef.current) return;
+    if (mode !== "record" || !initialItemId) return;
+    if (loadingEquipments) return;
+    const target = equipments.find((e) => e.id === initialItemId);
+    if (!target) return;
+    autoEnteredRef.current = true;
+    enterRecord(target);
+  }, [initialItemId, loadingEquipments, equipments, mode, enterRecord]);
 
   // ---------- long-press +/- ----------
   // Voor de standaard koeling/kerntemperatuur weergave (twee stappen).

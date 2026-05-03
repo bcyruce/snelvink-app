@@ -152,12 +152,27 @@ function tasksForRange(tasks: PlannedTask[], start: Date, end: Date) {
   return tasks.filter((task) => task.date >= startIso && task.date < endIso);
 }
 
+function formatTaskDateLabel(isoDate: string, locale: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) return isoDate;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
 function TaskList({
   tasks,
   emptyText,
+  showDate = false,
+  locale,
 }: {
   tasks: PlannedTask[];
   emptyText: string;
+  showDate?: boolean;
+  locale?: string;
 }) {
   const router = useRouter();
   if (tasks.length === 0) {
@@ -192,6 +207,11 @@ function TaskList({
               />
             </div>
             <span className="min-w-0 flex-1">
+              {showDate && locale ? (
+                <span className="mb-0.5 block truncate text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)]">
+                  {formatTaskDateLabel(task.date, locale)}
+                </span>
+              ) : null}
               <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
                 {task.title}
               </span>
@@ -212,11 +232,15 @@ function ReminderSection({
   tasks,
   emptyText,
   defaultOpen = true,
+  showDate = false,
+  locale,
 }: {
   title: string;
   tasks: PlannedTask[];
   emptyText: string;
   defaultOpen?: boolean;
+  showDate?: boolean;
+  locale?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const count = tasks.length;
@@ -248,7 +272,14 @@ function ReminderSection({
           ].join(" ")}
         />
       </button>
-      {open ? <TaskList tasks={tasks} emptyText={emptyText} /> : null}
+      {open ? (
+        <TaskList
+          tasks={tasks}
+          emptyText={emptyText}
+          showDate={showDate}
+          locale={locale}
+        />
+      ) : null}
     </section>
   );
 }
@@ -487,15 +518,17 @@ export default function ScheduleReminderList() {
         const schedule = normalizeSchedule(row.schedule);
         if (!schedule) continue;
         const customName = customModuleName(row);
+        const id = String(row.id);
+        const baseRoute = row.custom_module_id
+          ? `/registreren/custom/${row.custom_module_id}`
+          : `/registreren/${row.type}`;
         nextItems.push({
-          id: String(row.id),
+          id,
           title: row.name ?? "Item",
           moduleLabel:
             customName ??
             (row.type === "kerntemperatuur" ? t("kerntemperatuur") : t("koeling")),
-          route: row.custom_module_id
-            ? `/registreren/custom/${row.custom_module_id}`
-            : `/registreren/${row.type}`,
+          route: `${baseRoute}?item=${encodeURIComponent(id)}`,
           itemKind: "equipment",
           schedule,
         });
@@ -505,13 +538,15 @@ export default function ScheduleReminderList() {
         const schedule = normalizeSchedule(row.schedule);
         if (!schedule) continue;
         const customName = customModuleName(row);
+        const id = String(row.id);
+        const baseRoute = row.custom_module_id
+          ? `/registreren/custom/${row.custom_module_id}`
+          : "/registreren/ontvangst";
         nextItems.push({
-          id: String(row.id),
+          id,
           title: row.name ?? "Item",
           moduleLabel: customName ?? t("ontvangst"),
-          route: row.custom_module_id
-            ? `/registreren/custom/${row.custom_module_id}`
-            : "/registreren/ontvangst",
+          route: `${baseRoute}?item=${encodeURIComponent(id)}`,
           itemKind: "product",
           schedule,
         });
@@ -521,13 +556,15 @@ export default function ScheduleReminderList() {
         const schedule = normalizeSchedule(row.schedule);
         if (!schedule) continue;
         const customName = customModuleName(row);
+        const id = String(row.id);
+        const baseRoute = row.custom_module_id
+          ? `/registreren/custom/${row.custom_module_id}`
+          : "/registreren/schoonmaak";
         nextItems.push({
-          id: String(row.id),
+          id,
           title: row.name ?? "Item",
           moduleLabel: customName ?? t("schoonmaak"),
-          route: row.custom_module_id
-            ? `/registreren/custom/${row.custom_module_id}`
-            : "/registreren/schoonmaak",
+          route: `${baseRoute}?item=${encodeURIComponent(id)}`,
           itemKind: "location",
           schedule,
         });
@@ -654,6 +691,8 @@ export default function ScheduleReminderList() {
             tasks={weekTasks}
             emptyText={t("noTasksThisWeek")}
             defaultOpen={false}
+            showDate
+            locale={locale}
           />
 
           {/* Calendar Section */}

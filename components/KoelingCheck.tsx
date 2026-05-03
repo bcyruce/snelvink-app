@@ -5,9 +5,10 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 type Props = {
   mode?: "manage" | "record";
+  initialItemId?: string;
 };
 
-export default function KoelingCheck({ mode = "record" }: Props) {
+export default function KoelingCheck({ mode = "record", initialItemId }: Props) {
   const { t } = useTranslation();
   return (
     <HaccpTemperatureModule
@@ -16,6 +17,7 @@ export default function KoelingCheck({ mode = "record" }: Props) {
       defaultTemperature={7}
       firstEquipmentName={t("koelingOne")}
       mode={mode}
+      initialItemId={initialItemId}
     />
   );
 }

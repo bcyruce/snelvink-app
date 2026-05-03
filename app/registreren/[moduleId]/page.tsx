@@ -10,11 +10,16 @@ import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { ArrowLeft } from "lucide-react";
-import { notFound, useParams, useRouter } from "next/navigation";
+import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, type ComponentType } from "react";
 
+type RegistrerenModuleProps = {
+  mode?: "manage" | "record";
+  initialItemId?: string;
+};
+
 // Components with mode prop - always use "record" mode for registreren
-const MODULE_COMPONENTS: Record<string, ComponentType<{ mode?: "manage" | "record" }>> = {
+const MODULE_COMPONENTS: Record<string, ComponentType<RegistrerenModuleProps>> = {
   koeling: KoelingCheck,
   ontvangst: OntvangstCheck,
   schoonmaak: SchoonmaakCheck,
@@ -24,7 +29,9 @@ const MODULE_COMPONENTS: Record<string, ComponentType<{ mode?: "manage" | "recor
 function ModuleContent() {
   const router = useRouter();
   const params = useParams<{ moduleId: string }>();
+  const searchParams = useSearchParams();
   const moduleId = params?.moduleId ?? "";
+  const initialItemId = searchParams?.get("item") ?? undefined;
   const { user, isLoading } = useUser();
   const { t } = useTranslation();
 
@@ -71,7 +78,7 @@ function ModuleContent() {
         </SupercellButton>
 
         {/* Always use record mode for registreren pages */}
-        <ModuleComponent mode="record" />
+        <ModuleComponent mode="record" initialItemId={initialItemId} />
       </section>
 
       <FloatingMenu active="registreren" onChange={handleMenuNav} />
