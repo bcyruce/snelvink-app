@@ -9,6 +9,7 @@ import {
   type ExportHistoryRow,
 } from "@/lib/historyExport";
 import { supabase } from "@/lib/supabase";
+import { loadLayout, type TaskModule } from "@/lib/taskModules";
 import { useUser } from "@/hooks/useUser";
 import { ChevronRight, Download, Eye, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
@@ -65,10 +66,22 @@ type ReportRow = {
   valueOrStatus: string;
   isOverLimit: boolean;
   status: "approved" | "rejected" | null;
+  taskModuleId: string;
   detailFields: { key: string; label: string; value: string }[];
   source: "haccp" | "custom";
   photoUrls: string[];
 };
+
+function haccpTaskModuleId(row: HaccpRecordRow): string {
+  if (
+    row.module_type === "custom_number" ||
+    row.module_type === "custom_boolean" ||
+    row.module_type === "custom_list"
+  ) {
+    return row.custom_module_id ?? row.module_type;
+  }
+  return row.module_type;
+}
 
 type CustomModuleLogValue = {
   field_id: string;
@@ -347,6 +360,11 @@ export default function HistoryList() {
   const [detailRow, setDetailRow] = useState<ReportRow | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [taskModules, setTaskModules] = useState<TaskModule[]>([]);
+
+  useEffect(() => {
+    setTaskModules(loadLayout());
+  }, []);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -443,6 +461,7 @@ export default function HistoryList() {
             if (row.status === "afgekeurd") return "rejected";
             return null;
           })(),
+          taskModuleId: haccpTaskModuleId(row),
           detailFields: buildHaccpDetailFields(row, valueOrStatus, t),
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
@@ -471,6 +490,7 @@ export default function HistoryList() {
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
           isOverLimit: false,
           status: null,
+          taskModuleId: row.custom_module_id ?? row.module_id ?? "custom",
           detailFields: [
             {
               key: "valueStatus",
@@ -508,11 +528,11 @@ export default function HistoryList() {
   );
   const exportTaskOptions = useMemo(
     () =>
-      Array.from(new Set(rows.map((row) => row.taskName))).map((taskName) => ({
-        value: taskName,
-        label: translateHaccpText(taskName),
+      taskModules.map((module) => ({
+        value: module.id,
+        label: translateHaccpText(module.name),
       })),
-    [rows, translateHaccpText],
+    [taskModules, translateHaccpText],
   );
 
   const handleExportDownload = useCallback(
@@ -541,7 +561,7 @@ export default function HistoryList() {
               !Number.isNaN(timestamp) &&
               timestamp >= start.getTime() &&
               timestamp <= end.getTime() &&
-              (taskFilter === "all" || row.taskName === taskFilter)
+              (taskFilter === "all" || row.taskModuleId === taskFilter)
             );
           })
           .sort(
