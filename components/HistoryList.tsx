@@ -457,8 +457,78 @@ export default function HistoryList() {
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white print:rounded-none print:border print:border-black print:bg-white">
-          <table className="min-w-[760px] w-full border-collapse text-left print:min-w-0 print:bg-white">
+        <>
+          <div className="space-y-4 print:hidden">
+            {groupedRows.map((group) => (
+              <section
+                key={`mobile-${group.label}`}
+                className="overflow-hidden rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white"
+              >
+                <div className="border-b border-slate-200 bg-slate-100 px-4 py-3 text-sm font-black uppercase tracking-wide text-slate-700">
+                  {group.label}
+                </div>
+                <ul className="divide-y divide-slate-100">
+                  {group.rows.map((row) => (
+                    <li key={`mobile-${row.id}`} className="px-4 py-4">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                          {t("time")}
+                        </span>
+                        <span className="text-sm font-black tabular-nums text-slate-900">
+                          {formatLogTime(row.created_at, locale)}
+                        </span>
+                      </div>
+                      <p className="text-base font-black text-slate-900">
+                        {translateHaccpText(row.apparaat)}
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-slate-600">
+                        {translateHaccpText(row.taskName)}
+                      </p>
+                      <p
+                        className={[
+                          "mt-2 text-sm font-black",
+                          row.isOverLimit ? "text-red-600" : "text-slate-900",
+                        ].join(" ")}
+                      >
+                        {translateHaccpText(row.valueOrStatus)}
+                        {row.isOverLimit ? (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-red-700">
+                            {t("overLimit")}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-700">
+                        {row.remarks ? translateHaccpText(row.remarks) : "—"}
+                      </p>
+                      <SupercellButton
+                        type="button"
+                        size="sm"
+                        variant="primary"
+                        onClick={() => setDetailRow(row)}
+                        textCase="normal"
+                        className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3 py-2 text-sm"
+                      >
+                        <Eye
+                          className="h-4 w-4"
+                          strokeWidth={2.5}
+                          aria-hidden
+                        />
+                        Details
+                        {row.photoUrls.length > 0 ? (
+                          <span className="ml-1 rounded-full bg-blue-700 px-2 py-0.5 text-xs font-black tabular-nums">
+                            {row.photoUrls.length}
+                          </span>
+                        ) : null}
+                      </SupercellButton>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white print:block print:rounded-none print:border print:border-black print:bg-white">
+            <table className="min-w-[760px] w-full border-collapse text-left print:min-w-0 print:bg-white">
             <thead>
               <tr className="bg-blue-500 print:bg-white">
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
@@ -568,8 +638,9 @@ export default function HistoryList() {
                 </Fragment>
               ))}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+        </>
       ) : null}
 
       {isFreePlan && restaurantId ? (
