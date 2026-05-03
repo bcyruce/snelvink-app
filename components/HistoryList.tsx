@@ -10,7 +10,7 @@ import {
 } from "@/lib/historyExport";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Download, Eye, X } from "lucide-react";
+import { ChevronRight, Download, Eye, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 type HaccpModuleType =
@@ -64,6 +64,7 @@ type ReportRow = {
   userName: string;
   valueOrStatus: string;
   isOverLimit: boolean;
+  status: "approved" | "rejected" | null;
   detailFields: { key: string; label: string; value: string }[];
   source: "haccp" | "custom";
   photoUrls: string[];
@@ -431,6 +432,15 @@ export default function HistoryList() {
           userName: row.user_id ? (userNameById.get(row.user_id) ?? "Onbekend") : "Onbekend",
           valueOrStatus,
           isOverLimit,
+          status:
+            row.module_type === "ontvangst" ||
+            row.module_type === "custom_boolean"
+              ? row.status === "goedgekeurd"
+                ? "approved"
+                : row.status === "afgekeurd"
+                  ? "rejected"
+                  : null
+              : null,
           detailFields: buildHaccpDetailFields(row, valueOrStatus, t),
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
@@ -458,6 +468,7 @@ export default function HistoryList() {
           userName: "Onbekend",
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
           isOverLimit: false,
+          status: null,
           detailFields: [
             {
               key: "valueStatus",
@@ -650,69 +661,61 @@ export default function HistoryList() {
 
       {rows.length > 0 ? (
         <>
-          <div className="space-y-4 print:hidden">
+          <div className="space-y-3 print:hidden">
             {groupedRows.map((group) => (
               <section
                 key={`mobile-${group.label}`}
-                className="overflow-hidden rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
               >
-                <div className="border-b border-slate-200 bg-slate-100 px-4 py-3 text-sm font-black uppercase tracking-wide text-slate-700">
+                <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
                   {group.label}
                 </div>
                 <ul className="divide-y divide-slate-100">
                   {group.rows.map((row) => (
-                    <li key={`mobile-${row.id}`} className="px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
-                          <span className="font-semibold text-slate-600">
-                            {translateHaccpText(row.taskName)}
-                          </span>
-                          {" · "}
-                          <span className="font-black text-slate-900">
+                    <li key={`mobile-${row.id}`}>
+                      <button
+                        type="button"
+                        onClick={() => setDetailRow(row)}
+                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-slate-50"
+                      >
+                        <span className="flex h-11 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-slate-100 text-[13px] font-black tabular-nums leading-none text-slate-700">
+                          {formatLogTime(row.created_at, locale)}
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-black leading-tight text-slate-900">
                             {translateHaccpText(row.apparaat)}
                           </span>
-                        </p>
-                        <p
+                          <span className="mt-0.5 block truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            {translateHaccpText(row.taskName)}
+                          </span>
+                        </span>
+
+                        <span
                           className={[
-                            "shrink-0 whitespace-nowrap text-sm font-black",
-                            row.isOverLimit ? "text-red-600" : "text-slate-900",
+                            "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-black",
+                            row.isOverLimit || row.status === "rejected"
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : row.status === "approved"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-50 text-slate-800",
                           ].join(" ")}
                         >
                           {translateHaccpText(row.valueOrStatus)}
-                        </p>
-                      </div>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
-                          <span className="whitespace-nowrap font-bold tabular-nums text-slate-700">
-                            {formatLogTime(row.created_at, locale)}
+                        </span>
+
+                        {row.photoUrls.length > 0 ? (
+                          <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-black tabular-nums text-blue-700">
+                            {row.photoUrls.length}
                           </span>
-                          {row.isOverLimit ? (
-                            <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-red-700">
-                              {t("overLimit")}
-                            </span>
-                          ) : null}
-                        </div>
-                        <SupercellButton
-                          type="button"
-                          size="sm"
-                          variant="neutral"
-                          onClick={() => setDetailRow(row)}
-                          textCase="normal"
-                          className="inline-flex min-h-[28px] items-center gap-1 rounded-lg px-2 py-1 text-[11px]"
-                        >
-                          <Eye
-                            className="h-3.5 w-3.5"
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
-                          Details
-                          {row.photoUrls.length > 0 ? (
-                            <span className="rounded-full bg-blue-700 px-1.5 py-0.5 text-[10px] font-black text-white tabular-nums">
-                              {row.photoUrls.length}
-                            </span>
-                          ) : null}
-                        </SupercellButton>
-                      </div>
+                        ) : null}
+
+                        <ChevronRight
+                          className="h-4 w-4 shrink-0 text-slate-400"
+                          strokeWidth={2.5}
+                          aria-hidden
+                        />
+                      </button>
                     </li>
                   ))}
                 </ul>
