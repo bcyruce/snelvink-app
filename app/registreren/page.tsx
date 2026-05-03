@@ -1,10 +1,10 @@
 "use client";
 
+import AppHeader from "@/components/AppHeader";
 import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import RecordSelectionModal from "@/components/RecordSelectionModal";
 import ScheduleReminderList from "@/components/ScheduleReminderList";
 import SupercellButton from "@/components/SupercellButton";
-import ThemePicker from "@/components/ThemePicker";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -46,43 +46,7 @@ function RegistrerenContent() {
     <>
       <VerifyEmailBanner />
 
-      {/* Header */}
-      <header
-        className="px-5 pt-6 pb-5"
-        style={{ background: theme.primary }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div
-              style={{
-                fontSize: 34,
-                fontWeight: 800,
-                color: "#fff",
-                letterSpacing: "0.06em",
-                lineHeight: 1,
-                fontFamily: "'Trebuchet MS', sans-serif",
-                textTransform: "uppercase",
-              }}
-            >
-              SNEL<span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
-            </div>
-            <div
-              style={{
-                fontSize: 9.5,
-                fontWeight: 600,
-                color: "rgba(255,255,255,0.4)",
-                letterSpacing: "0.15em",
-                marginTop: 3,
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {t("brandTagline")}
-            </div>
-          </div>
-          <ThemePicker />
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main Content */}
       <section

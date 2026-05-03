@@ -1,12 +1,12 @@
 "use client";
 
 import AddModuleModal from "@/components/AddModuleModal";
+import AppHeader from "@/components/AppHeader";
 import FloatingMenu, { type MenuTab } from "@/components/FloatingMenu";
 import HistoryList from "@/components/HistoryList";
 import RestaurantTab from "@/components/RestaurantTab";
 import SettingsTab from "@/components/SettingsTab";
 import SortableModuleCard from "@/components/SortableModuleCard";
-import ThemePicker from "@/components/ThemePicker";
 import UndoToast from "@/components/UndoToast";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { UserProvider, useUser } from "@/hooks/useUser";
@@ -35,7 +35,6 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { Construction, Pencil, Plus, User, Users } from "lucide-react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
@@ -218,40 +217,8 @@ function HomeContent() {
   return (
     <>
       <VerifyEmailBanner />
-      
-      {/* 深色 Header */}
-      <header 
-        className="px-5 pt-6 pb-5"
-        style={{ background: theme.primary }}
-      >
-        <div className="flex items-center justify-between">
-          {/* Logo + 标题 */}
-          <div className="flex items-center gap-3">
-            <Image
-              src="/logo-snelvink.png"
-              alt="Snelvink"
-              width={88}
-              height={88}
-              priority
-              className="h-20 w-20 shrink-0 select-none sm:h-22 sm:w-22"
-            />
-            <div style={{
-              fontSize: 34,
-              fontWeight: 800,
-              color: "#fff",
-              letterSpacing: "0.06em",
-              lineHeight: 1,
-              fontFamily: "'Trebuchet MS', sans-serif",
-              textTransform: "uppercase",
-            }}>
-              SNEL<span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
-            </div>
-          </div>
 
-          {/* 调色盘按钮 */}
-          <ThemePicker />
-        </div>
-      </header>
+      <AppHeader />
 
       <section
         className="relative px-4 pb-28 pt-0"
