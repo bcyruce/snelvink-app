@@ -304,19 +304,20 @@ function buildHaccpDetailFields(
     });
   }
 
-  if (row.opmerking && row.opmerking.trim().length > 0) {
-    fields.push({
-      key: "remarks",
-      label: t("remarks"),
-      value: row.opmerking,
-    });
-  }
-
   if (row.correction_action && row.correction_action.trim().length > 0) {
     fields.push({
       key: "correctiveAction",
       label: t("correctiveAction"),
       value: row.correction_action,
+    });
+  }
+
+  // Keep remarks at the end so users always find it last.
+  if (row.opmerking && row.opmerking.trim().length > 0) {
+    fields.push({
+      key: "remarks",
+      label: t("remarks"),
+      value: row.opmerking,
     });
   }
 
@@ -660,54 +661,58 @@ export default function HistoryList() {
                 </div>
                 <ul className="divide-y divide-slate-100">
                   {group.rows.map((row) => (
-                    <li key={`mobile-${row.id}`} className="px-4 py-3">
-                      <div className="mb-1.5 flex items-center justify-between gap-3">
-                        <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                          {t("time")}
-                        </span>
-                        <span className="text-sm font-black tabular-nums text-slate-900">
-                          {formatLogTime(row.created_at, locale)}
-                        </span>
+                    <li key={`mobile-${row.id}`} className="px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
+                          <span className="font-semibold text-slate-600">
+                            {translateHaccpText(row.taskName)}
+                          </span>
+                          {" · "}
+                          <span className="font-black text-slate-900">
+                            {translateHaccpText(row.apparaat)}
+                          </span>
+                        </p>
+                        <p
+                          className={[
+                            "shrink-0 whitespace-nowrap text-sm font-black",
+                            row.isOverLimit ? "text-red-600" : "text-slate-900",
+                          ].join(" ")}
+                        >
+                          {translateHaccpText(row.valueOrStatus)}
+                        </p>
                       </div>
-                      <p className="text-sm font-semibold text-slate-600">
-                        {translateHaccpText(row.taskName)}
-                      </p>
-                      <p className="text-base font-black text-slate-900">
-                        {translateHaccpText(row.apparaat)}
-                      </p>
-                      <p
-                        className={[
-                          "mt-1 text-sm font-black",
-                          row.isOverLimit ? "text-red-600" : "text-slate-900",
-                        ].join(" ")}
-                      >
-                        {translateHaccpText(row.valueOrStatus)}
-                        {row.isOverLimit ? (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-red-700">
-                            {t("overLimit")}
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                          <span className="whitespace-nowrap font-bold tabular-nums text-slate-700">
+                            {formatLogTime(row.created_at, locale)}
                           </span>
-                        ) : null}
-                      </p>
-                      <SupercellButton
-                        type="button"
-                        size="sm"
-                        variant="neutral"
-                        onClick={() => setDetailRow(row)}
-                        textCase="normal"
-                        className="mt-2 inline-flex min-h-[34px] items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs"
-                      >
-                        <Eye
-                          className="h-3.5 w-3.5"
-                          strokeWidth={2.5}
-                          aria-hidden
-                        />
-                        Details
-                        {row.photoUrls.length > 0 ? (
-                          <span className="ml-1 rounded-full bg-blue-700 px-2 py-0.5 text-xs font-black tabular-nums">
-                            {row.photoUrls.length}
-                          </span>
-                        ) : null}
-                      </SupercellButton>
+                          {row.isOverLimit ? (
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-red-700">
+                              {t("overLimit")}
+                            </span>
+                          ) : null}
+                        </div>
+                        <SupercellButton
+                          type="button"
+                          size="sm"
+                          variant="neutral"
+                          onClick={() => setDetailRow(row)}
+                          textCase="normal"
+                          className="inline-flex min-h-[28px] items-center gap-1 rounded-lg px-2 py-1 text-[11px]"
+                        >
+                          <Eye
+                            className="h-3.5 w-3.5"
+                            strokeWidth={2.5}
+                            aria-hidden
+                          />
+                          Details
+                          {row.photoUrls.length > 0 ? (
+                            <span className="rounded-full bg-blue-700 px-1.5 py-0.5 text-[10px] font-black text-white tabular-nums">
+                              {row.photoUrls.length}
+                            </span>
+                          ) : null}
+                        </SupercellButton>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -788,11 +793,11 @@ export default function HistoryList() {
                             aria-hidden
                           />
                           Details
-                          {row.photoUrls.length > 0 ? (
+                        {row.photoUrls.length > 0 ? (
                             <span className="ml-1 rounded-full bg-blue-700 px-2 py-0.5 text-xs font-black tabular-nums">
-                              {row.photoUrls.length}
-                            </span>
-                          ) : null}
+                            {row.photoUrls.length}
+                          </span>
+                        ) : null}
                         </SupercellButton>
 
                         <div className="hidden print:block">
