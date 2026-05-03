@@ -2,7 +2,6 @@
 
 import ExportModal, { type ExportFormat } from "@/components/ExportModal";
 import SupercellButton from "@/components/SupercellButton";
-import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   exportHistoryAsCsv,
@@ -11,8 +10,8 @@ import {
 } from "@/lib/historyExport";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Download, Eye, Printer, X } from "lucide-react";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Download, Eye, X } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 type HaccpModuleType =
   | "koeling"
@@ -64,11 +63,8 @@ type ReportRow = {
   taskName: string;
   userName: string;
   valueOrStatus: string;
-  remarks: string;
-  correctionAction: string | null;
   isOverLimit: boolean;
-  ontvangstStatus: "goedgekeurd" | "afgekeurd" | null;
-  ontvangstReasons: string[];
+  detailFields: { key: string; label: string; value: string }[];
   source: "haccp" | "custom";
   photoUrls: string[];
 };
@@ -147,7 +143,6 @@ function describeHaccpRow(
   apparaat: string;
   taskName: string;
   valueOrStatus: string;
-  remarks: string;
 } {
   const customName = customModuleName(row);
 
@@ -159,15 +154,10 @@ function describeHaccpRow(
         : row.status === "afgekeurd"
           ? t("afgekeurd")
           : t("unknown");
-    const reasonsList =
-      Array.isArray(row.reasons) && row.reasons.length > 0
-        ? row.reasons.join(", ")
-        : (row.reason ?? "");
     return {
       apparaat: productName,
       taskName: customName ?? moduleLabel(row.module_type, t),
       valueOrStatus: status,
-      remarks: reasonsList,
     };
   }
   if (row.module_type === "schoonmaak" || row.module_type === "custom_list") {
@@ -176,8 +166,7 @@ function describeHaccpRow(
     return {
       apparaat: location,
       taskName: customName ?? moduleLabel(row.module_type, t),
-      valueOrStatus: tasks.length > 0 ? t("completed") : t("noItemsChecked"),
-      remarks: tasks.length > 0 ? tasks.join(", ") : "",
+      valueOrStatus: tasks.length > 0 ? tasks.join(", ") : "—",
     };
   }
   // Koeling / kerntemperatuur / custom_number
@@ -192,7 +181,6 @@ function describeHaccpRow(
       typeof row.temperature === "number"
         ? `${Number(row.temperature).toFixed(1)} ${unit}`
         : "—",
-    remarks: row.opmerking ?? "",
   };
 }
 
@@ -257,6 +245,84 @@ function isCustomLogData(value: unknown): value is CustomModuleLogData {
   return Array.isArray(maybe.values);
 }
 
+function statusLabel(
+  status: "goedgekeurd" | "afgekeurd" | null,
+  t: ReturnType<typeof useTranslation>["t"],
+): string {
+  if (status === "goedgekeurd") return t("goedgekeurd");
+  if (status === "afgekeurd") return t("afgekeurd");
+  return "—";
+}
+
+function buildHaccpDetailFields(
+  row: HaccpRecordRow,
+  valueOrStatus: string,
+  t: ReturnType<typeof useTranslation>["t"],
+): { key: string; label: string; value: string }[] {
+  const fields: { key: string; label: string; value: string }[] = [
+    { key: "valueStatus", label: t("valueStatus"), value: valueOrStatus || "—" },
+  ];
+
+  if (
+    (row.module_type === "koeling" ||
+      row.module_type === "kerntemperatuur" ||
+      row.module_type === "custom_number") &&
+    typeof row.temperature === "number"
+  ) {
+    fields.push({
+      key: "temperature",
+      label: t("temperature"),
+      value: String(row.temperature),
+    });
+  }
+
+  if (row.module_type === "ontvangst" || row.module_type === "custom_boolean") {
+    fields.push({
+      key: "status",
+      label: t("status"),
+      value: statusLabel(row.status, t),
+    });
+    const selectedReasons =
+      Array.isArray(row.reasons) && row.reasons.length > 0
+        ? row.reasons.join(", ")
+        : row.reason ?? "";
+    if (selectedReasons.trim().length > 0) {
+      fields.push({
+        key: "selectedReasons",
+        label: t("selectedReasons", { count: Array.isArray(row.reasons) ? row.reasons.length : 1 }),
+        value: selectedReasons,
+      });
+    }
+  }
+
+  if (row.module_type === "schoonmaak" || row.module_type === "custom_list") {
+    const selectedItems = row.completed_tasks ?? [];
+    fields.push({
+      key: "items",
+      label: t("items"),
+      value: selectedItems.length > 0 ? selectedItems.join(", ") : t("noItemsChecked"),
+    });
+  }
+
+  if (row.opmerking && row.opmerking.trim().length > 0) {
+    fields.push({
+      key: "remarks",
+      label: t("remarks"),
+      value: row.opmerking,
+    });
+  }
+
+  if (row.correction_action && row.correction_action.trim().length > 0) {
+    fields.push({
+      key: "correctiveAction",
+      label: t("correctiveAction"),
+      value: row.correction_action,
+    });
+  }
+
+  return fields;
+}
+
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
 
 function toInputDate(date: Date): string {
@@ -276,7 +342,6 @@ export default function HistoryList() {
 
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showPrintUpgradeModal, setShowPrintUpgradeModal] = useState(false);
   const [detailRow, setDetailRow] = useState<ReportRow | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -347,7 +412,7 @@ export default function HistoryList() {
 
     const haccpRows =
       haccpData.map((row) => {
-        const { apparaat, taskName, valueOrStatus, remarks } =
+        const { apparaat, taskName, valueOrStatus } =
           describeHaccpRow(row, t);
         const limit = equipmentLimit(row);
         const isOverLimit =
@@ -357,19 +422,6 @@ export default function HistoryList() {
           typeof row.temperature === "number" &&
           typeof limit === "number" &&
           Number(row.temperature) > limit;
-        const isStatusType =
-          row.module_type === "ontvangst" ||
-          row.module_type === "custom_boolean";
-        const ontvangstReasons = isStatusType
-          ? Array.isArray(row.reasons) && row.reasons.length > 0
-            ? row.reasons
-            : row.reason
-              ? row.reason
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter((s) => s.length > 0)
-              : []
-          : [];
         return {
           id: `h-${row.id}`,
           created_at: row.recorded_at,
@@ -377,11 +429,8 @@ export default function HistoryList() {
           taskName,
           userName: row.user_id ? (userNameById.get(row.user_id) ?? "Onbekend") : "Onbekend",
           valueOrStatus,
-          remarks,
-          correctionAction: row.correction_action ?? null,
           isOverLimit,
-          ontvangstStatus: isStatusType ? row.status : null,
-          ontvangstReasons,
+          detailFields: buildHaccpDetailFields(row, valueOrStatus, t),
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
         };
@@ -407,11 +456,17 @@ export default function HistoryList() {
           taskName: moduleName,
           userName: "Onbekend",
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
-          remarks: value.remark ?? "",
-          correctionAction: null,
           isOverLimit: false,
-          ontvangstStatus: null,
-          ontvangstReasons: [],
+          detailFields: [
+            {
+              key: "valueStatus",
+              label: t("valueStatus"),
+              value: `${value.value} ${value.unit ?? ""}`.trim() || "—",
+            },
+            ...(value.remark && value.remark.trim().length > 0
+              ? [{ key: "remarks", label: t("remarks"), value: value.remark }]
+              : []),
+          ],
           source: "custom" as const,
           photoUrls,
         }));
@@ -437,6 +492,14 @@ export default function HistoryList() {
   const defaultStartDate = toInputDate(
     new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
   );
+  const exportTaskOptions = useMemo(
+    () =>
+      Array.from(new Set(rows.map((row) => row.taskName))).map((taskName) => ({
+        value: taskName,
+        label: translateHaccpText(taskName),
+      })),
+    [rows, translateHaccpText],
+  );
 
   const handleExportDownload = useCallback(
     async ({
@@ -444,11 +507,13 @@ export default function HistoryList() {
       endDate,
       format,
       includePhotos,
+      taskFilter,
     }: {
       startDate: string;
       endDate: string;
       format: ExportFormat;
       includePhotos: boolean;
+      taskFilter: string;
     }) => {
       setIsExporting(true);
       try {
@@ -461,22 +526,27 @@ export default function HistoryList() {
             return (
               !Number.isNaN(timestamp) &&
               timestamp >= start.getTime() &&
-              timestamp <= end.getTime()
+              timestamp <= end.getTime() &&
+              (taskFilter === "all" || row.taskName === taskFilter)
             );
           })
           .sort(
             (a, b) =>
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
           )
-          .map((row) => ({
-            createdAt: row.created_at,
-            category: translateHaccpText(row.taskName),
-            item: translateHaccpText(row.apparaat),
-            valueOrStatus: translateHaccpText(row.valueOrStatus),
-            userName: row.userName,
-            remarks: row.remarks ? translateHaccpText(row.remarks) : "",
-            photoUrls: row.photoUrls,
-          }));
+          .map((row) => {
+            const remarkValue =
+              row.detailFields.find((field) => field.key === "remarks")?.value ?? "";
+            return {
+              createdAt: row.created_at,
+              category: translateHaccpText(row.taskName),
+              item: translateHaccpText(row.apparaat),
+              valueOrStatus: translateHaccpText(row.valueOrStatus),
+              userName: row.userName,
+              remarks: remarkValue ? translateHaccpText(remarkValue) : "",
+              photoUrls: row.photoUrls,
+            };
+          });
 
         if (format === "csv") {
           exportHistoryAsCsv(exportRows, {
@@ -503,32 +573,18 @@ export default function HistoryList() {
         setIsExporting(false);
       }
     },
-    [restaurant?.name, rows, translateHaccpText],
+    [restaurant?.name, rows, translateHaccpText, t],
   );
-
-  const handlePrintClick = () => {
-    if (isFreePlan) {
-      setShowPrintUpgradeModal(true);
-      return;
-    }
-    window.print();
-  };
 
   const groupedRows = groupRowsByDate(rows, t, locale);
 
   return (
     <div className="mt-2 print:mt-0">
-      <UpgradePromptModal
-        open={showPrintUpgradeModal}
-        onClose={() => setShowPrintUpgradeModal(false)}
-      >
-        {t("reportUpgradeMessage")}
-      </UpgradePromptModal>
-
       <ExportModal
         open={showExportModal}
         initialStartDate={defaultStartDate}
         initialEndDate={defaultEndDate}
+        taskOptions={exportTaskOptions}
         isExporting={isExporting}
         onClose={() => {
           if (isExporting) return;
@@ -557,18 +613,6 @@ export default function HistoryList() {
       >
         <Download className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
         Exporteer
-      </SupercellButton>
-
-      <SupercellButton
-        type="button"
-        size="lg"
-        variant="primary"
-        onClick={handlePrintClick}
-        textCase="normal"
-        className="mb-5 flex h-20 w-full items-center justify-center gap-3 text-xl print:hidden"
-      >
-        <Printer className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
-        {t("generateNvwaReport")}
       </SupercellButton>
 
       <div className="mb-4 flex items-center justify-end gap-3 print:hidden">
@@ -616,8 +660,8 @@ export default function HistoryList() {
                 </div>
                 <ul className="divide-y divide-slate-100">
                   {group.rows.map((row) => (
-                    <li key={`mobile-${row.id}`} className="px-4 py-4">
-                      <div className="mb-2 flex items-center justify-between gap-3">
+                    <li key={`mobile-${row.id}`} className="px-4 py-3">
+                      <div className="mb-1.5 flex items-center justify-between gap-3">
                         <span className="text-xs font-bold uppercase tracking-wide text-slate-500">
                           {t("time")}
                         </span>
@@ -625,15 +669,15 @@ export default function HistoryList() {
                           {formatLogTime(row.created_at, locale)}
                         </span>
                       </div>
+                      <p className="text-sm font-semibold text-slate-600">
+                        {translateHaccpText(row.taskName)}
+                      </p>
                       <p className="text-base font-black text-slate-900">
                         {translateHaccpText(row.apparaat)}
                       </p>
-                      <p className="mt-0.5 text-sm font-semibold text-slate-600">
-                        {translateHaccpText(row.taskName)}
-                      </p>
                       <p
                         className={[
-                          "mt-2 text-sm font-black",
+                          "mt-1 text-sm font-black",
                           row.isOverLimit ? "text-red-600" : "text-slate-900",
                         ].join(" ")}
                       >
@@ -644,19 +688,16 @@ export default function HistoryList() {
                           </span>
                         ) : null}
                       </p>
-                      <p className="mt-2 text-sm text-slate-700">
-                        {row.remarks ? translateHaccpText(row.remarks) : "—"}
-                      </p>
                       <SupercellButton
                         type="button"
                         size="sm"
-                        variant="primary"
+                        variant="neutral"
                         onClick={() => setDetailRow(row)}
                         textCase="normal"
-                        className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3 py-2 text-sm"
+                        className="mt-2 inline-flex min-h-[34px] items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs"
                       >
                         <Eye
-                          className="h-4 w-4"
+                          className="h-3.5 w-3.5"
                           strokeWidth={2.5}
                           aria-hidden
                         />
@@ -682,16 +723,16 @@ export default function HistoryList() {
                   {t("time")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  {t("equipment")}
+                  {t("task")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  {t("task")}
+                  {t("equipment")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
                   {t("valueStatus")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  {t("remarks")}
+                  {t("details")}
                 </th>
               </tr>
             </thead>
@@ -712,10 +753,10 @@ export default function HistoryList() {
                         {formatLogTime(row.created_at, locale)}
                       </td>
                       <td className="border-b border-slate-100 px-4 py-5 text-base font-bold text-slate-900 print:border-black print:text-black">
-                        {translateHaccpText(row.apparaat)}
+                        {translateHaccpText(row.taskName)}
                       </td>
                       <td className="border-b border-slate-100 px-4 py-5 text-base font-semibold text-slate-600 print:border-black print:text-black">
-                        {translateHaccpText(row.taskName)}
+                        {translateHaccpText(row.apparaat)}
                       </td>
                       <td
                         className={[
@@ -755,17 +796,17 @@ export default function HistoryList() {
                         </SupercellButton>
 
                         <div className="hidden print:block">
-                          <p className="font-medium text-black">
-                            {row.remarks
-                              ? translateHaccpText(row.remarks)
-                              : "—"}
-                          </p>
-                          {row.correctionAction ? (
-                            <p className="mt-1 font-bold text-black">
-                          {t("correctiveAction")}:{" "}
-                              {translateHaccpText(row.correctionAction)}
-                            </p>
-                          ) : null}
+                          <ul className="space-y-1">
+                            {row.detailFields.map((field, index) => (
+                              <li
+                                key={`${row.id}-print-detail-${index}`}
+                                className="text-sm text-black"
+                              >
+                                <span className="font-bold">{field.label}: </span>
+                                <span>{translateHaccpText(field.value)}</span>
+                              </li>
+                            ))}
+                          </ul>
                           {row.photoUrls.length > 0 ? (
                             <div className="mt-2 flex flex-wrap gap-2">
                               {row.photoUrls.map((url, i) => (
@@ -907,54 +948,25 @@ function DetailModal({ row, onClose, translate, t, locale }: DetailModalProps) {
             </p>
           </div>
 
-          {row.ontvangstReasons.length > 0 ? (
-            <section className="mt-5">
-              <h3
-                className={[
-                  "text-xs font-bold uppercase tracking-wide",
-                  row.ontvangstStatus === "afgekeurd"
-                    ? "text-red-700"
-                    : "text-emerald-700",
-                ].join(" ")}
-              >
-                {t("selectedReasons", { count: row.ontvangstReasons.length })}
-              </h3>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {row.ontvangstReasons.map((reason, i) => (
-                  <li
-                    key={`${row.id}-reason-${i}`}
-                    className={[
-                      "rounded-full border-2 px-3 py-1 text-sm font-bold",
-                      row.ontvangstStatus === "afgekeurd"
-                        ? "border-red-300 bg-red-50 text-red-700"
-                        : "border-emerald-300 bg-emerald-50 text-emerald-700",
-                    ].join(" ")}
-                  >
-                    {translate(reason)}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {row.correctionAction ? (
-            <section className="mt-5">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-red-700">
-                {t("correctiveAction")}
-              </h3>
-              <p className="mt-2 whitespace-pre-wrap rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-base font-semibold leading-relaxed text-red-800 shadow-sm">
-                {translate(row.correctionAction)}
-              </p>
-            </section>
-          ) : null}
-
           <section className="mt-5">
             <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              {t("remarks")}
+              {t("details")}
             </h3>
-            <p className="mt-2 whitespace-pre-wrap rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-semibold leading-relaxed text-slate-800 shadow-sm">
-              {row.remarks ? translate(row.remarks) : t("noRemarks")}
-            </p>
+            <div className="mt-2 space-y-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+              {row.detailFields.map((field, index) => (
+                <div
+                  key={`${row.id}-detail-field-${index}`}
+                  className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                >
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                    {field.label}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm font-semibold text-slate-900">
+                    {field.value ? translate(field.value) : "—"}
+                  </p>
+                </div>
+              ))}
+            </div>
           </section>
 
           {row.photoUrls.length > 0 ? (

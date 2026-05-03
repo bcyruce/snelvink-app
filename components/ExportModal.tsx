@@ -11,12 +11,14 @@ type ExportModalSubmitPayload = {
   endDate: string;
   format: ExportFormat;
   includePhotos: boolean;
+  taskFilter: string;
 };
 
 type ExportModalProps = {
   open: boolean;
   initialStartDate: string;
   initialEndDate: string;
+  taskOptions: { value: string; label: string }[];
   isExporting: boolean;
   onClose: () => void;
   onSubmit: (payload: ExportModalSubmitPayload) => Promise<void> | void;
@@ -26,6 +28,7 @@ export default function ExportModal({
   open,
   initialStartDate,
   initialEndDate,
+  taskOptions,
   isExporting,
   onClose,
   onSubmit,
@@ -34,6 +37,7 @@ export default function ExportModal({
   const [endDate, setEndDate] = useState(initialEndDate);
   const [format, setFormat] = useState<ExportFormat>("csv");
   const [includePhotos, setIncludePhotos] = useState(true);
+  const [taskFilter, setTaskFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,6 +46,7 @@ export default function ExportModal({
     setEndDate(initialEndDate);
     setFormat("csv");
     setIncludePhotos(true);
+    setTaskFilter("all");
     setError(null);
   }, [open, initialStartDate, initialEndDate]);
 
@@ -57,7 +62,7 @@ export default function ExportModal({
       setError("Startdatum mag niet later zijn dan einddatum.");
       return;
     }
-    await onSubmit({ startDate, endDate, format, includePhotos });
+    await onSubmit({ startDate, endDate, format, includePhotos, taskFilter });
   };
 
   return (
@@ -141,6 +146,28 @@ export default function ExportModal({
                 PDF
               </SupercellButton>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="export-task-filter"
+              className="block text-base font-black text-slate-700"
+            >
+              Taak
+            </label>
+            <select
+              id="export-task-filter"
+              value={taskFilter}
+              onChange={(event) => setTaskFilter(event.target.value)}
+              className="h-14 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500"
+            >
+              <option value="all">Alle taken</option>
+              {taskOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {format === "pdf" ? (
