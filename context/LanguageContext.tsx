@@ -445,6 +445,9 @@ export const translations = {
       "Kies {count} dag(en) voor deze maandelijkse taak.",
     scheduleYearlyDates:
       "Kies {count} datum(s) voor deze jaarlijkse taak.",
+    manageItems: "Beheer je items en instellingen",
+    selectToRecord: "Selecteer een item om te registreren",
+    lastValue: "Laatste waarde",
   },
   en: {
     // Core HACCP terms
@@ -876,6 +879,9 @@ export const translations = {
     scheduleWeeklyDays: "Choose {count} day(s) for this weekly task.",
     scheduleMonthlyDays: "Choose {count} day(s) for this monthly task.",
     scheduleYearlyDates: "Choose {count} date(s) for this yearly task.",
+    manageItems: "Manage your items and settings",
+    selectToRecord: "Select an item to record",
+    lastValue: "Last value",
   },
 } as const;
 

@@ -162,38 +162,45 @@ function TaskList({
   const router = useRouter();
   if (tasks.length === 0) {
     return (
-      <p className="rounded-2xl bg-white px-4 py-5 text-center text-sm font-semibold text-slate-500 shadow-sm">
+      <p className="rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
         {emptyText}
       </p>
     );
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      {tasks.map((task) => (
+    <ul className="flex flex-col gap-1.5">
+      {tasks.map((task, index) => (
         <li key={task.key}>
-          <SupercellButton
+          <button
             type="button"
-            variant="neutral"
             onClick={() => router.push(task.route)}
-            className="flex min-h-[72px] w-full items-center gap-3 text-left normal-case"
+            className="group flex w-full items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-3 text-left transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md active:scale-[0.98]"
+            style={{ animationDelay: `${index * 30}ms` }}
           >
-            <AlertCircle
+            <div
               className={[
-                "h-5 w-5 shrink-0",
-                task.completed ? "text-emerald-500" : "text-red-500",
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                task.completed ? "bg-emerald-100" : "bg-red-100",
               ].join(" ")}
-            />
+            >
+              <AlertCircle
+                className={[
+                  "h-5 w-5",
+                  task.completed ? "text-emerald-600" : "text-red-500",
+                ].join(" ")}
+              />
+            </div>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-lg font-black text-slate-900">
+              <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
                 {task.title}
               </span>
-              <span className="block truncate text-sm font-semibold text-slate-500">
+              <span className="block truncate text-xs font-medium text-[var(--theme-muted)]">
                 {task.subtitle}
               </span>
             </span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
-          </SupercellButton>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5" />
+          </button>
         </li>
       ))}
     </ul>
@@ -215,11 +222,11 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={[
-        "rounded-full border-2 px-3 py-1.5 text-xs font-black uppercase tracking-wide",
+        "rounded-lg border px-3 py-1.5 text-xs font-bold transition-all",
         densePressClass,
         active
-          ? "border-blue-700 bg-blue-500 text-white"
-          : "border-slate-200 bg-white text-slate-600",
+          ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-white shadow-md shadow-[var(--theme-primary)]/20"
+          : "border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] text-[var(--theme-muted)] hover:border-[var(--theme-primary)]/30",
       ].join(" ")}
     >
       {label}
@@ -241,29 +248,29 @@ function ReminderSection({
   const [open, setOpen] = useState(defaultOpen);
   const count = tasks.length;
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-2">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         className={[
-          "flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-sm",
+          "flex items-center justify-between gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-3 text-left transition-all hover:border-[var(--theme-primary)]/30",
           densePressClass,
         ].join(" ")}
       >
         <span className="flex items-center gap-2">
-          <span className="text-sm font-black uppercase tracking-wide text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
             {title}
           </span>
           {count > 0 ? (
-            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-black text-white">
+            <span className="rounded-full bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-white">
               {count}
             </span>
           ) : null}
         </span>
         <ChevronDown
           className={[
-            "h-5 w-5 shrink-0 text-slate-400 transition-transform",
+            "h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform",
             open ? "rotate-180" : "",
           ].join(" ")}
         />
@@ -294,17 +301,17 @@ function DayPreviewModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
       <button
         type="button"
         aria-label={t("close")}
         onClick={onClose}
         className="absolute inset-0 h-full w-full"
       />
-      <div className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl">
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+      <div className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-[var(--theme-bg)] p-5 shadow-2xl">
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--theme-muted)]/30" />
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h3 className="text-lg font-black capitalize text-slate-900">
+          <h3 className="text-base font-black capitalize text-[var(--theme-fg)]">
             {titleLabel}
           </h3>
           <button
@@ -312,46 +319,53 @@ function DayPreviewModal({
             onClick={onClose}
             aria-label={t("close")}
             className={[
-              "flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100",
+              "flex h-9 w-9 items-center justify-center rounded-full text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-card-bg)]",
               densePressClass,
             ].join(" ")}
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         {tasks.length === 0 ? (
-          <p className="rounded-2xl bg-slate-50 px-4 py-5 text-center text-sm font-semibold text-slate-500">
+          <p className="rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
             {t("noPlannedTasksOnDay")}
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {tasks.map((task) => (
+          <ul className="flex flex-col gap-1.5">
+            {tasks.map((task, index) => (
               <li key={task.key}>
-                <SupercellButton
+                <button
                   type="button"
-                  variant="neutral"
                   onClick={() => {
                     onClose();
                     router.push(task.route);
                   }}
-                  className="flex min-h-[72px] w-full items-center gap-3 text-left normal-case"
+                  className="group flex w-full items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-3 text-left transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md active:scale-[0.98]"
+                  style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <AlertCircle
+                  <div
                     className={[
-                      "h-5 w-5 shrink-0",
-                      task.completed ? "text-emerald-500" : "text-red-500",
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                      task.completed ? "bg-emerald-100" : "bg-red-100",
                     ].join(" ")}
-                  />
+                  >
+                    <AlertCircle
+                      className={[
+                        "h-5 w-5",
+                        task.completed ? "text-emerald-600" : "text-red-500",
+                      ].join(" ")}
+                    />
+                  </div>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-lg font-black text-slate-900">
+                    <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
                       {task.title}
                     </span>
-                    <span className="block truncate text-sm font-semibold text-slate-500">
+                    <span className="block truncate text-xs font-medium text-[var(--theme-muted)]">
                       {task.subtitle}
                     </span>
                   </span>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
-                </SupercellButton>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5" />
+                </button>
               </li>
             ))}
           </ul>
@@ -378,8 +392,8 @@ function CalendarMonth({
   const cells = Array.from({ length: 42 }, (_, index) => addDays(start, index));
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
-      <div className="grid grid-cols-7 gap-1 pb-2 text-center text-[10px] font-black uppercase text-slate-400">
+    <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-3">
+      <div className="grid grid-cols-7 gap-1 pb-2 text-center text-[10px] font-bold uppercase text-[var(--theme-muted)]">
         {weekdays.map((day) => (
           <span key={day}>{day}</span>
         ))}
@@ -394,25 +408,25 @@ function CalendarMonth({
               type="button"
               onClick={() => onSelectDate(date)}
               className={[
-                "flex min-h-[76px] flex-col rounded-xl border p-1 text-left active:bg-slate-100",
+                "flex min-h-[68px] flex-col rounded-lg border p-1 text-left transition-all hover:border-[var(--theme-primary)]/30",
                 densePressClass,
                 isCurrentMonth
-                  ? "border-slate-100 bg-slate-50"
-                  : "border-transparent bg-transparent opacity-40",
+                  ? "border-[var(--theme-card-border)] bg-white"
+                  : "border-transparent bg-transparent opacity-30",
               ].join(" ")}
             >
-              <span className="text-xs font-black text-slate-700">
+              <span className="text-[11px] font-bold text-[var(--theme-fg)]">
                 {date.getDate()}
               </span>
-              <span className="mt-1 flex flex-col gap-1">
+              <span className="mt-0.5 flex flex-col gap-0.5">
                 {dayTasks.slice(0, 2).map((task) => (
                   <span
                     key={task.key}
                     className={[
-                      "truncate rounded px-1 py-0.5 text-[10px] font-bold",
+                      "truncate rounded px-1 py-0.5 text-[9px] font-bold",
                       task.completed
                         ? "bg-emerald-100 text-emerald-700"
-                        : "bg-blue-100 text-blue-700",
+                        : "bg-[var(--theme-primary)]/10 text-[var(--theme-primary)]",
                     ].join(" ")}
                     title={task.title}
                   >
@@ -420,7 +434,7 @@ function CalendarMonth({
                   </span>
                 ))}
                 {dayTasks.length > 2 ? (
-                  <span className="text-[10px] font-bold text-slate-400">
+                  <span className="text-[9px] font-bold text-[var(--theme-muted)]">
                     +{dayTasks.length - 2}
                   </span>
                 ) : null}
@@ -631,20 +645,25 @@ export default function ScheduleReminderList() {
   if (!restaurantId) return null;
 
   return (
-    <section className="mt-6 flex flex-col gap-5">
+    <section className="mt-6 flex flex-col gap-4">
+      {/* Header */}
       <div className="flex items-center gap-2">
-        <CalendarClock className="h-5 w-5 text-slate-500" />
-        <h2 className="text-lg font-black text-slate-900">{t("reminders")}</h2>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--theme-primary)]/10">
+          <CalendarClock className="h-5 w-5 text-[var(--theme-primary)]" />
+        </div>
+        <h2 className="text-lg font-black text-[var(--theme-fg)]">{t("reminders")}</h2>
       </div>
 
       {loading ? (
-        <p className="rounded-2xl bg-white px-4 py-5 text-center text-sm font-semibold text-slate-500 shadow-sm">
-          {t("loadingReminders")}
-        </p>
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+        </div>
       ) : errorMessage ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center text-sm font-semibold text-red-700">
-          {errorMessage}
-        </p>
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-5">
+          <p className="text-center text-sm font-bold text-red-700">
+            {errorMessage}
+          </p>
+        </div>
       ) : (
         <>
           <ReminderSection
@@ -664,16 +683,18 @@ export default function ScheduleReminderList() {
             defaultOpen={false}
           />
 
-          <section className="flex flex-col gap-3">
-            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">
+          {/* Calendar Section */}
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
               {t("allPlanning")}
             </h3>
+            
             {moduleLabels.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-black uppercase tracking-wide text-slate-500">
+              <div className="mb-4">
+                <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--theme-muted)]">
                   {t("filterByType")}
                 </span>
-                <div className="-mx-1 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   <FilterChip
                     active={moduleFilter === "all"}
                     onClick={() => setModuleFilter("all")}
@@ -690,15 +711,17 @@ export default function ScheduleReminderList() {
                 </div>
               </div>
             ) : null}
-            <div className="flex items-center gap-2">
+
+            {/* Month Navigation */}
+            <div className="mb-3 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setMonthIndex((value) => Math.max(0, value - 1))}
                 disabled={monthIndex === 0}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--theme-card-border)] bg-white text-[var(--theme-fg)] transition-colors hover:border-[var(--theme-primary)]/30 disabled:opacity-40"
                 aria-label={t("previousMonth")}
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-4 w-4" />
               </button>
               <select
                 value={calendarMonth.getMonth()}
@@ -711,7 +734,7 @@ export default function ScheduleReminderList() {
                   if (target) setMonthIndex(target.index);
                 }}
                 aria-label={t("chooseMonth")}
-                className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2 text-base font-black capitalize text-slate-900 shadow-sm"
+                className="min-w-0 flex-1 rounded-lg border border-[var(--theme-card-border)] bg-white px-3 py-2 text-sm font-bold capitalize text-[var(--theme-fg)]"
               >
                 {monthsForYear.map((option) => (
                   <option key={option.index} value={option.month}>
@@ -732,7 +755,7 @@ export default function ScheduleReminderList() {
                   if (target) setMonthIndex(target.index);
                 }}
                 aria-label={t("chooseYear")}
-                className="rounded-xl bg-white px-3 py-2 text-base font-black text-slate-900 shadow-sm"
+                className="rounded-lg border border-[var(--theme-card-border)] bg-white px-3 py-2 text-sm font-bold text-[var(--theme-fg)]"
               >
                 {yearOptions.map((year) => (
                   <option key={year} value={year}>
@@ -746,22 +769,24 @@ export default function ScheduleReminderList() {
                   setMonthIndex((value) => Math.min(maxMonthIndex, value + 1))
                 }
                 disabled={monthIndex === maxMonthIndex}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm disabled:opacity-40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--theme-card-border)] bg-white text-[var(--theme-fg)] transition-colors hover:border-[var(--theme-primary)]/30 disabled:opacity-40"
                 aria-label={t("nextMonth")}
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-center text-base font-black capitalize text-slate-900">
+
+            <p className="mb-3 text-center text-sm font-bold capitalize text-[var(--theme-fg)]">
               {monthLabel(calendarMonth, locale)}
             </p>
+            
             <CalendarMonth
               month={calendarMonth}
               tasks={filteredTasks}
               onSelectDate={(date) => setSelectedDate(date)}
               weekdays={weekdayNames}
             />
-          </section>
+          </div>
         </>
       )}
 

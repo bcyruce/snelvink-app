@@ -511,74 +511,107 @@ function ListView({
 }: ListViewProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col gap-5">
-      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-        {title}
-      </h2>
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="mb-2">
+        <h2 className="text-2xl font-black tracking-tight text-[var(--theme-fg)]">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm font-medium text-[var(--theme-muted)]">
+          {mode === "manage" ? t("manageItems") : t("selectToRecord")}
+        </p>
+      </div>
 
       {!restaurantReady ? (
-        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
-          {t("noRestaurantLinked")}
-        </p>
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-5 py-8 text-center">
+          <p className="text-base font-semibold text-[var(--theme-muted)]">
+            {t("noRestaurantLinked")}
+          </p>
+        </div>
       ) : null}
 
       {errorMessage ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
-          {errorMessage}
-        </p>
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-center text-sm font-bold text-red-700">
+            {errorMessage}
+          </p>
+        </div>
       ) : null}
 
       {loading ? (
-        <p className="text-center text-slate-500">{t("loadingEquipment")}</p>
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+        </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {equipments.map((eq) => (
+        <ul className="flex flex-col gap-2">
+          {equipments.map((eq, index) => (
             <li key={eq.id}>
-              <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
+              <div 
+                className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 {/* Record mode: click to record */}
                 {mode === "record" ? (
                   <button
                     type="button"
                     onClick={() => onPick(eq)}
-                    className="flex flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
+                    className="flex flex-1 items-center gap-3 text-left"
                   >
-                    <div className="flex flex-1 flex-col gap-1">
-                      <span className="text-xl font-bold text-slate-900 truncate">
-                        {eq.name}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
+                      <span className="text-lg font-black text-[var(--theme-primary)]">
+                        {eq.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
+                        {eq.name}
+                      </span>
+                      {eq.last_temp !== null ? (
+                        <span className="text-sm font-medium text-[var(--theme-muted)]">
+                          {t("lastValue")}: {eq.last_temp.toFixed(1)}
+                          {eq.unit ?? "°C"}
+                        </span>
+                      ) : null}
+                    </div>
                     <ChevronRight
-                      className="h-6 w-6 text-slate-400 shrink-0"
+                      className="h-5 w-5 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-1"
                       strokeWidth={2.5}
                       aria-hidden
                     />
                   </button>
                 ) : (
                   /* Manage mode: display name with edit/delete buttons */
-                  <div className="flex flex-1 flex-col gap-1">
-                    <span className="text-xl font-bold text-slate-900 truncate">
-                      {eq.name}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
+                      <span className="text-lg font-black text-[var(--theme-primary)]">
+                        {eq.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
+                        {eq.name}
+                      </span>
+                    </div>
+                  </>
                 )}
 
                 {/* Right: edit and delete buttons - only in manage mode */}
                 {mode === "manage" ? (
-                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                  <div className="flex items-center gap-1">
                     <a
                       href={`${editBasePath}/${eq.id}`}
                       aria-label={`${t("edit")} ${eq.name}`}
-                      className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)]"
                     >
-                      <Pencil className="h-5 w-5" aria-hidden />
+                      <Pencil className="h-4 w-4" aria-hidden />
                     </a>
                     <button
                       type="button"
                       onClick={() => onDelete(eq)}
                       aria-label={`${t("delete")} ${eq.name}`}
-                      className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-red-50 hover:text-red-500"
                     >
-                      <Trash2 className="h-5 w-5" aria-hidden />
+                      <Trash2 className="h-4 w-4" aria-hidden />
                     </button>
                   </div>
                 ) : null}
@@ -590,12 +623,14 @@ function ListView({
 
       {/* Add button only in manage mode */}
       {mode === "manage" ? (
-        <InlineAddInput
-          label={t("addProduct", { name: t("equipment").toLowerCase() })}
-          placeholder={t("equipmentName")}
-          onAdd={onAdd}
-          disabled={!restaurantReady}
-        />
+        <div className="mt-2">
+          <InlineAddInput
+            label={t("addProduct", { name: t("equipment").toLowerCase() })}
+            placeholder={t("equipmentName")}
+            onAdd={onAdd}
+            disabled={!restaurantReady}
+          />
+        </div>
       ) : null}
     </div>
   );
@@ -712,156 +747,157 @@ function RecordView({
   })();
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Datum & tijd van meting */}
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          {t("measurementDateTimeLabel")}
-        </span>
-        <input
-          type="datetime-local"
-          value={recordedAtLocal}
-          onChange={(e) => onRecordedAtChange(e.target.value)}
-          className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
-        />
-      </label>
+    <div className="flex flex-col gap-5">
+      {/* Header Card */}
+      <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+        <h3 className="text-center text-xl font-black text-[var(--theme-fg)]">
+          {equipment?.name ?? title}
+        </h3>
+        {limitTemp !== null ? (
+          <p className="mt-1 text-center text-sm font-semibold text-[var(--theme-muted)]">
+            {t("limitLabel", { value: limitTemp.toFixed(1), unit: unitLabel })}
+          </p>
+        ) : null}
+      </div>
 
-      <h3 className="text-center text-2xl font-extrabold text-slate-900">
-        {equipment?.name ?? title}
-      </h3>
-
-      {/* Limit info */}
-      {limitTemp !== null ? (
-        <p className="text-center text-sm font-semibold text-slate-500">
-          {t("limitLabel", { value: limitTemp.toFixed(1), unit: unitLabel })}
-        </p>
-      ) : null}
+      {/* Date/Time Input */}
+      <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+            {t("measurementDateTimeLabel")}
+          </span>
+          <input
+            type="datetime-local"
+            value={recordedAtLocal}
+            onChange={(e) => onRecordedAtChange(e.target.value)}
+            className="h-14 w-full rounded-xl border border-[var(--theme-card-border)] bg-white px-4 text-center text-lg font-bold tabular-nums text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+          />
+        </label>
+      </div>
 
       {errorMessage ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
-          {errorMessage}
-        </p>
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-center text-sm font-bold text-red-700">
+            {errorMessage}
+          </p>
+        </div>
       ) : null}
 
-      {/*
-        Temperatuur-blok – verticale layout:
-          [ +1  ][+0.1]   <- groot & klein, allebei met long-press
-              <temp>
-          [ -1  ][-0.1]
-      */}
-      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3">
-        {stepLayout === "double" ? (
-          <div className="flex w-full items-stretch gap-3">
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              {...incOnePress}
-              aria-label={t("increaseOneDegreeFast")}
-              className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
-            >
-              + 1°
-            </SupercellButton>
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              {...incTenthPress}
-              aria-label={t("increaseTenthDegreeFast")}
-              className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
-            >
-              + 0,1°
-            </SupercellButton>
-          </div>
-        ) : (
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            {...incCustomPress}
-            aria-label={t("increaseStepFast", { step: stepLabel, unit: unitLabel })}
-            className="flex min-h-[96px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
-          >
-            + {stepLabel}
-            {unitLabel ? ` ${unitLabel}` : ""}
-          </SupercellButton>
-        )}
-
-        <div className="flex w-full min-h-[6rem] items-center justify-center py-2">
-          {isManualEdit ? (
-            <input
-              ref={manualInputRef}
-              type="number"
-              inputMode="decimal"
-              step="0.1"
-              value={manualText}
-              onChange={(e) => setManualText(e.target.value)}
-              onBlur={commitManual}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  commitManual();
-                }
-                if (e.key === "Escape") setIsManualEdit(false);
-              }}
-              className={`w-full rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center text-7xl font-black tabular-nums leading-none shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 ${tempColorClass}`}
-              aria-label={t("manualTemperatureInput")}
-            />
+      {/* Temperature Control Card */}
+      <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+        <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3">
+          {/* Increase buttons */}
+          {stepLayout === "double" ? (
+            <div className="flex w-full items-stretch gap-2">
+              <SupercellButton
+                size="lg"
+                variant="neutral"
+                {...incOnePress}
+                aria-label={t("increaseOneDegreeFast")}
+                className="flex h-16 flex-[2] select-none items-center justify-center rounded-xl text-2xl font-black normal-case"
+              >
+                +1°
+              </SupercellButton>
+              <SupercellButton
+                size="lg"
+                variant="neutral"
+                {...incTenthPress}
+                aria-label={t("increaseTenthDegreeFast")}
+                className="flex h-16 flex-1 select-none items-center justify-center rounded-xl text-lg font-bold normal-case"
+              >
+                +0.1°
+              </SupercellButton>
+            </div>
           ) : (
             <SupercellButton
               size="lg"
               variant="neutral"
-              onClick={startManual}
-              aria-label={t("currentTemperatureAria", { temp: tempLabel })}
-              className={`min-h-[112px] w-full rounded-3xl border border-slate-100 px-2 py-4 text-center text-8xl tabular-nums leading-none normal-case ${tempColorClass}`}
+              {...incCustomPress}
+              aria-label={t("increaseStepFast", { step: stepLabel, unit: unitLabel })}
+              className="flex h-16 w-full select-none items-center justify-center rounded-xl text-xl font-black normal-case"
             >
-              {tempLabel}
+              +{stepLabel}{unitLabel ? ` ${unitLabel}` : ""}
+            </SupercellButton>
+          )}
+
+          {/* Temperature Display */}
+          <div className="w-full py-3">
+            {isManualEdit ? (
+              <input
+                ref={manualInputRef}
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={manualText}
+                onChange={(e) => setManualText(e.target.value)}
+                onBlur={commitManual}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitManual();
+                  }
+                  if (e.key === "Escape") setIsManualEdit(false);
+                }}
+                className={`w-full rounded-2xl border-2 border-[var(--theme-primary)] bg-white px-4 py-6 text-center text-5xl font-black tabular-nums leading-none outline-none ${tempColorClass}`}
+                aria-label={t("manualTemperatureInput")}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={startManual}
+                aria-label={t("currentTemperatureAria", { temp: tempLabel })}
+                className={`w-full rounded-2xl border-2 border-transparent bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-6 text-center text-5xl font-black tabular-nums leading-none transition-all hover:border-[var(--theme-primary)]/30 active:scale-[0.98] ${isOverLimit ? "text-red-600" : "text-[var(--theme-fg)]"}`}
+              >
+                {tempLabel}
+              </button>
+            )}
+          </div>
+
+          {/* Decrease buttons */}
+          {stepLayout === "double" ? (
+            <div className="flex w-full items-stretch gap-2">
+              <SupercellButton
+                size="lg"
+                variant="neutral"
+                {...decOnePress}
+                aria-label={t("decreaseOneDegreeFast")}
+                className="flex h-16 flex-[2] select-none items-center justify-center rounded-xl text-2xl font-black normal-case"
+              >
+                -1°
+              </SupercellButton>
+              <SupercellButton
+                size="lg"
+                variant="neutral"
+                {...decTenthPress}
+                aria-label={t("decreaseTenthDegreeFast")}
+                className="flex h-16 flex-1 select-none items-center justify-center rounded-xl text-lg font-bold normal-case"
+              >
+                -0.1°
+              </SupercellButton>
+            </div>
+          ) : (
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              {...decCustomPress}
+              aria-label={t("decreaseStepFast", { step: stepLabel, unit: unitLabel })}
+              className="flex h-16 w-full select-none items-center justify-center rounded-xl text-xl font-black normal-case"
+            >
+              -{stepLabel}{unitLabel ? ` ${unitLabel}` : ""}
             </SupercellButton>
           )}
         </div>
-
-        {stepLayout === "double" ? (
-          <div className="flex w-full items-stretch gap-3">
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              {...decOnePress}
-              aria-label={t("decreaseOneDegreeFast")}
-              className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
-            >
-              − 1°
-            </SupercellButton>
-            <SupercellButton
-              size="lg"
-              variant="neutral"
-              {...decTenthPress}
-              aria-label={t("decreaseTenthDegreeFast")}
-              className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
-            >
-              − 0,1°
-            </SupercellButton>
-          </div>
-        ) : (
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            {...decCustomPress}
-            aria-label={t("decreaseStepFast", { step: stepLabel, unit: unitLabel })}
-            className="flex min-h-[96px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
-          >
-            − {stepLabel}
-            {unitLabel ? ` ${unitLabel}` : ""}
-          </SupercellButton>
-        )}
+        <p className="mt-3 text-center text-xs font-medium text-[var(--theme-muted)]">
+          {t("holdButtonHint")}
+        </p>
       </div>
 
-      <p className="text-center text-sm text-slate-500">
-        {t("holdButtonHint")}
-      </p>
-
-      {/* Limit waarschuwing + corrigerende maatregel */}
+      {/* Limit Warning */}
       {isOverLimit && limitTemp !== null ? (
         <div
           role="alert"
           aria-live="polite"
-          className="flex flex-col gap-3 rounded-2xl border-2 border-red-300 border-b-4 border-b-red-500 bg-red-50 px-5 py-4 shadow-sm"
+          className="rounded-2xl border-2 border-red-300 bg-red-50 p-4"
         >
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white">
@@ -871,26 +907,26 @@ function RecordView({
               <p className="text-base font-black text-red-700">
                 {t("valueOverLimit", { value: limitTemp.toFixed(1), unit: unitLabel })}
               </p>
-              <p className="mt-1 text-sm font-semibold text-red-700/90">
+              <p className="mt-1 text-sm font-medium text-red-600">
                 {t("correctiveActionRequiredHelp")}
               </p>
             </div>
           </div>
-          <label className="flex flex-col gap-2">
-            <span className="text-xs font-bold uppercase tracking-wide text-red-700">
+          <label className="mt-4 flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-red-700">
               {t("correctiveAction")}
             </span>
             <textarea
               value={correctionAction}
               onChange={(e) => onCorrectionActionChange(e.target.value)}
               placeholder={t("correctiveActionPlaceholder")}
-              rows={3}
+              rows={2}
               autoFocus
               className={[
-                "w-full resize-none rounded-2xl border-2 border-b-4 bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none focus:ring-4",
+                "w-full resize-none rounded-xl border-2 bg-white px-4 py-3 text-base font-semibold text-[var(--theme-fg)] outline-none transition-all focus:ring-2",
                 correctionRequired
-                  ? "border-red-400 border-b-red-500 focus:border-red-500 focus:ring-red-500/20"
-                  : "border-slate-200 border-b-slate-300 focus:border-slate-900 focus:ring-slate-900/10",
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-slate-200 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20",
               ].join(" ")}
               aria-invalid={correctionRequired}
               aria-required="true"
@@ -904,81 +940,86 @@ function RecordView({
         </div>
       ) : null}
 
-      {/* Opmerking */}
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          {t("noteOptional")}
-        </span>
-        <textarea
-          value={opmerking}
-          onChange={(e) => onOpmerkingChange(e.target.value)}
-          placeholder={t("notePlaceholder")}
-          rows={3}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+      {/* Note Section */}
+      <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+            {t("noteOptional")}
+          </span>
+          <textarea
+            value={opmerking}
+            onChange={(e) => onOpmerkingChange(e.target.value)}
+            placeholder={t("notePlaceholder")}
+            rows={2}
+            className="w-full resize-none rounded-xl border border-[var(--theme-card-border)] bg-white px-4 py-3 text-base font-medium text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+          />
+        </label>
+      </div>
+
+      {/* Photo Section */}
+      <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={onPhotoChange}
         />
-      </label>
+        <button
+          type="button"
+          onClick={onPickPhotos}
+          disabled={isSaving || photoSlotsLeft <= 0}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--theme-card-border)] bg-white text-base font-bold text-[var(--theme-muted)] transition-all hover:border-[var(--theme-primary)] hover:text-[var(--theme-primary)] disabled:opacity-50"
+        >
+          <Camera className="h-5 w-5" aria-hidden />
+          {photoSlotsLeft <= 0
+            ? t("maxPhotos", { count: MAX_PHOTOS })
+            : photoFiles.length > 0
+              ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
+              : t("pickPhoto", { count: MAX_PHOTOS })}
+        </button>
 
-      {/* Foto-knop */}
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={onPhotoChange}
-      />
-      <SupercellButton
-        size="lg"
-        variant="neutral"
-        onClick={onPickPhotos}
-        disabled={isSaving || photoSlotsLeft <= 0}
-        className="flex min-h-[80px] w-full items-center justify-center gap-3 border border-slate-200 text-xl normal-case"
-      >
-        <Camera className="h-7 w-7" aria-hidden />
-        {photoSlotsLeft <= 0
-          ? t("maxPhotos", { count: MAX_PHOTOS })
-          : photoFiles.length > 0
-            ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
-            : t("pickPhoto", { count: MAX_PHOTOS })}
-      </SupercellButton>
+        {photoPreviews.length > 0 ? (
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {photoPreviews.map((url, i) => (
+              <div key={url} className="relative">
+                <img
+                  src={url}
+                  alt={t("photoAlt", { number: i + 1 })}
+                  className="h-20 w-full rounded-lg border border-[var(--theme-card-border)] object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => onRemovePhoto(i)}
+                  aria-label={t("removePhoto", { number: i + 1 })}
+                  className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-transform hover:scale-110"
+                >
+                  <X className="h-3 w-3" strokeWidth={3} aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
-      {photoPreviews.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3">
-          {photoPreviews.map((url, i) => (
-            <div key={url} className="relative">
-              <img
-                src={url}
-                alt={t("photoAlt", { number: i + 1 })}
-                className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
-              />
-              <SupercellButton
-                size="icon"
-                variant="danger"
-                onClick={() => onRemovePhoto(i)}
-                aria-label={t("removePhoto", { number: i + 1 })}
-                className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
-              >
-                <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-              </SupercellButton>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {/* Save */}
+      {/* Save Button */}
       <SupercellButton
         size="lg"
         variant="success"
         onClick={onSave}
         disabled={!canSave}
         aria-busy={isSaving}
-        className="flex min-h-[96px] w-full items-center justify-center gap-3 text-2xl normal-case"
+        className="flex h-14 w-full items-center justify-center gap-2 rounded-xl text-lg font-black normal-case"
       >
         {isSaving ? (
-          t("saving")
+          <span className="flex items-center gap-2">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            {t("saving")}
+          </span>
         ) : (
           <>
-            <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
+            <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
             {t("save")}
           </>
         )}

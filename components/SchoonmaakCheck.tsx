@@ -363,56 +363,76 @@ export default function SchoonmaakCheck({
   // =========================================================================
   if (mode === "manage") {
     return (
-      <div className="mt-2 flex flex-col gap-6">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          {headingTitle}
-        </h2>
+      <div className="flex flex-col gap-4">
+        {/* Header */}
+        <div className="mb-2">
+          <h2 className="text-2xl font-black tracking-tight text-[var(--theme-fg)]">
+            {headingTitle}
+          </h2>
+          <p className="mt-1 text-sm font-medium text-[var(--theme-muted)]">
+            {t("manageItems")}
+          </p>
+        </div>
 
         {errorMessage ? (
-          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
-            {errorMessage}
-          </p>
+          <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-center text-sm font-bold text-red-700">
+              {errorMessage}
+            </p>
+          </div>
         ) : null}
 
         {!restaurantId ? (
-          <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
-            {t("noRestaurantLinked")}
-          </p>
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-5 py-8 text-center">
+            <p className="text-base font-semibold text-[var(--theme-muted)]">
+              {t("noRestaurantLinked")}
+            </p>
+          </div>
         ) : null}
 
         {/* ===== Locaties beheer ===== */}
         <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
             {isCustom ? t("groups") : t("locations")}
           </h3>
 
           {loadingLocations ? (
-            <p className="text-center text-slate-500">{t("loadingLocations")}</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+            </div>
           ) : (
-            <ul className="flex flex-col gap-3">
-              {locations.map((loc) => (
+            <ul className="flex flex-col gap-2">
+              {locations.map((loc, index) => (
                 <li key={loc.id}>
-                  <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-                    <div className="flex flex-1 flex-col gap-1">
-                      <span className="text-xl font-bold text-slate-900 truncate">
+                  <div 
+                    className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
+                      <span className="text-lg font-black text-[var(--theme-primary)]">
+                        {loc.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
                         {loc.name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                    <div className="flex items-center gap-1">
                       <a
                         href={`${editBasePath}/${loc.id}`}
                         aria-label={`${t("edit")} ${loc.name}`}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)]"
                       >
-                        <Pencil className="h-5 w-5" aria-hidden />
+                        <Pencil className="h-4 w-4" aria-hidden />
                       </a>
                       <button
                         type="button"
                         onClick={() => handleDeleteLocation(loc)}
                         aria-label={`${t("delete")} ${loc.name}`}
-                        className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-red-50 hover:text-red-500"
                       >
-                        <Trash2 className="h-5 w-5" aria-hidden />
+                        <Trash2 className="h-4 w-4" aria-hidden />
                       </button>
                     </div>
                   </div>
@@ -421,12 +441,14 @@ export default function SchoonmaakCheck({
             </ul>
           )}
 
-          <InlineAddInput
-            label={t("addLocation", { name: groupSingularLower })}
-            placeholder={t("nameOfLocation", { name: groupSingularLower })}
-            onAdd={handleAddLocation}
-            disabled={!restaurantId}
-          />
+          <div className="mt-2">
+            <InlineAddInput
+              label={t("addLocation", { name: groupSingularLower })}
+              placeholder={t("nameOfLocation", { name: groupSingularLower })}
+              onAdd={handleAddLocation}
+              disabled={!restaurantId}
+            />
+          </div>
         </section>
       </div>
     );
@@ -436,7 +458,7 @@ export default function SchoonmaakCheck({
   // RECORD MODE: Full recording flow
   // =========================================================================
   return (
-    <div className="mt-2 flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <UpgradePromptModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
@@ -444,55 +466,81 @@ export default function SchoonmaakCheck({
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-        {headingTitle}
-      </h2>
+      {/* Header */}
+      <div className="mb-2">
+        <h2 className="text-2xl font-black tracking-tight text-[var(--theme-fg)]">
+          {headingTitle}
+        </h2>
+        <p className="mt-1 text-sm font-medium text-[var(--theme-muted)]">
+          {t("selectToRecord")}
+        </p>
+      </div>
 
       {errorMessage ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
-          {errorMessage}
-        </p>
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-center text-sm font-bold text-red-700">
+            {errorMessage}
+          </p>
+        </div>
       ) : null}
 
       {!restaurantId ? (
-        <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
-          {t("noRestaurantLinked")}
-        </p>
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-5 py-8 text-center">
+          <p className="text-base font-semibold text-[var(--theme-muted)]">
+            {t("noRestaurantLinked")}
+          </p>
+        </div>
       ) : null}
 
       {/* ===== Locatie sectie ===== */}
       <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            {t("chooseLocation", { name: groupSingularLower })}
-          </h3>
-        </div>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+          {t("chooseLocation", { name: groupSingularLower })}
+        </h3>
 
         {selectedLocation ? (
-          <p className="truncate rounded-2xl bg-slate-100 px-5 py-5 text-2xl font-black text-slate-900 shadow-sm">
-            {selectedLocation.name}
-          </p>
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--theme-primary)]/10">
+              <span className="text-base font-black text-[var(--theme-primary)]">
+                {selectedLocation.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <span className="min-w-0 flex-1 truncate text-base font-bold text-[var(--theme-fg)]">
+              {selectedLocation.name}
+            </span>
+          </div>
         ) : loadingLocations ? (
-          <p className="text-center text-slate-500">{t("loadingLocations")}</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+          </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {locations.map((loc) => (
-              <SupercellButton
+          <div className="flex flex-col gap-2">
+            {locations.map((loc, index) => (
+              <button
                 key={loc.id}
-                size="lg"
-                variant="neutral"
+                type="button"
                 onClick={() => setSelectedLocation(loc)}
-                className="flex h-20 w-full items-center justify-between text-left text-2xl normal-case"
+                className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 text-left transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md active:scale-[0.98]"
+                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <span className="flex-1 truncate">{loc.name}</span>
-              </SupercellButton>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
+                  <span className="text-lg font-black text-[var(--theme-primary)]">
+                    {loc.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="min-w-0 flex-1 truncate text-base font-bold text-[var(--theme-fg)]">
+                  {loc.name}
+                </span>
+              </button>
             ))}
             {allowAddGroupInRecord ? (
-              <InlineAddInput
-                label={t("addLocation", { name: groupSingularLower })}
-                placeholder={t("nameOfLocation", { name: groupSingularLower })}
-                onAdd={handleAddLocation}
-              />
+              <div className="mt-2">
+                <InlineAddInput
+                  label={t("addLocation", { name: groupSingularLower })}
+                  placeholder={t("nameOfLocation", { name: groupSingularLower })}
+                  onAdd={handleAddLocation}
+                />
+              </div>
             ) : null}
           </div>
         )}
@@ -500,161 +548,176 @@ export default function SchoonmaakCheck({
 
       {/* ===== Datum/tijd (alleen na locatie selectie) ===== */}
       {selectedLocation ? (
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            {t("dateTimeLabel")}
-          </span>
-          <input
-            type="datetime-local"
-            value={recordedAtLocal}
-            onChange={(e) => setRecordedAtLocal(e.target.value)}
-            className="h-20 w-full rounded-2xl border-2 border-slate-300 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 sm:text-3xl"
-          />
-        </label>
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+              {t("dateTimeLabel")}
+            </span>
+            <input
+              type="datetime-local"
+              value={recordedAtLocal}
+              onChange={(e) => setRecordedAtLocal(e.target.value)}
+              className="h-14 w-full rounded-xl border border-[var(--theme-card-border)] bg-white px-4 text-center text-lg font-bold tabular-nums text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+            />
+          </label>
+        </div>
       ) : null}
 
       {/* ===== Taken sectie ===== */}
       {selectedLocation ? (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
               {isCustom ? t("items") : t("cleaningTasks")}
             </h3>
-            <span className="text-sm font-bold text-slate-500">
+            <span className="rounded-full bg-[var(--theme-primary)]/10 px-2.5 py-1 text-xs font-bold text-[var(--theme-primary)]">
               {t("completedCount", { done: completedCount, total: tasks.length })}
             </span>
           </div>
 
           {loadingTasks ? (
-            <p className="text-center text-slate-500">{t("loadingTasks")}</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+            </div>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-2">
               {tasks.map((task) => {
                 const checked = checkedTaskIds.has(task.id);
                 return (
                   <li key={task.id}>
-                    <SupercellButton
-                      size="lg"
-                      variant={checked ? "success" : "neutral"}
+                    <button
+                      type="button"
                       onClick={() => toggleTask(task.id)}
                       aria-pressed={checked}
-                      className="flex h-20 w-full items-center justify-between gap-3 px-5 text-left text-xl normal-case"
+                      className={[
+                        "flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all active:scale-[0.98]",
+                        checked
+                          ? "border-emerald-500 bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                          : "border-[var(--theme-card-border)] bg-white text-[var(--theme-fg)] hover:border-[var(--theme-primary)]/30",
+                      ].join(" ")}
                     >
-                      <span className="flex-1 truncate">{task.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-base font-bold">{task.name}</span>
                       <span
                         className={[
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
                           checked
-                            ? "bg-white text-green-600"
-                            : "border-2 border-slate-300 bg-white text-slate-300",
+                            ? "bg-white text-emerald-500"
+                            : "border-2 border-[var(--theme-card-border)] bg-white",
                         ].join(" ")}
                         aria-hidden
                       >
                         {checked ? (
-                          <Check className="h-6 w-6" strokeWidth={3} />
+                          <Check className="h-4 w-4" strokeWidth={3} />
                         ) : null}
                       </span>
-                    </SupercellButton>
+                    </button>
                   </li>
                 );
               })}
             </ul>
           )}
-        </section>
+        </div>
       ) : null}
 
       {/* ===== Opmerking + Foto + opslaan ===== */}
       {selectedLocation && !loadingTasks ? (
-        <section className="flex flex-col gap-4">
-          {/* Opmerking */}
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              {t("noteOptional")}
+        <div className="flex flex-col gap-4">
+          {/* Note Section */}
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+                {t("noteOptional")}
+              </span>
+              <textarea
+                value={opmerking}
+                onChange={(e) => setOpmerking(e.target.value)}
+                placeholder={t("notePlaceholder")}
+                rows={2}
+                className="w-full resize-none rounded-xl border border-[var(--theme-card-border)] bg-white px-4 py-3 text-base font-medium text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+              />
+            </label>
+          </div>
+
+          {/* Photo Section */}
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+            <span className="mb-3 block text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+              {t("photosOptional")}
             </span>
-            <textarea
-              value={opmerking}
-              onChange={(e) => setOpmerking(e.target.value)}
-              placeholder={t("notePlaceholder")}
-              rows={3}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoChange}
             />
-          </label>
 
-          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            {t("photosOptional")}
-          </h3>
+            <button
+              type="button"
+              onClick={handlePickPhotos}
+              disabled={isSaving || photoSlotsLeft <= 0}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--theme-card-border)] bg-white text-base font-bold text-[var(--theme-muted)] transition-all hover:border-[var(--theme-primary)] hover:text-[var(--theme-primary)] disabled:opacity-50"
+            >
+              <Camera className="h-5 w-5" aria-hidden />
+              {photoSlotsLeft <= 0
+                ? t("maxPhotos", { count: MAX_PHOTOS })
+                : photoFiles.length > 0
+                  ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
+                  : t("pickPhoto", { count: MAX_PHOTOS })}
+            </button>
 
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handlePhotoChange}
-          />
+            {photoPreviews.length > 0 ? (
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {photoPreviews.map((url, i) => (
+                  <div key={url} className="relative">
+                    <img
+                      src={url}
+                      alt={t("photoAlt", { number: i + 1 })}
+                      className="h-20 w-full rounded-lg border border-[var(--theme-card-border)] object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      aria-label={t("removePhoto", { number: i + 1 })}
+                      className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-transform hover:scale-110"
+                    >
+                      <X className="h-3 w-3" strokeWidth={3} aria-hidden />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            onClick={handlePickPhotos}
-            disabled={isSaving || photoSlotsLeft <= 0}
-            className="flex h-20 w-full items-center justify-center gap-3 border-2 border-slate-300 text-xl normal-case"
-          >
-            <Camera className="h-7 w-7" aria-hidden />
-            {photoSlotsLeft <= 0
-              ? t("maxPhotos", { count: MAX_PHOTOS })
-              : photoFiles.length > 0
-                ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
-                : t("pickPhoto", { count: MAX_PHOTOS })}
-          </SupercellButton>
-
-          {photoPreviews.length > 0 ? (
-            <div className="grid grid-cols-3 gap-3">
-              {photoPreviews.map((url, i) => (
-                <div key={url} className="relative">
-                  <img
-                    src={url}
-                    alt={t("photoAlt", { number: i + 1 })}
-                    className="h-28 w-full rounded-xl border border-slate-200 object-cover shadow-sm"
-                  />
-                  <SupercellButton
-                    size="icon"
-                    variant="danger"
-                    onClick={() => removePhoto(i)}
-                    aria-label={t("removePhoto", { number: i + 1 })}
-                    className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
-                  >
-                    <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-                  </SupercellButton>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
+          {/* Save Button */}
           <SupercellButton
             size="lg"
             variant="success"
             onClick={handleSave}
             disabled={!canSave}
             aria-busy={isSaving}
-            className="flex h-24 w-full items-center justify-center gap-3 text-2xl normal-case"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl text-lg font-black normal-case"
           >
             {isSaving ? (
-              t("saving")
+              <span className="flex items-center gap-2">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                {t("saving")}
+              </span>
             ) : (
               <>
-                <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
+                <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
                 {t("save")} ({completedCount})
               </>
             )}
           </SupercellButton>
 
           {completedCount === 0 ? (
-            <p className="text-center text-sm text-slate-500">
+            <p className="text-center text-xs font-medium text-[var(--theme-muted)]">
               {t("selectAtLeastOneTask")}
             </p>
           ) : null}
-        </section>
+        </div>
       ) : null}
     </div>
   );
