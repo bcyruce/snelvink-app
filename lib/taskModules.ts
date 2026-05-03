@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   Clock,
   Droplet,
@@ -122,4 +123,99 @@ export function saveLayout(modules: TaskModule[]): void {
   } catch {
     // localStorage 写入失败时静默忽略（例如隐身模式配额）
   }
+}
+
+function normalizeModuleList(modules: TaskModule[]): TaskModule[] {
+  return modules
+    .filter((m) => !REMOVED_DEFAULT_IDS.has(m.id))
+    .map((m) => ({
+      ...m,
+      href: normalizeStoredModuleHref(m.href),
+    }));
+}
+
+/** Parse JSON from DB/localStorage into task modules; skips invalid entries. */
+export function parseTaskModulesFromJson(raw: unknown): TaskModule[] | null {
+  if (raw === null || raw === undefined) return null;
+  if (!Array.isArray(raw)) return null;
+  const out: TaskModule[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id : null;
+    const name = typeof o.name === "string" ? o.name : null;
+    const icon = typeof o.icon === "string" ? o.icon : null;
+    const href = typeof o.href === "string" ? o.href : null;
+    const isCustom = o.isCustom === true;
+    if (!id || !name || !icon || !href) continue;
+    out.push({
+      id,
+      name,
+      icon,
+      isCustom,
+      href: normalizeStoredModuleHref(href),
+    });
+  }
+  return out;
+}
+
+/**
+ * Prefer server layout when present so all browsers match.
+ * If server empty, use local (localStorage) so old single-device layouts still work.
+ */
+export function mergeServerAndLocalLayout(
+  serverModules: TaskModule[] | null,
+  localModules: TaskModule[],
+): TaskModule[] {
+  if (serverModules && serverModules.length > 0) {
+    return normalizeModuleList(serverModules);
+  }
+  const local = normalizeModuleList(localModules);
+  if (local.length > 0) return local;
+  return DEFAULT_MODULES;
+}
+
+/** True if layout is not the default four tiles in default order (incl. custom tiles). */
+export function layoutDiffersFromDefault(modules: TaskModule[]): boolean {
+  const ids = modules.map((m) => m.id).join("\0");
+  const defaultIds = DEFAULT_MODULES.map((m) => m.id).join("\0");
+  return ids !== defaultIds || modules.some((m) => m.isCustom);
+}
+
+export async function fetchRestaurantTaskModulesLayout(
+  client: SupabaseClient,
+  restaurantId: string,
+): Promise<TaskModule[] | null> {
+  const { data, error } = await client
+    .from("restaurant_task_modules_layout")
+    .select("modules")
+    .eq("restaurant_id", restaurantId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Task layout ophalen mislukt:", error.message);
+    return null;
+  }
+  return parseTaskModulesFromJson(data?.modules);
+}
+
+export async function upsertRestaurantTaskModulesLayout(
+  client: SupabaseClient,
+  restaurantId: string,
+  modules: TaskModule[],
+): Promise<boolean> {
+  const { error } = await client.from("restaurant_task_modules_layout").upsert(
+    {
+      restaurant_id: restaurantId,
+      modules,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "restaurant_id" },
+  );
+
+  if (error) {
+    console.warn("Task layout opslaan mislukt:", error.message);
+    return false;
+  }
+  return true;
 }

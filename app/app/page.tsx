@@ -14,10 +14,15 @@ import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { densePressClass } from "@/lib/uiMotion";
 import {
+  fetchRestaurantTaskModulesLayout,
+  layoutDiffersFromDefault,
   loadLayout,
+  mergeServerAndLocalLayout,
   saveLayout,
+  upsertRestaurantTaskModulesLayout,
   type TaskModule,
 } from "@/lib/taskModules";
+import { supabase } from "@/lib/supabase";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   DndContext,
@@ -61,7 +66,7 @@ type PendingDelete = {
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isLoading } = useUser();
+  const { user, isLoading, profile } = useUser();
   const { theme } = useTheme();
   const { t } = useTranslation();
 
@@ -72,6 +77,7 @@ function HomeContent() {
 
   const [activeTab, setActiveTab] = useState<MenuTab>(initialTab);
   const [modules, setModules] = useState<TaskModule[]>(() => loadLayout());
+  const [layoutHydrated, setLayoutHydrated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<TaskModule | null>(null);
@@ -85,6 +91,56 @@ function HomeContent() {
   useEffect(() => {
     saveLayout(modules);
   }, [modules]);
+
+  useEffect(() => {
+    if (!user || !profile?.restaurant_id) {
+      setLayoutHydrated(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLayoutHydrated(false);
+
+    void (async () => {
+      const fromServer = await fetchRestaurantTaskModulesLayout(
+        supabase,
+        profile.restaurant_id,
+      );
+      if (cancelled) return;
+
+      const local = loadLayout();
+      const merged = mergeServerAndLocalLayout(fromServer, local);
+      setModules(merged);
+      saveLayout(merged);
+
+      const serverEmpty = !fromServer || fromServer.length === 0;
+      if (serverEmpty && layoutDiffersFromDefault(merged)) {
+        await upsertRestaurantTaskModulesLayout(
+          supabase,
+          profile.restaurant_id,
+          merged,
+        );
+      }
+
+      if (!cancelled) setLayoutHydrated(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, profile?.restaurant_id]);
+
+  useEffect(() => {
+    if (!layoutHydrated || !profile?.restaurant_id) return;
+    const timer = window.setTimeout(() => {
+      void upsertRestaurantTaskModulesLayout(
+        supabase,
+        profile.restaurant_id,
+        modules,
+      );
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [modules, layoutHydrated, profile?.restaurant_id]);
 
   useEffect(() => {
     if (!isLoading && !user) {
