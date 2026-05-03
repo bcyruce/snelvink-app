@@ -2,7 +2,11 @@
 
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
-import { listItemVariants, modalBackdropVariants } from "@/lib/uiMotion";
+import {
+  listContainerVariants,
+  listItemVariants,
+  modalBackdropVariants,
+} from "@/lib/uiMotion";
 import {
   Menu,
   X,
@@ -135,7 +139,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
               initial={{ opacity: 0, scale: 0.85, y: 24, originX: 1, originY: 1 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 16 }}
-              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26 }}
               className="pointer-events-auto mr-4 w-56 overflow-hidden rounded-2xl shadow-2xl"
               style={{
                 background: theme.cardBg,
@@ -145,12 +149,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
             >
             <motion.nav
               className="py-2"
-              variants={{
-                initial: {},
-                animate: {
-                  transition: { staggerChildren: 0.02 },
-                },
-              }}
+              variants={listContainerVariants}
               initial="initial"
               animate="animate"
             >
@@ -164,7 +163,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                     whileHover={
                       disabled
                         ? undefined
-                        : { x: 4, transition: { type: "spring", stiffness: 480, damping: 26 } }
+                        : { x: 4, transition: { type: "spring", stiffness: 400, damping: 22 } }
                     }
                     whileTap={disabled ? undefined : { scale: 0.97 }}
                     onClick={() => handleSelect(id, disabled)}
@@ -183,7 +182,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                   >
                     <motion.span
                       animate={{ rotate: isActive ? [0, -8, 8, 0] : 0 }}
-                      transition={{ duration: 0.28, ease: "easeOut" }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
                       className="inline-flex"
                     >
                       <Icon
@@ -221,17 +220,17 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
           data-floating-menu
           type="button"
           onClick={handleToggle}
-          whileHover={{ scale: 1.06, y: -2 }}
-          whileTap={{ scale: 0.94, y: 1 }}
+          whileHover={{ scale: 1.08, y: -2 }}
+          whileTap={{ scale: 0.92, y: 1 }}
           animate={{
             rotate: isOpen ? 180 : 0,
             boxShadow: isOpen
               ? `0 2px 0 ${theme.primaryDark}, 0 4px 12px rgba(0,0,0,0.18)`
               : `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
           }}
-          transition={{ type: "spring", stiffness: 420, damping: 26 }}
-          className="pointer-events-auto mr-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ background: theme.primary, marginBottom: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 22 }}
+          className="pointer-events-auto mb-6 mr-4 flex h-14 w-14 items-center justify-center rounded-full"
+          style={{ background: theme.primary }}
           aria-label={isOpen ? t("menuClose") : t("menuOpen")}
           aria-expanded={isOpen}
         >
@@ -242,7 +241,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
               initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
               animate={{ rotate: 0, opacity: 1, scale: 1 }}
               exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.12 }}
+              transition={{ duration: 0.18 }}
               className="inline-flex"
             >
               <X className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -253,7 +252,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
               initial={{ rotate: 90, opacity: 0, scale: 0.6 }}
               animate={{ rotate: 0, opacity: 1, scale: 1 }}
               exit={{ rotate: -90, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.12 }}
+              transition={{ duration: 0.18 }}
               className="inline-flex"
             >
               <Menu className="h-6 w-6 text-white" strokeWidth={2.5} />

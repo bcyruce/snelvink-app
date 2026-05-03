@@ -71,7 +71,7 @@ export default function UndoToast({
       initial={{ y: "120%", opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: "120%", opacity: 0 }}
-      transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.55 }}
+      transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.7 }}
       className="fixed left-1/2 z-[105] w-[min(calc(100%-2rem),28rem)] -translate-x-1/2 print:hidden"
       style={{
         bottom: "max(8rem, calc(env(safe-area-inset-bottom, 0px) + 6rem))",

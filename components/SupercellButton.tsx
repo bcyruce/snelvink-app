@@ -66,8 +66,8 @@ const SupercellButton = forwardRef<HTMLButtonElement, SupercellButtonProps>(
         onClick={onClick}
         disabled={disabled}
         whileHover={disabled ? undefined : { scale: 1.02 }}
-        whileTap={disabled ? undefined : { y: 2, scale: 0.98 }}
-        transition={{ type: "spring", stiffness: 520, damping: 28, mass: 0.45 }}
+        whileTap={disabled ? undefined : { y: 3, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className={[
           "rounded-xl border-2 border-b-4 font-black outline-none focus-visible:ring-4 transition-colors",
           variantClasses[variant],

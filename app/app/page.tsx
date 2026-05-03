@@ -24,6 +24,7 @@ import {
   type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
@@ -101,8 +102,10 @@ function HomeContent() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      // Covers mouse + touch; avoids TouchSensor’s activation delay on taps.
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
