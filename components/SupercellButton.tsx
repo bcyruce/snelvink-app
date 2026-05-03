@@ -6,7 +6,7 @@ import { forwardRef } from "react";
 import type { ReactNode, CSSProperties } from "react";
 
 type SupercellButtonVariant = "primary" | "danger" | "success" | "neutral";
-type SupercellButtonSize = "sm" | "md" | "lg" | "icon";
+type SupercellButtonSize = "sm" | "md" | "lg" | "icon" | "iconSm";
 type SupercellButtonTextCase = "upper" | "normal";
 
 type SupercellButtonProps = {
@@ -35,6 +35,7 @@ const sizeClasses: Record<SupercellButtonSize, string> = {
   md: "px-5 py-3 text-base",
   lg: "px-6 py-4 text-lg",
   icon: "h-14 w-14 px-0 py-0 text-2xl",
+  iconSm: "h-10 w-10 px-0 py-0 text-base",
 };
 
 const textCaseClasses: Record<SupercellButtonTextCase, string> = {

@@ -105,13 +105,14 @@ function CustomModuleManageContent() {
       <VerifyEmailBanner />
       <section className="px-6 pb-36 pt-8 sm:px-10 sm:pb-40 sm:pt-12">
         <SupercellButton
+          type="button"
           variant="neutral"
           onClick={() => router.push("/")}
-          size="lg"
-          className="mb-6 flex min-h-[72px] w-full items-center justify-center gap-3 text-2xl"
+          size="iconSm"
+          aria-label={t("back")}
+          className="mb-4 rounded-full"
         >
-          <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          {t("back")}
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </SupercellButton>
 
         {module ? (

@@ -222,13 +222,13 @@ function LocationEditContent() {
       <div className="mx-auto max-w-md">
         <SupercellButton
           type="button"
-          size="lg"
+          size="iconSm"
           variant="neutral"
           onClick={() => router.push("/taken/schoonmaak")}
-          className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
+          aria-label={t("back")}
+          className="mb-4 rounded-full"
         >
-          <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          {t("back")}
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </SupercellButton>
 
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-slate-900">

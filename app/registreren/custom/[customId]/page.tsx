@@ -105,13 +105,13 @@ function CustomModuleRecordContent() {
       <section className="px-6 pb-24 pt-20 sm:px-10 sm:pb-28 sm:pt-28">
         <SupercellButton
           type="button"
-          size="lg"
+          size="iconSm"
           variant="neutral"
           onClick={() => router.push("/registreren")}
-          className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
+          aria-label={t("back")}
+          className="mb-4 rounded-full"
         >
-          <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          {t("back")}
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </SupercellButton>
 
         {module ? (

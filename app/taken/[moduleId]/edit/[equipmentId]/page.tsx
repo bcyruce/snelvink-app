@@ -214,13 +214,13 @@ function EquipmentEditContent() {
         <div className="mx-auto max-w-md space-y-4">
           <SupercellButton
             type="button"
-            size="lg"
+            size="iconSm"
             variant="neutral"
             onClick={() => router.push(`/taken/${moduleIdParam}`)}
-            className="flex h-20 w-full items-center justify-center gap-3 text-2xl"
+            aria-label={t("back")}
+            className="rounded-full"
           >
-            <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            {t("back")}
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </SupercellButton>
           <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-center font-bold text-red-700">
             {errorMessage ?? t("equipmentNotFound")}
@@ -235,13 +235,13 @@ function EquipmentEditContent() {
       <div className="mx-auto max-w-md">
         <SupercellButton
           type="button"
-          size="lg"
+          size="iconSm"
           variant="neutral"
           onClick={() => router.push(`/taken/${moduleIdParam}`)}
-          className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
+          aria-label={t("back")}
+          className="mb-4 rounded-full"
         >
-          <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          {t("back")}
+          <ArrowLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </SupercellButton>
 
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-slate-900">
