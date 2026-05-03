@@ -355,50 +355,70 @@ export default function OntvangstCheck({
   // =========================================================================
   if (mode === "manage") {
     return (
-      <div className="mt-2 flex flex-col gap-6">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          {headingTitle}
-        </h2>
+      <div className="flex flex-col gap-4">
+        {/* Header */}
+        <div className="mb-2">
+          <h2 className="text-2xl font-black tracking-tight text-[var(--theme-fg)]">
+            {headingTitle}
+          </h2>
+          <p className="mt-1 text-sm font-medium text-[var(--theme-muted)]">
+            {t("manageItems")}
+          </p>
+        </div>
 
         {errorMessage ? (
-          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
-            {errorMessage}
-          </p>
+          <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-center text-sm font-bold text-red-700">
+              {errorMessage}
+            </p>
+          </div>
         ) : null}
 
         {!restaurantId ? (
-          <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
-            {t("noRestaurantLinked")}
-          </p>
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-5 py-8 text-center">
+            <p className="text-base font-semibold text-[var(--theme-muted)]">
+              {t("noRestaurantLinked")}
+            </p>
+          </div>
         ) : null}
 
         {loadingProducts ? (
-          <p className="text-center text-slate-500">{t("loadingProducts")}</p>
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+          </div>
         ) : (
-          <ul className="flex flex-col gap-3">
-            {products.map((p) => (
+          <ul className="flex flex-col gap-2">
+            {products.map((p, index) => (
               <li key={p.id}>
-                <div className="flex min-h-[88px] items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm">
-                  <div className="flex flex-1 flex-col gap-1">
-                    <span className="text-xl font-bold text-slate-900 truncate">
+                <div 
+                  className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
+                    <span className="text-lg font-black text-[var(--theme-primary)]">
+                      {p.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
                       {p.name}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                  <div className="flex items-center gap-1">
                     <a
                       href={`${editBasePath}/${p.id}`}
                       aria-label={`${t("edit")} ${p.name}`}
-                      className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)]"
                     >
-                      <Pencil className="h-5 w-5" aria-hidden />
+                      <Pencil className="h-4 w-4" aria-hidden />
                     </a>
                     <button
                       type="button"
                       onClick={() => handleDeleteProduct(p)}
                       aria-label={`${t("delete")} ${p.name}`}
-                      className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-red-50 hover:text-red-500"
                     >
-                      <Trash2 className="h-5 w-5" aria-hidden />
+                      <Trash2 className="h-4 w-4" aria-hidden />
                     </button>
                   </div>
                 </div>
@@ -407,12 +427,14 @@ export default function OntvangstCheck({
           </ul>
         )}
 
-        <InlineAddInput
-          label={t("addProduct", { name: itemSingularLower })}
-          placeholder={t("nameOfProduct", { name: itemSingularLower })}
-          onAdd={handleAddProduct}
-          disabled={!restaurantId}
-        />
+        <div className="mt-2">
+          <InlineAddInput
+            label={t("addProduct", { name: itemSingularLower })}
+            placeholder={t("nameOfProduct", { name: itemSingularLower })}
+            onAdd={handleAddProduct}
+            disabled={!restaurantId}
+          />
+        </div>
       </div>
     );
   }
@@ -421,7 +443,7 @@ export default function OntvangstCheck({
   // RECORD MODE: Full recording flow
   // =========================================================================
   return (
-    <div className="mt-2 flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <UpgradePromptModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
@@ -429,20 +451,30 @@ export default function OntvangstCheck({
         {t("basicPlanPhotoMessage")}
       </UpgradePromptModal>
 
-      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-        {headingTitle}
-      </h2>
+      {/* Header */}
+      <div className="mb-2">
+        <h2 className="text-2xl font-black tracking-tight text-[var(--theme-fg)]">
+          {headingTitle}
+        </h2>
+        <p className="mt-1 text-sm font-medium text-[var(--theme-muted)]">
+          {t("selectToRecord")}
+        </p>
+      </div>
 
       {errorMessage ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-red-700">
-          {errorMessage}
-        </p>
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-center text-sm font-bold text-red-700">
+            {errorMessage}
+          </p>
+        </div>
       ) : null}
 
       {!restaurantId ? (
-        <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
-          {t("noRestaurantLinked")}
-        </p>
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-5 py-8 text-center">
+          <p className="text-base font-semibold text-[var(--theme-muted)]">
+            {t("noRestaurantLinked")}
+          </p>
+        </div>
       ) : null}
 
       {/* ===== Product/Item sectie ===== */}
@@ -453,27 +485,38 @@ export default function OntvangstCheck({
         collapsed={currentStep !== "product"}
       >
         {loadingProducts ? (
-          <p className="text-center text-slate-500">{t("loadingProducts")}</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+          </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {products.map((p) => (
-              <SupercellButton
+          <div className="flex flex-col gap-2">
+            {products.map((p, index) => (
+              <button
                 key={p.id}
-                size="lg"
-                variant="neutral"
+                type="button"
                 onClick={() => setSelectedProduct(p)}
-                className="flex min-h-[80px] w-full items-center justify-between text-left text-2xl normal-case"
+                className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 text-left transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md active:scale-[0.98]"
+                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <span className="flex-1 truncate">{p.name}</span>
-              </SupercellButton>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
+                  <span className="text-lg font-black text-[var(--theme-primary)]">
+                    {p.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="min-w-0 flex-1 truncate text-base font-bold text-[var(--theme-fg)]">
+                  {p.name}
+                </span>
+              </button>
             ))}
 
             {allowAddItemInRecord ? (
-              <InlineAddInput
-                label={t("addProduct", { name: itemSingularLower })}
-                placeholder={t("nameOfProduct", { name: itemSingularLower })}
-                onAdd={handleAddProduct}
-              />
+              <div className="mt-2">
+                <InlineAddInput
+                  label={t("addProduct", { name: itemSingularLower })}
+                  placeholder={t("nameOfProduct", { name: itemSingularLower })}
+                  onAdd={handleAddProduct}
+                />
+              </div>
             ) : null}
           </div>
         )}
@@ -481,23 +524,25 @@ export default function OntvangstCheck({
 
       {/* ===== Datum/tijd (alleen na product selectie) ===== */}
       {selectedProduct ? (
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            {t("receivedDateTimeLabel")}
-          </span>
-          <input
-            type="datetime-local"
-            value={recordedAtLocal}
-            onChange={(e) => setRecordedAtLocal(e.target.value)}
-            className="min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white px-5 text-center text-2xl font-black tabular-nums text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 sm:text-3xl"
-          />
-        </label>
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+              {t("receivedDateTimeLabel")}
+            </span>
+            <input
+              type="datetime-local"
+              value={recordedAtLocal}
+              onChange={(e) => setRecordedAtLocal(e.target.value)}
+              className="h-14 w-full rounded-xl border border-[var(--theme-card-border)] bg-white px-4 text-center text-lg font-bold tabular-nums text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+            />
+          </label>
+        </div>
       ) : null}
 
       {/* ===== Beoordeling – knoppen blijven altijd zichtbaar ===== */}
       {selectedProduct ? (
-        <div className="flex flex-col gap-3">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+        <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+          <span className="mb-3 block text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
             {t("rating")}
           </span>
           <div className="grid grid-cols-2 gap-3">
@@ -506,14 +551,14 @@ export default function OntvangstCheck({
               onClick={() => handleSetStatus("goedgekeurd")}
               aria-pressed={status === "goedgekeurd"}
               className={[
-                "flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-4 transition-all",
+                "flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl border-2 transition-all active:scale-[0.98]",
                 status === "goedgekeurd"
-                  ? "border-emerald-700 bg-emerald-500 text-white"
-                  : "border-emerald-300 bg-emerald-50 text-emerald-700 active:bg-emerald-100",
+                  ? "border-emerald-600 bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300",
               ].join(" ")}
             >
-              <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
-              <span className="text-lg font-black">{t("goedgekeurd")}</span>
+              <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
+              <span className="text-sm font-black">{t("goedgekeurd")}</span>
             </button>
 
             <button
@@ -521,14 +566,14 @@ export default function OntvangstCheck({
               onClick={() => handleSetStatus("afgekeurd")}
               aria-pressed={status === "afgekeurd"}
               className={[
-                "flex min-h-[96px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-4 transition-all",
+                "flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl border-2 transition-all active:scale-[0.98]",
                 status === "afgekeurd"
-                  ? "border-red-700 bg-red-500 text-white"
-                  : "border-red-300 bg-red-50 text-red-700 active:bg-red-100",
+                  ? "border-red-600 bg-red-500 text-white shadow-lg shadow-red-500/30"
+                  : "border-red-200 bg-red-50 text-red-700 hover:border-red-300",
               ].join(" ")}
             >
-              <X className="h-9 w-9" strokeWidth={3} aria-hidden />
-              <span className="text-lg font-black">{t("afgekeurd")}</span>
+              <X className="h-7 w-7" strokeWidth={3} aria-hidden />
+              <span className="text-sm font-black">{t("afgekeurd")}</span>
             </button>
           </div>
         </div>
@@ -540,14 +585,14 @@ export default function OntvangstCheck({
           className={[
             "rounded-2xl border-2 p-4",
             status === "goedgekeurd"
-              ? "border-emerald-200 bg-emerald-50"
-              : "border-red-200 bg-red-50",
+              ? "border-emerald-200 bg-emerald-50/50"
+              : "border-red-200 bg-red-50/50",
           ].join(" ")}
         >
           <h3
             className={[
-              "mb-3 text-lg font-black",
-              status === "goedgekeurd" ? "text-emerald-800" : "text-red-800",
+              "mb-3 text-sm font-black uppercase tracking-wider",
+              status === "goedgekeurd" ? "text-emerald-700" : "text-red-700",
             ].join(" ")}
           >
             {status === "goedgekeurd"
@@ -556,7 +601,7 @@ export default function OntvangstCheck({
           </h3>
 
           {reasonsForStatus.length === 0 ? (
-            <p className="rounded-xl bg-white px-4 py-4 text-center text-sm font-semibold text-slate-500">
+            <p className="rounded-xl bg-white px-4 py-4 text-center text-sm font-semibold text-[var(--theme-muted)]">
               {t("noReasonsConfigured")}
             </p>
           ) : (
@@ -566,11 +611,11 @@ export default function OntvangstCheck({
                 const accent =
                   status === "goedgekeurd"
                     ? isSelected
-                      ? "border-emerald-700 bg-emerald-500 text-white"
-                      : "border-emerald-200 bg-white text-slate-800 active:bg-emerald-50"
+                      ? "border-emerald-500 bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                      : "border-emerald-200 bg-white text-[var(--theme-fg)] hover:border-emerald-300"
                     : isSelected
-                      ? "border-red-700 bg-red-500 text-white"
-                      : "border-red-200 bg-white text-slate-800 active:bg-red-50";
+                      ? "border-red-500 bg-red-500 text-white shadow-md shadow-red-500/20"
+                      : "border-red-200 bg-white text-[var(--theme-fg)] hover:border-red-300";
                 return (
                   <li key={r} className="flex flex-col gap-2">
                     <button
@@ -578,19 +623,19 @@ export default function OntvangstCheck({
                       onClick={() => toggleReason(r)}
                       aria-pressed={isSelected}
                       className={[
-                        "flex w-full items-center justify-between gap-3 rounded-xl border-2 border-b-4 px-4 py-4 text-left text-lg font-bold transition-all",
+                        "flex w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left text-base font-bold transition-all active:scale-[0.98]",
                         accent,
                       ].join(" ")}
                     >
                       <span className="min-w-0 flex-1 truncate">{r === "Anders" ? t("other") : r}</span>
                       {isSelected ? (
                         <Check
-                          className="h-6 w-6 shrink-0"
+                          className="h-5 w-5 shrink-0"
                           strokeWidth={3}
                           aria-hidden
                         />
                       ) : (
-                        <span className="h-6 w-6 shrink-0 rounded-full border-2 border-current opacity-30" />
+                        <span className="h-5 w-5 shrink-0 rounded-full border-2 border-current opacity-30" />
                       )}
                     </button>
 
@@ -602,10 +647,10 @@ export default function OntvangstCheck({
                         placeholder={t("describeOptional")}
                         autoFocus
                         className={[
-                          "min-h-[56px] w-full rounded-xl border-2 border-b-4 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:ring-4",
+                          "h-12 w-full rounded-xl border-2 bg-white px-4 text-base font-semibold text-[var(--theme-fg)] outline-none transition-all focus:ring-2",
                           status === "goedgekeurd"
-                            ? "border-emerald-300 border-b-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/15"
-                            : "border-red-300 border-b-red-400 focus:border-red-500 focus:ring-red-500/15",
+                            ? "border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/20"
+                            : "border-red-300 focus:border-red-500 focus:ring-red-500/20",
                         ].join(" ")}
                       />
                     ) : null}
@@ -618,8 +663,8 @@ export default function OntvangstCheck({
           {selectedReasons.length > 0 ? (
             <p
               className={[
-                "mt-4 text-sm font-bold",
-                status === "goedgekeurd" ? "text-emerald-800" : "text-red-800",
+                "mt-3 text-xs font-bold uppercase tracking-wider",
+                status === "goedgekeurd" ? "text-emerald-700" : "text-red-700",
               ].join(" ")}
             >
               {selectedReasons.length === 1
@@ -633,84 +678,91 @@ export default function OntvangstCheck({
       {/* ===== Opmerking + Foto + opslaan ===== */}
       {selectedProduct && status ? (
         <div className="flex flex-col gap-4">
-          {/* Opmerking */}
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              {t("noteOptional")}
+          {/* Note Section */}
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+            <label className="flex flex-col gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+                {t("noteOptional")}
+              </span>
+              <textarea
+                value={opmerking}
+                onChange={(e) => setOpmerking(e.target.value)}
+                placeholder={t("notePlaceholder")}
+                rows={2}
+                className="w-full resize-none rounded-xl border border-[var(--theme-card-border)] bg-white px-4 py-3 text-base font-medium text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+              />
+            </label>
+          </div>
+
+          {/* Photo Section */}
+          <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+            <span className="mb-3 block text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
+              {t("photosOptional")}
             </span>
-            <textarea
-              value={opmerking}
-              onChange={(e) => setOpmerking(e.target.value)}
-              placeholder={t("notePlaceholder")}
-              rows={3}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
+
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoChange}
             />
-          </label>
 
-          <h3 className="text-xl font-black uppercase tracking-wide text-slate-500">
-            {t("photosOptional")}
-          </h3>
+            <button
+              type="button"
+              onClick={handlePickPhotos}
+              disabled={isSaving || photoSlotsLeft <= 0}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--theme-card-border)] bg-white text-base font-bold text-[var(--theme-muted)] transition-all hover:border-[var(--theme-primary)] hover:text-[var(--theme-primary)] disabled:opacity-50"
+            >
+              <Camera className="h-5 w-5" aria-hidden />
+              {photoSlotsLeft <= 0
+                ? t("maxPhotos", { count: MAX_PHOTOS })
+                : photoFiles.length > 0
+                  ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
+                  : t("pickPhoto", { count: MAX_PHOTOS })}
+            </button>
 
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handlePhotoChange}
-          />
+            {photoPreviews.length > 0 ? (
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {photoPreviews.map((url, i) => (
+                  <div key={url} className="relative">
+                    <img
+                      src={url}
+                      alt={t("photoAlt", { number: i + 1 })}
+                      className="h-20 w-full rounded-lg border border-[var(--theme-card-border)] object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      aria-label={t("removePhoto", { number: i + 1 })}
+                      className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition-transform hover:scale-110"
+                    >
+                      <X className="h-3 w-3" strokeWidth={3} aria-hidden />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
-          <SupercellButton
-            size="lg"
-            variant="neutral"
-            onClick={handlePickPhotos}
-            disabled={isSaving || photoSlotsLeft <= 0}
-            className="flex min-h-[80px] w-full items-center justify-center gap-3 border border-slate-200 text-xl normal-case"
-          >
-            <Camera className="h-7 w-7" aria-hidden />
-            {photoSlotsLeft <= 0
-              ? t("maxPhotos", { count: MAX_PHOTOS })
-              : photoFiles.length > 0
-                ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
-                : t("pickPhoto", { count: MAX_PHOTOS })}
-          </SupercellButton>
-
-          {photoPreviews.length > 0 ? (
-            <div className="grid grid-cols-3 gap-3">
-              {photoPreviews.map((url, i) => (
-                <div key={url} className="relative">
-                  <img
-                    src={url}
-                    alt={t("photoAlt", { number: i + 1 })}
-                    className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
-                  />
-                  <SupercellButton
-                    size="icon"
-                    variant="danger"
-                    onClick={() => removePhoto(i)}
-                    aria-label={t("removePhoto", { number: i + 1 })}
-                    className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
-                  >
-                    <X className="h-4 w-4" strokeWidth={3} aria-hidden />
-                  </SupercellButton>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
+          {/* Save Button */}
           <SupercellButton
             size="lg"
             variant="success"
             onClick={handleSave}
             disabled={!canSave}
             aria-busy={isSaving}
-            className="flex min-h-[96px] w-full items-center justify-center gap-3 text-2xl normal-case"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl text-lg font-black normal-case"
           >
             {isSaving ? (
-              t("saving")
+              <span className="flex items-center gap-2">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                {t("saving")}
+              </span>
             ) : (
               <>
-                <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
+                <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
                 {t("save")}
               </>
             )}
@@ -745,31 +797,37 @@ function Section({
   const { t } = useTranslation();
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--theme-muted)]">
           {title}
         </h3>
         {collapsed && summary && onEdit ? (
-          <SupercellButton
-            size="sm"
-            variant="neutral"
+          <button
+            type="button"
             onClick={onEdit}
-            className="flex min-h-[64px] items-center gap-2 text-base normal-case"
+            className="flex h-8 items-center gap-1.5 rounded-lg bg-[var(--theme-primary)]/10 px-3 text-sm font-bold text-[var(--theme-primary)] transition-colors hover:bg-[var(--theme-primary)]/20"
           >
-            <Pencil className="h-4 w-4" aria-hidden />
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
             {t("edit")}
-          </SupercellButton>
+          </button>
         ) : null}
       </div>
 
       {collapsed && summary ? (
-        <p
-          className={`truncate rounded-2xl border border-slate-100 bg-white px-5 py-5 text-2xl font-black text-slate-900 shadow-sm ${
+        <div
+          className={`flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 ${
             summaryAccentClass ?? ""
           }`}
         >
-          {summary}
-        </p>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--theme-primary)]/10">
+            <span className="text-base font-black text-[var(--theme-primary)]">
+              {summary.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <span className="min-w-0 flex-1 truncate text-base font-bold text-[var(--theme-fg)]">
+            {summary}
+          </span>
+        </div>
       ) : (
         children
       )}
