@@ -207,33 +207,6 @@ function TaskList({
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={[
-        "rounded-lg border px-3 py-1.5 text-xs font-bold transition-all",
-        densePressClass,
-        active
-          ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-white shadow-md shadow-[var(--theme-primary)]/20"
-          : "border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] text-[var(--theme-muted)] hover:border-[var(--theme-primary)]/30",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-}
-
 function ReminderSection({
   title,
   tasks,
@@ -694,21 +667,19 @@ export default function ScheduleReminderList() {
                 <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--theme-muted)]">
                   {t("filterByType")}
                 </span>
-                <div className="flex flex-wrap gap-1.5">
-                  <FilterChip
-                    active={moduleFilter === "all"}
-                    onClick={() => setModuleFilter("all")}
-                    label={t("all")}
-                  />
+                <select
+                  value={moduleFilter}
+                  onChange={(event) => setModuleFilter(event.target.value)}
+                  aria-label={t("filterByType")}
+                  className="w-full rounded-lg border border-[var(--theme-card-border)] bg-white px-3 py-2 text-sm font-bold text-[var(--theme-fg)]"
+                >
+                  <option value="all">{t("all")}</option>
                   {moduleLabels.map((label) => (
-                    <FilterChip
-                      key={label}
-                      active={moduleFilter === label}
-                      onClick={() => setModuleFilter(label)}
-                      label={label}
-                    />
+                    <option key={label} value={label}>
+                      {label}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
             ) : null}
 
@@ -734,7 +705,7 @@ export default function ScheduleReminderList() {
                   if (target) setMonthIndex(target.index);
                 }}
                 aria-label={t("chooseMonth")}
-                className="min-w-0 flex-1 rounded-lg border border-[var(--theme-card-border)] bg-white px-3 py-2 text-sm font-bold capitalize text-[var(--theme-fg)]"
+                className="w-36 rounded-lg border border-[var(--theme-card-border)] bg-white px-3 py-2 text-sm font-bold capitalize text-[var(--theme-fg)] sm:w-40"
               >
                 {monthsForYear.map((option) => (
                   <option key={option.index} value={option.month}>
