@@ -432,15 +432,17 @@ export default function HistoryList() {
           userName: row.user_id ? (userNameById.get(row.user_id) ?? "Onbekend") : "Onbekend",
           valueOrStatus,
           isOverLimit,
-          status:
-            row.module_type === "ontvangst" ||
-            row.module_type === "custom_boolean"
-              ? row.status === "goedgekeurd"
-                ? "approved"
-                : row.status === "afgekeurd"
-                  ? "rejected"
-                  : null
-              : null,
+          status: ((): "approved" | "rejected" | null => {
+            if (
+              row.module_type !== "ontvangst" &&
+              row.module_type !== "custom_boolean"
+            ) {
+              return null;
+            }
+            if (row.status === "goedgekeurd") return "approved";
+            if (row.status === "afgekeurd") return "rejected";
+            return null;
+          })(),
           detailFields: buildHaccpDetailFields(row, valueOrStatus, t),
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
