@@ -11,7 +11,8 @@ import {
 import { supabase } from "@/lib/supabase";
 import { loadLayout, type TaskModule } from "@/lib/taskModules";
 import { useUser } from "@/hooks/useUser";
-import { ChevronRight, Download, Eye, Filter, RotateCcw, X } from "lucide-react";
+import { AlertCircle, ChevronRight, Download, Eye, Filter, RotateCcw, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 type HaccpModuleType =
@@ -350,6 +351,7 @@ function toInputDate(date: Date): string {
 }
 
 export default function HistoryList() {
+  const router = useRouter();
   const { translateHaccpText, t, language } = useTranslation();
   const { profile, restaurant, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
@@ -681,6 +683,18 @@ export default function HistoryList() {
       >
         <Download className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
         Exporteer
+      </SupercellButton>
+
+      <SupercellButton
+        type="button"
+        size="lg"
+        variant="neutral"
+        onClick={() => router.push("/geschiedenis/onvoltooid")}
+        textCase="normal"
+        className="mb-4 flex h-16 w-full items-center justify-center gap-3 text-base print:hidden"
+      >
+        <AlertCircle className="h-5 w-5 shrink-0 text-red-500" strokeWidth={2.5} aria-hidden />
+        <span className="font-black">{t("viewIncompleteTasks")}</span>
       </SupercellButton>
 
       <section
