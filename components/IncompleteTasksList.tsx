@@ -221,24 +221,34 @@ export default function IncompleteTasksList() {
           .gte("occurrence_date", toIsoDate(horizon)),
       ]);
 
+    // Core data must succeed.
     if (
       equipments.error ||
       products.error ||
       locations.error ||
-      recordResult.error ||
-      dismissedResult.error
+      recordResult.error
     ) {
       console.error(
         "Onvoltooide taken laden mislukt:",
         equipments.error ??
           products.error ??
           locations.error ??
-          recordResult.error ??
-          dismissedResult.error,
+          recordResult.error,
       );
       setErrorMessage(t("incompleteTasksLoadFailed"));
       setLoading(false);
       return;
+    }
+
+    // The dismissed_planned_tasks table is optional. If the migration has not
+    // been applied yet (PostgREST returns 42P01 / "relation ... does not
+    // exist"), treat it as if there are no dismissed occurrences instead of
+    // failing the whole page.
+    if (dismissedResult.error) {
+      console.warn(
+        "dismissed_planned_tasks niet beschikbaar (migratie nog niet toegepast?). Pagina werkt verder zonder afgevinkte taken.",
+        dismissedResult.error,
+      );
     }
 
     const nextItems: ScheduledItem[] = [];
@@ -298,7 +308,11 @@ export default function IncompleteTasksList() {
 
     setItems(nextItems);
     setRecords((recordResult.data ?? []) as RecordRow[]);
-    setDismissed((dismissedResult.data ?? []) as DismissedRow[]);
+    setDismissed(
+      dismissedResult.error
+        ? []
+        : ((dismissedResult.data ?? []) as DismissedRow[]),
+    );
     setLoading(false);
   }, [restaurantId, t]);
 

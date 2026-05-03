@@ -19,13 +19,13 @@ import { supabase } from "@/lib/supabase";
 import { loadLayout, type TaskModule } from "@/lib/taskModules";
 import { densePressClass } from "@/lib/uiMotion";
 import {
-  AlertCircle,
   CalendarClock,
   CalendarDays,
-  CheckCircle2,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Circle,
   Clock,
   Layers,
   X,
@@ -44,10 +44,17 @@ type ScheduledItem = {
 };
 
 type RecordRow = {
+  id: string;
   recorded_at: string;
   equipment_id: string | null;
   product_id: string | null;
   location_id: string | null;
+};
+
+type CompletedRecord = {
+  id: string;
+  /** HH:MM string in the user's local time. */
+  time: string;
 };
 
 type PlannedTask = {
@@ -61,6 +68,8 @@ type PlannedTask = {
   completed: boolean;
   requiredCount: number;
   completedCount: number;
+  /** All haccp_records that contributed to this occurrence (for the "details" view). */
+  completedRecords: CompletedRecord[];
 };
 
 function addDays(date: Date, amount: number) {
@@ -83,7 +92,7 @@ function monthLabel(date: Date, locale: string) {
   return date.toLocaleDateString(locale, { month: "long", year: "numeric" });
 }
 
-function countRecordsForDate(
+function recordsForDate(
   item: ScheduledItem,
   records: RecordRow[],
   date: string,
@@ -93,7 +102,15 @@ function countRecordsForDate(
     if (item.itemKind === "equipment") return record.equipment_id === item.id;
     if (item.itemKind === "product") return record.product_id === item.id;
     return record.location_id === item.id;
-  }).length;
+  });
+}
+
+function formatTimeOfDay(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
 }
 
 function customModuleName(row: { custom_modules?: unknown }) {
@@ -124,8 +141,15 @@ function buildPlannedTasks(
     );
 
     for (const occurrence of occurrences) {
-      const completedCount = countRecordsForDate(item, records, occurrence.date);
+      const matchedRecords = recordsForDate(item, records, occurrence.date);
+      const completedCount = matchedRecords.length;
       const completed = completedCount >= occurrence.requiredCount;
+      const completedRecords: CompletedRecord[] = matchedRecords
+        .map((record) => ({
+          id: record.id,
+          time: formatTimeOfDay(record.recorded_at),
+        }))
+        .sort((a, b) => a.time.localeCompare(b.time));
       tasks.push({
         key: `${item.itemKind}:${item.id}:${occurrence.date}:${occurrence.time ?? ""}`,
         date: occurrence.date,
@@ -137,6 +161,7 @@ function buildPlannedTasks(
         completed,
         requiredCount: occurrence.requiredCount,
         completedCount,
+        completedRecords,
       });
     }
   }
@@ -179,98 +204,173 @@ function TaskCard({
   locale?: string;
   index?: number;
 }) {
+  const { t } = useTranslation();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   const dateLabel =
     showDate && locale ? formatTaskDateLabel(task.date, locale) : null;
   const showRatio = task.requiredCount > 1;
-  const ratioComplete = task.completedCount >= task.requiredCount;
-  const ratioPartial = !ratioComplete && task.completedCount > 0;
-  const StatusIcon = task.completed ? CheckCircle2 : AlertCircle;
+  const ratioPartial =
+    task.completedCount > 0 && task.completedCount < task.requiredCount;
   const hasMeta = Boolean(dateLabel || task.time || showRatio);
 
+  // ── COMPLETED: compact "done" row that can be expanded for details ──────────
+  if (task.completed) {
+    const detailsId = `task-details-${task.key}`;
+    return (
+      <div
+        className="overflow-hidden rounded-lg border border-emerald-200/70 bg-emerald-50/40 transition-all"
+        style={{ animationDelay: `${index * 30}ms` }}
+      >
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <span
+            aria-hidden
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white"
+          >
+            <Check className="h-4 w-4" strokeWidth={3} />
+          </span>
+          <button
+            type="button"
+            onClick={onClick}
+            className="min-w-0 flex-1 truncate text-left text-sm font-bold text-emerald-900/80 line-through decoration-emerald-400/60 underline-offset-2 hover:text-emerald-900"
+            title={task.title}
+          >
+            {task.title}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((value) => !value)}
+            aria-expanded={detailsOpen}
+            aria-controls={detailsId}
+            className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100/60"
+          >
+            {t("details")}
+            <ChevronDown
+              className={[
+                "h-3.5 w-3.5 transition-transform",
+                detailsOpen ? "rotate-180" : "",
+              ].join(" ")}
+              strokeWidth={2.75}
+              aria-hidden
+            />
+          </button>
+        </div>
+        {detailsOpen ? (
+          <div
+            id={detailsId}
+            className="border-t border-emerald-200/70 bg-white/70 px-3 py-2"
+          >
+            <p className="mb-1.5 flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-800/80">
+              <Layers className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+              <span className="truncate">{task.moduleLabel}</span>
+              {showRatio ? (
+                <span className="ml-auto rounded-md bg-emerald-100 px-1.5 py-0.5 tabular-nums text-emerald-700">
+                  {task.completedCount}/{task.requiredCount}
+                </span>
+              ) : null}
+            </p>
+            {dateLabel ? (
+              <p className="flex items-center gap-1 text-[11px] font-bold text-slate-600">
+                <CalendarDays className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+                {dateLabel}
+              </p>
+            ) : null}
+            {task.completedRecords.length > 0 ? (
+              <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                {task.completedRecords.map((record) => (
+                  <li
+                    key={record.id}
+                    className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-black tabular-nums text-emerald-800"
+                  >
+                    <Clock className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                    {record.time || "—"}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // ── PENDING / TODO: friendly to-do card with an empty checkbox affordance ───
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        "group block w-full overflow-hidden rounded-xl border text-left transition-all hover:shadow-md active:scale-[0.98]",
-        task.completed
-          ? "border-emerald-200/60 bg-[var(--theme-card-bg)] hover:border-emerald-300"
-          : "border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] hover:border-[var(--theme-primary)]/30",
+        "group block w-full overflow-hidden rounded-xl border-2 text-left transition-all hover:shadow-md active:scale-[0.98]",
+        ratioPartial
+          ? "border-amber-200 border-b-4 border-b-amber-300 bg-amber-50/50 hover:border-amber-300"
+          : "border-[var(--theme-card-border)] border-b-4 border-b-slate-300 bg-[var(--theme-card-bg)] hover:border-[var(--theme-primary)]/40",
       ].join(" ")}
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <div className="flex items-stretch">
+      <div className="flex items-start gap-3 p-3">
         <span
           aria-hidden
           className={[
-            "w-1.5 shrink-0",
-            task.completed ? "bg-emerald-400" : "bg-red-400",
+            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+            ratioPartial
+              ? "border-amber-400 bg-white text-amber-500"
+              : "border-[var(--theme-primary)]/40 bg-white text-[var(--theme-primary)]/0 group-hover:bg-[var(--theme-primary)]/5",
           ].join(" ")}
-        />
+        >
+          {ratioPartial ? (
+            <span className="block h-2 w-2 rounded-full bg-amber-500" />
+          ) : (
+            <Circle className="h-3.5 w-3.5" strokeWidth={2.5} />
+          )}
+        </span>
 
-        <div className="flex flex-1 items-start gap-3 p-3">
-          <div
-            className={[
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-              task.completed ? "bg-emerald-100" : "bg-red-100",
-            ].join(" ")}
-          >
-            <StatusIcon
-              className={[
-                "h-6 w-6",
-                task.completed ? "text-emerald-600" : "text-red-500",
-              ].join(" ")}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="truncate text-base font-black leading-tight text-[var(--theme-fg)]">
+              {task.title}
+            </h4>
+            <ChevronRight
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5"
               strokeWidth={2.5}
             />
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h4 className="truncate text-base font-black leading-tight text-[var(--theme-fg)]">
-                {task.title}
-              </h4>
-              <ChevronRight
-                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5"
-                strokeWidth={2.5}
-              />
+          <p className="mt-1 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--theme-muted)]">
+            <Layers className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+            <span className="truncate">{task.moduleLabel}</span>
+          </p>
+
+          {hasMeta ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {dateLabel ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-[var(--theme-primary)]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)]">
+                  <CalendarDays
+                    className="h-3 w-3 shrink-0"
+                    strokeWidth={2.75}
+                  />
+                  {dateLabel}
+                </span>
+              ) : null}
+              {task.time ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-black tabular-nums text-slate-700">
+                  <Clock className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+                  {task.time}
+                </span>
+              ) : null}
+              {showRatio ? (
+                <span
+                  className={[
+                    "ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black tabular-nums",
+                    ratioPartial
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-700",
+                  ].join(" ")}
+                >
+                  {task.completedCount}/{task.requiredCount}
+                </span>
+              ) : null}
             </div>
-
-            <p className="mt-1 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--theme-muted)]">
-              <Layers className="h-3 w-3 shrink-0" strokeWidth={2.75} />
-              <span className="truncate">{task.moduleLabel}</span>
-            </p>
-
-            {hasMeta ? (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {dateLabel ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-[var(--theme-primary)]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)]">
-                    <CalendarDays className="h-3 w-3 shrink-0" strokeWidth={2.75} />
-                    {dateLabel}
-                  </span>
-                ) : null}
-                {task.time ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-black tabular-nums text-slate-700">
-                    <Clock className="h-3 w-3 shrink-0" strokeWidth={2.75} />
-                    {task.time}
-                  </span>
-                ) : null}
-                {showRatio ? (
-                  <span
-                    className={[
-                      "ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black tabular-nums",
-                      ratioComplete
-                        ? "bg-emerald-100 text-emerald-700"
-                        : ratioPartial
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700",
-                    ].join(" ")}
-                  >
-                    {task.completedCount}/{task.requiredCount}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
     </button>
@@ -297,20 +397,44 @@ function TaskList({
     );
   }
 
+  // Pending first, completed (compact rows) at the bottom — preserves
+  // the original ordering inside each group.
+  const pending = tasks.filter((task) => !task.completed);
+  const completed = tasks.filter((task) => task.completed);
+
   return (
-    <ul className="flex flex-col gap-1.5">
-      {tasks.map((task, index) => (
-        <li key={task.key}>
-          <TaskCard
-            task={task}
-            onClick={() => router.push(task.route)}
-            showDate={showDate}
-            locale={locale}
-            index={index}
-          />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-1.5">
+      {pending.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {pending.map((task, index) => (
+            <li key={task.key}>
+              <TaskCard
+                task={task}
+                onClick={() => router.push(task.route)}
+                showDate={showDate}
+                locale={locale}
+                index={index}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {completed.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {completed.map((task, index) => (
+            <li key={task.key}>
+              <TaskCard
+                task={task}
+                onClick={() => router.push(task.route)}
+                showDate={showDate}
+                locale={locale}
+                index={index}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
@@ -666,7 +790,7 @@ export default function ScheduleReminderList() {
       const today = startOfDay(new Date());
       const recordResult = await supabase
         .from("haccp_records")
-        .select("recorded_at, equipment_id, product_id, location_id")
+        .select("id, recorded_at, equipment_id, product_id, location_id")
         .eq("restaurant_id", restaurantId)
         .gte("recorded_at", today.toISOString());
 
@@ -736,9 +860,9 @@ export default function ScheduleReminderList() {
     return plannedTasks.filter((task) => task.moduleId === moduleFilter);
   }, [plannedTasks, moduleFilter]);
 
-  const todayTasks = tasksForDate(filteredTasks, today).filter(
-    (task) => !task.completed,
-  );
+  // Keep completed tasks in the list — they collapse into a compact "done"
+  // row (with an expandable details panel) instead of disappearing.
+  const todayTasks = tasksForDate(filteredTasks, today);
   const tomorrowTasks = tasksForDate(filteredTasks, tomorrow);
   const weekTasks = tasksForRange(filteredTasks, today, nextWeek);
   const calendarMonth = addMonths(today, monthIndex);
