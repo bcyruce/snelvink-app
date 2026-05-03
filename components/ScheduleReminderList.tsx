@@ -20,9 +20,13 @@ import { densePressClass } from "@/lib/uiMotion";
 import {
   AlertCircle,
   CalendarClock,
+  CalendarDays,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Layers,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -48,8 +52,8 @@ type RecordRow = {
 type PlannedTask = {
   key: string;
   date: string;
+  time: string | null;
   title: string;
-  subtitle: string;
   route: string;
   moduleId: string;
   moduleLabel: string;
@@ -124,14 +128,8 @@ function buildPlannedTasks(
       tasks.push({
         key: `${item.itemKind}:${item.id}:${occurrence.date}:${occurrence.time ?? ""}`,
         date: occurrence.date,
+        time: occurrence.time ?? null,
         title: item.title,
-        subtitle: [
-          item.moduleLabel,
-          occurrence.time,
-          `${completedCount}/${occurrence.requiredCount}`,
-        ]
-          .filter(Boolean)
-          .join(" · "),
         route: item.route,
         moduleId: item.moduleId,
         moduleLabel: item.moduleLabel,
@@ -167,6 +165,117 @@ function formatTaskDateLabel(isoDate: string, locale: string) {
   });
 }
 
+function TaskCard({
+  task,
+  onClick,
+  showDate = false,
+  locale,
+  index = 0,
+}: {
+  task: PlannedTask;
+  onClick: () => void;
+  showDate?: boolean;
+  locale?: string;
+  index?: number;
+}) {
+  const dateLabel =
+    showDate && locale ? formatTaskDateLabel(task.date, locale) : null;
+  const showRatio = task.requiredCount > 1;
+  const ratioComplete = task.completedCount >= task.requiredCount;
+  const ratioPartial = !ratioComplete && task.completedCount > 0;
+  const StatusIcon = task.completed ? CheckCircle2 : AlertCircle;
+  const hasMeta = Boolean(dateLabel || task.time || showRatio);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "group block w-full overflow-hidden rounded-xl border text-left transition-all hover:shadow-md active:scale-[0.98]",
+        task.completed
+          ? "border-emerald-200/60 bg-[var(--theme-card-bg)] hover:border-emerald-300"
+          : "border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] hover:border-[var(--theme-primary)]/30",
+      ].join(" ")}
+      style={{ animationDelay: `${index * 30}ms` }}
+    >
+      <div className="flex items-stretch">
+        <span
+          aria-hidden
+          className={[
+            "w-1.5 shrink-0",
+            task.completed ? "bg-emerald-400" : "bg-red-400",
+          ].join(" ")}
+        />
+
+        <div className="flex flex-1 items-start gap-3 p-3">
+          <div
+            className={[
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+              task.completed ? "bg-emerald-100" : "bg-red-100",
+            ].join(" ")}
+          >
+            <StatusIcon
+              className={[
+                "h-6 w-6",
+                task.completed ? "text-emerald-600" : "text-red-500",
+              ].join(" ")}
+              strokeWidth={2.5}
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="truncate text-base font-black leading-tight text-[var(--theme-fg)]">
+                {task.title}
+              </h4>
+              <ChevronRight
+                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5"
+                strokeWidth={2.5}
+              />
+            </div>
+
+            <p className="mt-1 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-[var(--theme-muted)]">
+              <Layers className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+              <span className="truncate">{task.moduleLabel}</span>
+            </p>
+
+            {hasMeta ? (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {dateLabel ? (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-[var(--theme-primary)]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)]">
+                    <CalendarDays className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+                    {dateLabel}
+                  </span>
+                ) : null}
+                {task.time ? (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-black tabular-nums text-slate-700">
+                    <Clock className="h-3 w-3 shrink-0" strokeWidth={2.75} />
+                    {task.time}
+                  </span>
+                ) : null}
+                {showRatio ? (
+                  <span
+                    className={[
+                      "ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black tabular-nums",
+                      ratioComplete
+                        ? "bg-emerald-100 text-emerald-700"
+                        : ratioPartial
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700",
+                    ].join(" ")}
+                  >
+                    {task.completedCount}/{task.requiredCount}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function TaskList({
   tasks,
   emptyText,
@@ -181,7 +290,7 @@ function TaskList({
   const router = useRouter();
   if (tasks.length === 0) {
     return (
-      <p className="rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
+      <p className="rounded-xl border border-dashed border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
         {emptyText}
       </p>
     );
@@ -191,40 +300,13 @@ function TaskList({
     <ul className="flex flex-col gap-1.5">
       {tasks.map((task, index) => (
         <li key={task.key}>
-          <button
-            type="button"
+          <TaskCard
+            task={task}
             onClick={() => router.push(task.route)}
-            className="group flex w-full items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-3 text-left transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md active:scale-[0.98]"
-            style={{ animationDelay: `${index * 30}ms` }}
-          >
-            <div
-              className={[
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                task.completed ? "bg-emerald-100" : "bg-red-100",
-              ].join(" ")}
-            >
-              <AlertCircle
-                className={[
-                  "h-5 w-5",
-                  task.completed ? "text-emerald-600" : "text-red-500",
-                ].join(" ")}
-              />
-            </div>
-            <span className="min-w-0 flex-1">
-              {showDate && locale ? (
-                <span className="mb-0.5 block truncate text-[10px] font-black uppercase tracking-wider text-[var(--theme-primary)]">
-                  {formatTaskDateLabel(task.date, locale)}
-                </span>
-              ) : null}
-              <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
-                {task.title}
-              </span>
-              <span className="block truncate text-xs font-medium text-[var(--theme-muted)]">
-                {task.subtitle}
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5" />
-          </button>
+            showDate={showDate}
+            locale={locale}
+            index={index}
+          />
         </li>
       ))}
     </ul>
@@ -335,45 +417,21 @@ function DayPreviewModal({
           </button>
         </div>
         {tasks.length === 0 ? (
-          <p className="rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
+          <p className="rounded-xl border border-dashed border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] px-4 py-5 text-center text-sm font-medium text-[var(--theme-muted)]">
             {t("noPlannedTasksOnDay")}
           </p>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {tasks.map((task, index) => (
               <li key={task.key}>
-                <button
-                  type="button"
+                <TaskCard
+                  task={task}
+                  index={index}
                   onClick={() => {
                     onClose();
                     router.push(task.route);
                   }}
-                  className="group flex w-full items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-3 text-left transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md active:scale-[0.98]"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <div
-                    className={[
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                      task.completed ? "bg-emerald-100" : "bg-red-100",
-                    ].join(" ")}
-                  >
-                    <AlertCircle
-                      className={[
-                        "h-5 w-5",
-                        task.completed ? "text-emerald-600" : "text-red-500",
-                      ].join(" ")}
-                    />
-                  </div>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
-                      {task.title}
-                    </span>
-                    <span className="block truncate text-xs font-medium text-[var(--theme-muted)]">
-                      {task.subtitle}
-                    </span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-0.5" />
-                </button>
+                />
               </li>
             ))}
           </ul>
