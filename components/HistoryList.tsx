@@ -1,11 +1,17 @@
 "use client";
 
+import ExportModal, { type ExportFormat } from "@/components/ExportModal";
 import SupercellButton from "@/components/SupercellButton";
 import UpgradePromptModal from "@/components/UpgradePromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
+import {
+  exportHistoryAsCsv,
+  exportHistoryAsPdf,
+  type ExportHistoryRow,
+} from "@/lib/historyExport";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { Eye, Printer, X } from "lucide-react";
+import { Download, Eye, Printer, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 type HaccpModuleType =
@@ -19,6 +25,7 @@ type HaccpModuleType =
 
 type HaccpRecordRow = {
   id: string;
+  user_id: string | null;
   recorded_at: string;
   module_type: HaccpModuleType;
   temperature: number | null;
@@ -55,6 +62,7 @@ type ReportRow = {
   created_at: string;
   apparaat: string;
   taskName: string;
+  userName: string;
   valueOrStatus: string;
   remarks: string;
   correctionAction: string | null;
@@ -251,9 +259,18 @@ function isCustomLogData(value: unknown): value is CustomModuleLogData {
 
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
 
+function toInputDate(date: Date): string {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  const year = next.getFullYear();
+  const month = String(next.getMonth() + 1).padStart(2, "0");
+  const day = String(next.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function HistoryList() {
   const { translateHaccpText, t, language } = useTranslation();
-  const { profile, isFreePlan } = useUser();
+  const { profile, restaurant, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
   const locale = language === "en" ? "en-GB" : "nl-NL";
 
@@ -261,6 +278,8 @@ export default function HistoryList() {
   const [loading, setLoading] = useState(true);
   const [showPrintUpgradeModal, setShowPrintUpgradeModal] = useState(false);
   const [detailRow, setDetailRow] = useState<ReportRow | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -276,7 +295,7 @@ export default function HistoryList() {
     const haccpBase = supabase
       .from("haccp_records")
       .select(
-        "id, recorded_at, module_type, temperature, status, reason, reasons, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, custom_module_id, haccp_equipments ( name, limit_temp, unit ), custom_modules ( name )",
+        "id, user_id, recorded_at, module_type, temperature, status, reason, reasons, product_name, location_name, completed_tasks, image_urls, opmerking, correction_action, custom_module_id, haccp_equipments ( name, limit_temp, unit ), custom_modules ( name )",
       )
       .eq("restaurant_id", restaurantId);
 
@@ -297,8 +316,37 @@ export default function HistoryList() {
       console.error("custom_module_logs ophalen mislukt:", customRes.error);
     }
 
+    const haccpData = (haccpRes.data as HaccpRecordRow[] | null) ?? [];
+    const userIds = Array.from(
+      new Set(
+        haccpData
+          .map((row) => row.user_id)
+          .filter((value): value is string => typeof value === "string"),
+      ),
+    );
+    const userNameById = new Map<string, string>();
+    if (userIds.length > 0) {
+      const { data: profileRows, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", userIds);
+      if (profileError) {
+        console.error("Gebruikers laden mislukt:", profileError);
+      } else {
+        for (const row of profileRows ?? []) {
+          const item = row as {
+            id: string;
+            full_name: string | null;
+            email: string | null;
+          };
+          const display = item.full_name?.trim() || item.email?.trim() || "Onbekend";
+          userNameById.set(item.id, display);
+        }
+      }
+    }
+
     const haccpRows =
-      (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => {
+      haccpData.map((row) => {
         const { apparaat, taskName, valueOrStatus, remarks } =
           describeHaccpRow(row, t);
         const limit = equipmentLimit(row);
@@ -327,6 +375,7 @@ export default function HistoryList() {
           created_at: row.recorded_at,
           apparaat,
           taskName,
+          userName: row.user_id ? (userNameById.get(row.user_id) ?? "Onbekend") : "Onbekend",
           valueOrStatus,
           remarks,
           correctionAction: row.correction_action ?? null,
@@ -336,7 +385,7 @@ export default function HistoryList() {
           source: "haccp" as const,
           photoUrls: row.image_urls ?? [],
         };
-      }) ?? [];
+      });
 
     const customRows =
       (customRes.data as CustomModuleLogRow[] | null)?.flatMap((row) => {
@@ -356,6 +405,7 @@ export default function HistoryList() {
           created_at: row.created_at,
           apparaat: value.name ?? t("moduleTypeNumber"),
           taskName: moduleName,
+          userName: "Onbekend",
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
           remarks: value.remark ?? "",
           correctionAction: null,
@@ -383,6 +433,79 @@ export default function HistoryList() {
     void fetchLogs();
   }, [fetchLogs]);
 
+  const defaultEndDate = toInputDate(new Date());
+  const defaultStartDate = toInputDate(
+    new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+  );
+
+  const handleExportDownload = useCallback(
+    async ({
+      startDate,
+      endDate,
+      format,
+      includePhotos,
+    }: {
+      startDate: string;
+      endDate: string;
+      format: ExportFormat;
+      includePhotos: boolean;
+    }) => {
+      setIsExporting(true);
+      try {
+        const start = new Date(`${startDate}T00:00:00`);
+        const end = new Date(`${endDate}T23:59:59`);
+
+        const exportRows: ExportHistoryRow[] = rows
+          .filter((row) => {
+            const timestamp = new Date(row.created_at).getTime();
+            return (
+              !Number.isNaN(timestamp) &&
+              timestamp >= start.getTime() &&
+              timestamp <= end.getTime()
+            );
+          })
+          .sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+          )
+          .map((row) => ({
+            createdAt: row.created_at,
+            category: translateHaccpText(row.taskName),
+            item: translateHaccpText(row.apparaat),
+            valueOrStatus: translateHaccpText(row.valueOrStatus),
+            userName: row.userName,
+            remarks: row.remarks ? translateHaccpText(row.remarks) : "",
+            photoUrls: row.photoUrls,
+          }));
+
+        if (format === "csv") {
+          exportHistoryAsCsv(exportRows, {
+            restaurantName: restaurant?.name ?? "Restaurant",
+            startDate,
+            endDate,
+          });
+        } else {
+          await exportHistoryAsPdf(
+            exportRows,
+            {
+              restaurantName: restaurant?.name ?? "Restaurant",
+              startDate,
+              endDate,
+            },
+            includePhotos,
+          );
+        }
+
+        setShowExportModal(false);
+      } catch (error) {
+        console.error("Exporteren mislukt:", error);
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [restaurant?.name, rows, translateHaccpText],
+  );
+
   const handlePrintClick = () => {
     if (isFreePlan) {
       setShowPrintUpgradeModal(true);
@@ -402,6 +525,18 @@ export default function HistoryList() {
         {t("reportUpgradeMessage")}
       </UpgradePromptModal>
 
+      <ExportModal
+        open={showExportModal}
+        initialStartDate={defaultStartDate}
+        initialEndDate={defaultEndDate}
+        isExporting={isExporting}
+        onClose={() => {
+          if (isExporting) return;
+          setShowExportModal(false);
+        }}
+        onSubmit={handleExportDownload}
+      />
+
       <h1 className="hidden print:mb-6 print:block print:text-4xl print:font-black print:tracking-tight print:text-black">
         {t("haccpLogbookTitle")}
       </h1>
@@ -411,6 +546,18 @@ export default function HistoryList() {
           {isFreePlan ? t("latest30Days") : t("navGeschiedenis")}
         </h2>
       </div>
+
+      <SupercellButton
+        type="button"
+        size="lg"
+        variant="primary"
+        onClick={() => setShowExportModal(true)}
+        textCase="normal"
+        className="mb-4 flex h-20 w-full items-center justify-center gap-3 text-xl print:hidden"
+      >
+        <Download className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
+        Exporteer
+      </SupercellButton>
 
       <SupercellButton
         type="button"
