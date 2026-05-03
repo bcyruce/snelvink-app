@@ -76,6 +76,7 @@ export default function OntvangstCheck({
   const headingTitle = title ?? t("ontvangst");
   const itemSingular = isCustom ? t("item") : t("product");
   const itemSingularLower = itemSingular.toLowerCase();
+  const allowAddItemInRecord = !(mode === "record" && isCustom);
 
   // ---------- form state ----------
   const [recordedAtLocal, setRecordedAtLocal] = useState<string>(() =>
@@ -222,15 +223,6 @@ export default function OntvangstCheck({
       if (removed) URL.revokeObjectURL(removed);
       return next;
     });
-  };
-
-  // ---------- reset helpers ----------
-  const resetProduct = () => {
-    setSelectedProduct(null);
-    setStatus(null);
-    setSelectedReasons([]);
-    setAndersText("");
-    setOpmerking("");
   };
 
   const isAndersOption = (reason: string) => reason.trim() === "Anders";
@@ -457,7 +449,7 @@ export default function OntvangstCheck({
       <Section
         title={itemSingular}
         summary={selectedProduct?.name ?? null}
-        onEdit={selectedProduct ? resetProduct : null}
+        onEdit={null}
         collapsed={currentStep !== "product"}
       >
         {loadingProducts ? (
@@ -476,11 +468,13 @@ export default function OntvangstCheck({
               </SupercellButton>
             ))}
 
-            <InlineAddInput
-              label={t("addProduct", { name: itemSingularLower })}
-              placeholder={t("nameOfProduct", { name: itemSingularLower })}
-              onAdd={handleAddProduct}
-            />
+            {allowAddItemInRecord ? (
+              <InlineAddInput
+                label={t("addProduct", { name: itemSingularLower })}
+                placeholder={t("nameOfProduct", { name: itemSingularLower })}
+                onAdd={handleAddProduct}
+              />
+            ) : null}
           </div>
         )}
       </Section>

@@ -61,6 +61,7 @@ export default function SchoonmaakCheck({
   const headingTitle = title ?? t("schoonmaak");
   const groupSingular = isCustom ? t("group") : t("location");
   const groupSingularLower = groupSingular.toLowerCase();
+  const allowAddGroupInRecord = !(mode === "record" && isCustom);
 
   // ---------- state ----------
   const [recordedAtLocal, setRecordedAtLocal] = useState<string>(() =>
@@ -486,11 +487,13 @@ export default function SchoonmaakCheck({
                 <span className="flex-1 truncate">{loc.name}</span>
               </SupercellButton>
             ))}
-            <InlineAddInput
-              label={t("addLocation", { name: groupSingularLower })}
-              placeholder={t("nameOfLocation", { name: groupSingularLower })}
-              onAdd={handleAddLocation}
-            />
+            {allowAddGroupInRecord ? (
+              <InlineAddInput
+                label={t("addLocation", { name: groupSingularLower })}
+                placeholder={t("nameOfLocation", { name: groupSingularLower })}
+                onAdd={handleAddLocation}
+              />
+            ) : null}
           </div>
         )}
       </section>
