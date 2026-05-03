@@ -14,9 +14,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { densePressClass } from "@/lib/uiMotion";
 import {
+  fetchActiveCustomModuleTiles,
   fetchRestaurantTaskModulesLayout,
-  layoutDiffersFromDefault,
   loadLayout,
+  mergeLayoutWithDbCustomModules,
   mergeServerAndLocalLayout,
   saveLayout,
   upsertRestaurantTaskModulesLayout,
@@ -102,25 +103,19 @@ function HomeContent() {
     setLayoutHydrated(false);
 
     void (async () => {
-      const fromServer = await fetchRestaurantTaskModulesLayout(
-        supabase,
-        profile.restaurant_id,
-      );
+      const restaurantId = profile.restaurant_id;
+
+      const [fromServer, dbCustomTiles] = await Promise.all([
+        fetchRestaurantTaskModulesLayout(supabase, restaurantId),
+        fetchActiveCustomModuleTiles(supabase, restaurantId),
+      ]);
       if (cancelled) return;
 
       const local = loadLayout();
       const merged = mergeServerAndLocalLayout(fromServer, local);
-      setModules(merged);
-      saveLayout(merged);
-
-      const serverEmpty = !fromServer || fromServer.length === 0;
-      if (serverEmpty && layoutDiffersFromDefault(merged)) {
-        await upsertRestaurantTaskModulesLayout(
-          supabase,
-          profile.restaurant_id,
-          merged,
-        );
-      }
+      const withCustoms = mergeLayoutWithDbCustomModules(merged, dbCustomTiles);
+      setModules(withCustoms);
+      saveLayout(withCustoms);
 
       if (!cancelled) setLayoutHydrated(true);
     })();

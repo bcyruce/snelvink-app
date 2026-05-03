@@ -146,7 +146,10 @@ export function parseTaskModulesFromJson(raw: unknown): TaskModule[] | null {
     const name = typeof o.name === "string" ? o.name : null;
     const icon = typeof o.icon === "string" ? o.icon : null;
     const href = typeof o.href === "string" ? o.href : null;
-    const isCustom = o.isCustom === true;
+    const isCustom =
+      o.isCustom === true ||
+      (href !== null &&
+        (href.includes("/taken/custom/") || href.includes("/app/taken/custom/")));
     if (!id || !name || !icon || !href) continue;
     out.push({
       id,
@@ -173,6 +176,57 @@ export function mergeServerAndLocalLayout(
   const local = normalizeModuleList(localModules);
   if (local.length > 0) return local;
   return DEFAULT_MODULES;
+}
+
+const DEFAULT_MODULE_IDS = new Set(DEFAULT_MODULES.map((m) => m.id));
+
+/**
+ * Append active custom modules from DB that are missing from the layout.
+ * Fixes new browsers when layout JSON is empty/default but `custom_modules` has rows.
+ */
+export function mergeLayoutWithDbCustomModules(
+  layout: TaskModule[],
+  dbCustomTiles: TaskModule[],
+): TaskModule[] {
+  const base = normalizeModuleList(layout);
+  const seen = new Set(base.map((m) => m.id));
+  const extras = dbCustomTiles.filter((m) => !seen.has(m.id));
+  if (extras.length === 0) {
+    return base.length > 0 ? base : DEFAULT_MODULES;
+  }
+  return [...base, ...extras];
+}
+
+/** Active custom modules for a restaurant (source of truth for tiles). */
+export async function fetchActiveCustomModuleTiles(
+  client: SupabaseClient,
+  restaurantId: string,
+): Promise<TaskModule[]> {
+  const { data, error } = await client
+    .from("custom_modules")
+    .select("id, name, icon")
+    .eq("restaurant_id", restaurantId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.warn("Custom modules voor layout ophalen:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row: { id: string; name: string; icon: string | null }) => {
+    const icon =
+      row.icon && (AVAILABLE_ICONS as readonly string[]).includes(row.icon)
+        ? row.icon
+        : "thermometer";
+    return {
+      id: String(row.id),
+      name: (row.name ?? "").trim() || "Custom",
+      icon,
+      isCustom: true,
+      href: `/app/taken/custom/${row.id}`,
+    } satisfies TaskModule;
+  });
 }
 
 /** True if layout is not the default four tiles in default order (incl. custom tiles). */
