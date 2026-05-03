@@ -27,6 +27,9 @@ type Equipment = {
   default_temp: number | null;
   last_temp: number | null;
   limit_temp: number | null;
+  min_value: number | null;
+  max_value: number | null;
+  require_correction_out_of_range: boolean | null;
   step: number | null;
   unit: string | null;
 };
@@ -117,9 +120,20 @@ export default function HaccpTemperatureModule({
     typeof activeEquipment?.limit_temp === "number"
       ? activeEquipment.limit_temp
       : null;
+  const minValue =
+    typeof activeEquipment?.min_value === "number" ? activeEquipment.min_value : null;
+  const maxValue =
+    typeof activeEquipment?.max_value === "number" ? activeEquipment.max_value : null;
+  const isOutOfRange =
+    (minValue !== null && temperature < minValue) ||
+    (maxValue !== null && temperature > maxValue);
   const isOverLimit = limitTemp !== null && temperature > limitTemp;
-  const tempColorClass = isOverLimit ? "text-red-600" : "text-slate-900";
-  const correctionRequired = isOverLimit && correctionAction.trim().length === 0;
+  const needsCorrectionAction = isCustom
+    ? activeEquipment?.require_correction_out_of_range === true && isOutOfRange
+    : isOverLimit;
+  const tempColorClass = needsCorrectionAction ? "text-red-600" : "text-slate-900";
+  const correctionRequired =
+    needsCorrectionAction && correctionAction.trim().length === 0;
   const canSave =
     !isSaving && !!restaurantId && !!activeEquipment && !correctionRequired;
 
@@ -131,7 +145,7 @@ export default function HaccpTemperatureModule({
     const baseQuery = supabase
       .from("haccp_equipments")
       .select(
-        "id, name, type, default_temp, last_temp, limit_temp, step, unit",
+        "id, name, type, default_temp, last_temp, limit_temp, min_value, max_value, require_correction_out_of_range, step, unit",
       )
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: true });
@@ -158,10 +172,13 @@ export default function HaccpTemperatureModule({
           type: isCustom ? "custom" : moduleType,
           last_temp: null,
           limit_temp: null,
+          min_value: null,
+          max_value: null,
+          require_correction_out_of_range: false,
           custom_module_id: customModuleId ?? null,
         })
         .select(
-          "id, name, type, default_temp, last_temp, limit_temp, step, unit",
+          "id, name, type, default_temp, last_temp, limit_temp, min_value, max_value, require_correction_out_of_range, step, unit",
         )
         .single();
 
@@ -194,10 +211,13 @@ export default function HaccpTemperatureModule({
           type: isCustom ? "custom" : moduleType,
           last_temp: null,
           limit_temp: null,
+          min_value: null,
+          max_value: null,
+          require_correction_out_of_range: false,
           custom_module_id: customModuleId ?? null,
         })
         .select(
-          "id, name, type, default_temp, last_temp, limit_temp, step, unit",
+          "id, name, type, default_temp, last_temp, limit_temp, min_value, max_value, require_correction_out_of_range, step, unit",
         )
         .single();
 
@@ -382,7 +402,7 @@ export default function HaccpTemperatureModule({
           recorded_at: recordedAt,
           image_urls: uploadedUrls,
           opmerking: opmerking.trim() || null,
-          correction_action: isOverLimit
+          correction_action: needsCorrectionAction
             ? correctionAction.trim() || null
             : null,
         });
@@ -450,8 +470,13 @@ export default function HaccpTemperatureModule({
           onRecordedAtChange={setRecordedAtLocal}
           temperature={temperature}
           tempColorClass={tempColorClass}
+          isCustomNumber={isCustom}
           isOverLimit={isOverLimit}
+          isOutOfRange={isOutOfRange}
           limitTemp={limitTemp}
+          minValue={minValue}
+          maxValue={maxValue}
+          needsCorrectionAction={needsCorrectionAction}
           correctionAction={correctionAction}
           onCorrectionActionChange={setCorrectionAction}
           correctionRequired={correctionRequired}
@@ -646,8 +671,13 @@ type RecordViewProps = {
   onRecordedAtChange: (v: string) => void;
   temperature: number;
   tempColorClass: string;
+  isCustomNumber: boolean;
   isOverLimit: boolean;
+  isOutOfRange: boolean;
   limitTemp: number | null;
+  minValue: number | null;
+  maxValue: number | null;
+  needsCorrectionAction: boolean;
   correctionAction: string;
   onCorrectionActionChange: (v: string) => void;
   correctionRequired: boolean;
@@ -680,8 +710,13 @@ function RecordView({
   onRecordedAtChange,
   temperature,
   tempColorClass,
+  isCustomNumber,
   isOverLimit,
+  isOutOfRange,
   limitTemp,
+  minValue,
+  maxValue,
+  needsCorrectionAction,
   correctionAction,
   onCorrectionActionChange,
   correctionRequired,
@@ -745,6 +780,20 @@ function RecordView({
         : 0.1;
     return String(s).replace(".", ",");
   })();
+  const rangeLabel = (() => {
+    if (!isCustomNumber) return "";
+    if (minValue !== null && maxValue !== null) {
+      return `${minValue.toFixed(1)} - ${maxValue.toFixed(1)} ${unitLabel}`;
+    }
+    if (minValue !== null) return `>= ${minValue.toFixed(1)} ${unitLabel}`;
+    if (maxValue !== null) return `<= ${maxValue.toFixed(1)} ${unitLabel}`;
+    return "";
+  })();
+  const warningText = isCustomNumber
+    ? isOutOfRange
+      ? `Waarde valt buiten het ingestelde bereik (${rangeLabel || "-"})`
+      : "Corrigerende maatregel is verplicht."
+    : t("valueOverLimit", { value: limitTemp?.toFixed(1) ?? "0.0", unit: unitLabel });
 
   return (
     <div className="flex flex-col gap-5">
@@ -753,7 +802,12 @@ function RecordView({
         <h3 className="text-center text-xl font-black text-[var(--theme-fg)]">
           {equipment?.name ?? title}
         </h3>
-        {limitTemp !== null ? (
+        {isCustomNumber && rangeLabel ? (
+          <p className="mt-1 text-center text-sm font-semibold text-[var(--theme-muted)]">
+            Bereik: {rangeLabel}
+          </p>
+        ) : null}
+        {!isCustomNumber && limitTemp !== null ? (
           <p className="mt-1 text-center text-sm font-semibold text-[var(--theme-muted)]">
             {t("limitLabel", { value: limitTemp.toFixed(1), unit: unitLabel })}
           </p>
@@ -846,7 +900,7 @@ function RecordView({
                 type="button"
                 onClick={startManual}
                 aria-label={t("currentTemperatureAria", { temp: tempLabel })}
-                className={`w-full rounded-2xl border-2 border-transparent bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-6 text-center text-5xl font-black tabular-nums leading-none transition-all hover:border-[var(--theme-primary)]/30 active:scale-[0.98] ${isOverLimit ? "text-red-600" : "text-[var(--theme-fg)]"}`}
+                className={`w-full rounded-2xl border-2 border-transparent bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-6 text-center text-5xl font-black tabular-nums leading-none transition-all hover:border-[var(--theme-primary)]/30 active:scale-[0.98] ${needsCorrectionAction ? "text-red-600" : "text-[var(--theme-fg)]"}`}
               >
                 {tempLabel}
               </button>
@@ -893,7 +947,7 @@ function RecordView({
       </div>
 
       {/* Limit Warning */}
-      {isOverLimit && limitTemp !== null ? (
+      {needsCorrectionAction ? (
         <div
           role="alert"
           aria-live="polite"
@@ -905,7 +959,7 @@ function RecordView({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-base font-black text-red-700">
-                {t("valueOverLimit", { value: limitTemp.toFixed(1), unit: unitLabel })}
+                {warningText}
               </p>
               <p className="mt-1 text-sm font-medium text-red-600">
                 {t("correctiveActionRequiredHelp")}

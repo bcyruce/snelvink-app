@@ -53,13 +53,18 @@ function CustomItemEditContent() {
   // Getal
   const [hasDefault, setHasDefault] = useState(false);
   const [defaultValueText, setDefaultValueText] = useState("0");
-  const [limitText, setLimitText] = useState("0");
+  const [minValueText, setMinValueText] = useState("");
+  const [maxValueText, setMaxValueText] = useState("");
+  const [requireCorrectionOutOfRange, setRequireCorrectionOutOfRange] =
+    useState(false);
   const [stepText, setStepText] = useState("0.1");
   const [unit, setUnit] = useState("");
 
   // Ja/Nee
   const [acceptReasons, setAcceptReasons] = useState<string[]>(["Anders"]);
   const [rejectReasons, setRejectReasons] = useState<string[]>(["Anders"]);
+  const [requireCorrectionOnReject, setRequireCorrectionOnReject] =
+    useState(false);
   const [reasonsTab, setReasonsTab] = useState<"accept" | "reject">("accept");
 
   // Lijst
@@ -102,7 +107,7 @@ function CustomItemEditContent() {
         const { data, error } = await supabase
           .from("haccp_equipments")
           .select(
-            "id, name, default_temp, limit_temp, step, unit, last_temp, schedule",
+            "id, name, default_temp, min_value, max_value, require_correction_out_of_range, step, unit, last_temp, schedule",
           )
           .eq("id", itemId)
           .maybeSingle();
@@ -122,8 +127,14 @@ function CustomItemEditContent() {
               ? String(data.last_temp)
               : "0",
         );
-        setLimitText(
-          typeof data.limit_temp === "number" ? String(data.limit_temp) : "0",
+        setMinValueText(
+          typeof data.min_value === "number" ? String(data.min_value) : "",
+        );
+        setMaxValueText(
+          typeof data.max_value === "number" ? String(data.max_value) : "",
+        );
+        setRequireCorrectionOutOfRange(
+          data.require_correction_out_of_range === true,
         );
         setStepText(
           typeof data.step === "number" && data.step > 0
@@ -135,7 +146,9 @@ function CustomItemEditContent() {
       } else if (moduleType === "boolean") {
         const { data, error } = await supabase
           .from("haccp_products")
-          .select("id, name, accept_reasons, reject_reasons, schedule")
+          .select(
+            "id, name, accept_reasons, reject_reasons, require_correction_on_reject, schedule",
+          )
           .eq("id", itemId)
           .maybeSingle();
         if (ignore) return;
@@ -155,6 +168,7 @@ function CustomItemEditContent() {
             ? data.reject_reasons
             : ["Anders"],
         );
+        setRequireCorrectionOnReject(data.require_correction_on_reject === true);
         setSchedule(normalizeSchedule(data.schedule));
       } else {
         const { data, error } = await supabase
@@ -213,8 +227,22 @@ function CustomItemEditContent() {
       const parsedDefault = Number.parseFloat(
         defaultValueText.replace(",", "."),
       );
-      const parsedLimit = Number.parseFloat(limitText.replace(",", "."));
+      const parsedMin = Number.parseFloat(minValueText.replace(",", "."));
+      const parsedMax = Number.parseFloat(maxValueText.replace(",", "."));
       const parsedStep = Number.parseFloat(stepText.replace(",", "."));
+
+      const minValue = Number.isFinite(parsedMin) ? parsedMin : null;
+      const maxValue = Number.isFinite(parsedMax) ? parsedMax : null;
+
+      if (
+        minValue !== null &&
+        maxValue !== null &&
+        Number(minValue) > Number(maxValue)
+      ) {
+        setErrorMessage(t("rangeInvalid"));
+        setSaving(false);
+        return;
+      }
 
       const { error } = await supabase
         .from("haccp_equipments")
@@ -223,7 +251,9 @@ function CustomItemEditContent() {
           default_temp: hasDefault && Number.isFinite(parsedDefault)
             ? parsedDefault
             : null,
-          limit_temp: Number.isFinite(parsedLimit) ? parsedLimit : null,
+          min_value: minValue,
+          max_value: maxValue,
+          require_correction_out_of_range: requireCorrectionOutOfRange,
           step:
             Number.isFinite(parsedStep) && parsedStep > 0 ? parsedStep : 0.1,
           unit: unit.trim() || null,
@@ -250,6 +280,7 @@ function CustomItemEditContent() {
           name: trimmed,
           accept_reasons: finalAccept,
           reject_reasons: finalReject,
+          require_correction_on_reject: requireCorrectionOnReject,
           schedule: scheduleToJson(schedule),
         })
         .eq("id", itemId);
@@ -279,12 +310,15 @@ function CustomItemEditContent() {
     name,
     customModule,
     defaultValueText,
-    limitText,
+    minValueText,
+    maxValueText,
+    requireCorrectionOutOfRange,
     stepText,
     unit,
     hasDefault,
     acceptReasons,
     rejectReasons,
+    requireCorrectionOnReject,
     schedule,
     itemId,
     router,
@@ -407,8 +441,14 @@ function CustomItemEditContent() {
                 onToggleHasDefault={setHasDefault}
                 defaultValueText={defaultValueText}
                 onChangeDefaultValueText={setDefaultValueText}
-                limitText={limitText}
-                onChangeLimitText={setLimitText}
+                minValueText={minValueText}
+                onChangeMinValueText={setMinValueText}
+                maxValueText={maxValueText}
+                onChangeMaxValueText={setMaxValueText}
+                requireCorrectionOutOfRange={requireCorrectionOutOfRange}
+                onChangeRequireCorrectionOutOfRange={
+                  setRequireCorrectionOutOfRange
+                }
                 stepText={stepText}
                 onChangeStepText={setStepText}
                 unit={unit}
@@ -424,6 +464,8 @@ function CustomItemEditContent() {
                 onChangeAcceptReasons={setAcceptReasons}
                 rejectReasons={rejectReasons}
                 onChangeRejectReasons={setRejectReasons}
+                requireCorrectionOnReject={requireCorrectionOnReject}
+                onChangeRequireCorrectionOnReject={setRequireCorrectionOnReject}
               />
             ) : null}
 
@@ -463,8 +505,12 @@ type NumberItemFieldsProps = {
   onToggleHasDefault: (next: boolean) => void;
   defaultValueText: string;
   onChangeDefaultValueText: (next: string) => void;
-  limitText: string;
-  onChangeLimitText: (next: string) => void;
+  minValueText: string;
+  onChangeMinValueText: (next: string) => void;
+  maxValueText: string;
+  onChangeMaxValueText: (next: string) => void;
+  requireCorrectionOutOfRange: boolean;
+  onChangeRequireCorrectionOutOfRange: (next: boolean) => void;
   stepText: string;
   onChangeStepText: (next: string) => void;
   unit: string;
@@ -476,8 +522,12 @@ function NumberItemFields({
   onToggleHasDefault,
   defaultValueText,
   onChangeDefaultValueText,
-  limitText,
-  onChangeLimitText,
+  minValueText,
+  onChangeMinValueText,
+  maxValueText,
+  onChangeMaxValueText,
+  requireCorrectionOutOfRange,
+  onChangeRequireCorrectionOutOfRange,
   stepText,
   onChangeStepText,
   unit,
@@ -535,29 +585,71 @@ function NumberItemFields({
 
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <span className="text-lg font-bold text-slate-800">
-          {t("limit")}
+          {t("range")}
         </span>
         <p className="text-sm text-slate-500">
-          {t("limitValueHelp")}
+          {t("rangeValueHelp")}
         </p>
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            {t("limitValue")} {unit ? `(${unit})` : ""}
+        <div className="grid grid-cols-2 gap-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+              {t("minimumValue")} {unit ? `(${unit})` : ""}
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={minValueText}
+              onChange={(e) => onChangeMinValueText(e.target.value)}
+              className="min-h-[72px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-5 text-center text-3xl font-black tabular-nums text-blue-600 outline-none focus:border-blue-500 focus:border-b-blue-700"
+            />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
+              {t("maximumValue")} {unit ? `(${unit})` : ""}
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={maxValueText}
+              onChange={(e) => onChangeMaxValueText(e.target.value)}
+              className="min-h-[72px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-5 text-center text-3xl font-black tabular-nums text-blue-600 outline-none focus:border-blue-500 focus:border-b-blue-700"
+            />
+          </label>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <span className="text-sm font-bold text-slate-700">
+            {t("requireCorrectionOutOfRange")}
           </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={limitText}
-            onChange={(e) => onChangeLimitText(e.target.value)}
-            className="min-h-[72px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-5 text-center text-3xl font-black tabular-nums text-blue-600 outline-none focus:border-blue-500 focus:border-b-blue-700"
-          />
-        </label>
+          <button
+            type="button"
+            onClick={() =>
+              onChangeRequireCorrectionOutOfRange(!requireCorrectionOutOfRange)
+            }
+            className={[
+              "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+              requireCorrectionOutOfRange
+                ? "border-blue-700 bg-blue-500"
+                : "border-slate-400 bg-slate-200",
+            ].join(" ")}
+            aria-pressed={requireCorrectionOutOfRange}
+          >
+            <span
+              className={[
+                "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
+                requireCorrectionOutOfRange ? "translate-x-7" : "translate-x-1",
+              ].join(" ")}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-2">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
             {t("stepSize")}
+          </span>
+          <span className="text-xs font-semibold text-slate-500">
+            {t("stepSizeHelp")}
           </span>
           <input
             type="text"
@@ -594,6 +686,8 @@ type BooleanItemFieldsProps = {
   onChangeAcceptReasons: (next: string[]) => void;
   rejectReasons: string[];
   onChangeRejectReasons: (next: string[]) => void;
+  requireCorrectionOnReject: boolean;
+  onChangeRequireCorrectionOnReject: (next: boolean) => void;
 };
 
 function BooleanItemFields({
@@ -603,6 +697,8 @@ function BooleanItemFields({
   onChangeAcceptReasons,
   rejectReasons,
   onChangeRejectReasons,
+  requireCorrectionOnReject,
+  onChangeRequireCorrectionOnReject,
 }: BooleanItemFieldsProps) {
   const { t } = useTranslation();
   const removeReason = (target: "accept" | "reject", reason: string) => {
@@ -672,6 +768,30 @@ function BooleanItemFields({
         >
           <X className="h-8 w-8" strokeWidth={3} />
           <span className="text-sm font-black">{t("afgekeurd")}</span>
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <span className="text-sm font-bold text-slate-700">
+          {t("requireCorrectionOnReject")}
+        </span>
+        <button
+          type="button"
+          onClick={() => onChangeRequireCorrectionOnReject(!requireCorrectionOnReject)}
+          className={[
+            "relative flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+            requireCorrectionOnReject
+              ? "border-blue-700 bg-blue-500"
+              : "border-slate-400 bg-slate-200",
+          ].join(" ")}
+          aria-pressed={requireCorrectionOnReject}
+        >
+          <span
+            className={[
+              "absolute top-0.5 h-5 w-5 rounded-full border-2 border-slate-300 bg-white transition-transform",
+              requireCorrectionOnReject ? "translate-x-7" : "translate-x-1",
+            ].join(" ")}
+          />
         </button>
       </div>
 

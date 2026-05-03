@@ -28,6 +28,7 @@ type Product = {
   name: string;
   accept_reasons: string[] | null;
   reject_reasons: string[] | null;
+  require_correction_on_reject: boolean | null;
 };
 
 type Status = "goedgekeurd" | "afgekeurd";
@@ -89,6 +90,7 @@ export default function OntvangstCheck({
   const [status, setStatus] = useState<Status | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [andersText, setAndersText] = useState("");
+  const [correctionAction, setCorrectionAction] = useState("");
   const [opmerking, setOpmerking] = useState("");
 
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -107,7 +109,9 @@ export default function OntvangstCheck({
 
     const baseQuery = supabase
       .from("haccp_products")
-      .select("id, name, accept_reasons, reject_reasons")
+      .select(
+        "id, name, accept_reasons, reject_reasons, require_correction_on_reject",
+      )
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: true });
     const { data, error } = await (isCustom
@@ -142,10 +146,13 @@ export default function OntvangstCheck({
             ? {
                 accept_reasons: [...DEFAULT_ACCEPT_REASONS],
                 reject_reasons: [...DEFAULT_ACCEPT_REASONS],
+                require_correction_on_reject: false,
               }
             : {}),
         })
-        .select("id, name, accept_reasons, reject_reasons")
+        .select(
+          "id, name, accept_reasons, reject_reasons, require_correction_on_reject",
+        )
         .single();
 
       if (error) {
@@ -250,6 +257,7 @@ export default function OntvangstCheck({
     if (next !== status) {
       setSelectedReasons([]);
       setAndersText("");
+      setCorrectionAction("");
     }
     setStatus(next);
   };
@@ -271,8 +279,19 @@ export default function OntvangstCheck({
           : DEFAULT_REJECT_REASONS
         : [];
 
+  const requiresRejectCorrection =
+    isCustom &&
+    status === "afgekeurd" &&
+    selectedProduct?.require_correction_on_reject === true;
+  const correctionRequired =
+    requiresRejectCorrection && correctionAction.trim().length === 0;
+
   const canSave =
-    !!selectedProduct && !!status && !!restaurantId && !isSaving;
+    !!selectedProduct &&
+    !!status &&
+    !!restaurantId &&
+    !isSaving &&
+    !correctionRequired;
 
   // ---------- save ----------
   const handleSave = async () => {
@@ -328,6 +347,9 @@ export default function OntvangstCheck({
           recorded_at: buildRecordedAt(recordedAtLocal),
           image_urls: uploadedUrls,
           opmerking: opmerking.trim() || null,
+          correction_action: requiresRejectCorrection
+            ? correctionAction.trim() || null
+            : null,
         });
 
       if (insertError) {
@@ -672,6 +694,35 @@ export default function OntvangstCheck({
                 : t("reasonsSelected", { count: selectedReasons.length })}
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {requiresRejectCorrection ? (
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-red-700">
+              {t("correctiveAction")}
+            </span>
+            <textarea
+              value={correctionAction}
+              onChange={(e) => setCorrectionAction(e.target.value)}
+              placeholder={t("correctiveActionPlaceholder")}
+              rows={3}
+              className={[
+                "w-full resize-none rounded-xl border-2 bg-white px-4 py-3 text-base font-semibold text-[var(--theme-fg)] outline-none transition-all focus:ring-2",
+                correctionRequired
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-slate-200 focus:border-[var(--theme-primary)] focus:ring-[var(--theme-primary)]/20",
+              ].join(" ")}
+              aria-invalid={correctionRequired}
+              aria-required="true"
+            />
+            {correctionRequired ? (
+              <span className="text-xs font-bold text-red-700">
+                {t("correctiveActionRequired")}
+              </span>
+            ) : null}
+          </label>
         </div>
       ) : null}
 

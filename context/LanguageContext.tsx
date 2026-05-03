@@ -316,7 +316,19 @@ export const translations = {
     limitValue: "Limietwaarde",
     limitValueHelp:
       "Boven deze waarde moet een corrigerende maatregel worden ingevuld.",
+    range: "Bereik",
+    rangeValueHelp:
+      "Stel een minimum en/of maximum in. Buiten dit bereik wordt de waarde als afwijking gezien.",
+    minimumValue: "Minimum",
+    maximumValue: "Maximum",
+    rangeInvalid: "Minimumwaarde mag niet groter zijn dan maximumwaarde.",
+    requireCorrectionOnReject:
+      "Als afgekeurd is gekozen: corrigerende maatregel verplicht",
+    requireCorrectionOutOfRange:
+      "Als waarde buiten bereik valt: corrigerende maatregel verplicht",
     stepSize: "Stapgrootte",
+    stepSizeHelp:
+      "Bij registreren is dit de grootte van de stap voor de +/- knoppen.",
     unit: "Eenheid",
     unitPlaceholder: "bv. °C, kg, %",
     reasonsPerStatus: "Redenen per status",
@@ -749,7 +761,19 @@ export const translations = {
     limitValue: "Limit value",
     limitValueHelp:
       "Above this value, a corrective action must be entered.",
+    range: "Range",
+    rangeValueHelp:
+      "Set a minimum and/or maximum. Outside this range, the value is treated as a deviation.",
+    minimumValue: "Minimum",
+    maximumValue: "Maximum",
+    rangeInvalid: "Minimum value cannot be greater than maximum value.",
+    requireCorrectionOnReject:
+      "If rejected is selected: corrective action is required",
+    requireCorrectionOutOfRange:
+      "If value is outside range: corrective action is required",
     stepSize: "Step size",
+    stepSizeHelp:
+      "During registration, this is the increment size for the +/- buttons.",
     unit: "Unit",
     unitPlaceholder: "e.g. °C, kg, %",
     reasonsPerStatus: "Reasons per status",
