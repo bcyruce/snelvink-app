@@ -3,7 +3,8 @@
 import SupercellButton from "@/components/SupercellButton";
 import { motion } from "framer-motion";
 import { Undo2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type UndoToastProps = {
   message: string;
@@ -21,9 +22,14 @@ export default function UndoToast({
   onDismiss,
 }: UndoToastProps) {
   const [progress, setProgress] = useState(100);
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const startRef = useRef<number>(Date.now());
   const rafRef = useRef<number | null>(null);
   const dismissedRef = useRef(false);
+
+  useLayoutEffect(() => {
+    setPortalEl(document.body);
+  }, []);
 
   useEffect(() => {
     startRef.current = Date.now();
@@ -60,13 +66,16 @@ export default function UndoToast({
     onUndo();
   };
 
-  return (
+  const shell = (
     <motion.div
       initial={{ y: "120%", opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: "120%", opacity: 0 }}
-      transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.7 }}
-      className="fixed bottom-32 left-1/2 z-50 w-[min(calc(100%-2rem),28rem)] -translate-x-1/2"
+      transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.55 }}
+      className="fixed left-1/2 z-[105] w-[min(calc(100%-2rem),28rem)] -translate-x-1/2 print:hidden"
+      style={{
+        bottom: "max(8rem, calc(env(safe-area-inset-bottom, 0px) + 6rem))",
+      }}
       role="status"
       aria-live="polite"
     >
@@ -102,4 +111,7 @@ export default function UndoToast({
       </div>
     </motion.div>
   );
+
+  if (!portalEl) return null;
+  return createPortal(shell, portalEl);
 }

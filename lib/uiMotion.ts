@@ -77,45 +77,41 @@ export const pageVariants: Variants = {
 
 /** Slide-in from right for forward navigation. */
 export const slideInRight: Variants = {
-  initial: { opacity: 0, x: 60, filter: "blur(3px)" },
+  initial: { opacity: 0, x: 48 },
   animate: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
     transition: {
       type: "spring",
-      stiffness: 300,
-      damping: 28,
-      mass: 0.8,
+      stiffness: 380,
+      damping: 30,
+      mass: 0.55,
     },
   },
   exit: {
     opacity: 0,
-    x: -40,
-    filter: "blur(2px)",
-    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
+    x: -28,
+    transition: { duration: 0.12, ease: [0.4, 0, 1, 1] },
   },
 };
 
 /** Slide-in from left for backward navigation. */
 export const slideInLeft: Variants = {
-  initial: { opacity: 0, x: -60, filter: "blur(3px)" },
+  initial: { opacity: 0, x: -48 },
   animate: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
     transition: {
       type: "spring",
-      stiffness: 300,
-      damping: 28,
-      mass: 0.8,
+      stiffness: 380,
+      damping: 30,
+      mass: 0.55,
     },
   },
   exit: {
     opacity: 0,
-    x: 40,
-    filter: "blur(2px)",
-    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
+    x: 28,
+    transition: { duration: 0.12, ease: [0.4, 0, 1, 1] },
   },
 };
 

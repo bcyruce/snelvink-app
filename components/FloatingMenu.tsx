@@ -2,11 +2,7 @@
 
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
-import {
-  listContainerVariants,
-  listItemVariants,
-  modalBackdropVariants,
-} from "@/lib/uiMotion";
+import { listItemVariants, modalBackdropVariants } from "@/lib/uiMotion";
 import {
   Menu,
   X,
@@ -18,7 +14,8 @@ import {
   Store,
   Settings,
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type MenuTab =
@@ -64,6 +61,12 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  /** Portals to body so `position:fixed` is not trapped by parent `transform` (e.g. app/template). */
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    setPortalEl(document.body);
+  }, []);
 
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
@@ -107,7 +110,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
 
-  return (
+  const shell = (
     <>
       {/* Backdrop */}
       <AnimatePresence>
@@ -117,22 +120,22 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="fixed inset-0 z-40 bg-black/40 print:hidden"
+            className="fixed inset-0 z-[100] bg-black/40 print:hidden"
             style={{ backdropFilter: "blur(4px)" }}
           />
         )}
       </AnimatePresence>
 
-      {/* Menu Panel - Fixed to viewport, centered within max-w-md container */}
+      {/* Menu Panel - viewport-fixed; portal escapes transformed layout ancestors */}
       <AnimatePresence>
         {isOpen && (
-          <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 mx-auto flex max-w-md justify-end print:hidden">
+          <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[110] mx-auto flex max-w-md justify-end print:hidden">
             <motion.div
               data-floating-menu
               initial={{ opacity: 0, scale: 0.85, y: 24, originX: 1, originY: 1 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 16 }}
-              transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
               className="pointer-events-auto mr-4 w-56 overflow-hidden rounded-2xl shadow-2xl"
               style={{
                 background: theme.cardBg,
@@ -142,7 +145,12 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
             >
             <motion.nav
               className="py-2"
-              variants={listContainerVariants}
+              variants={{
+                initial: {},
+                animate: {
+                  transition: { staggerChildren: 0.02 },
+                },
+              }}
               initial="initial"
               animate="animate"
             >
@@ -156,7 +164,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                     whileHover={
                       disabled
                         ? undefined
-                        : { x: 4, transition: { type: "spring", stiffness: 400, damping: 22 } }
+                        : { x: 4, transition: { type: "spring", stiffness: 480, damping: 26 } }
                     }
                     whileTap={disabled ? undefined : { scale: 0.97 }}
                     onClick={() => handleSelect(id, disabled)}
@@ -175,7 +183,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
                   >
                     <motion.span
                       animate={{ rotate: isActive ? [0, -8, 8, 0] : 0 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      transition={{ duration: 0.28, ease: "easeOut" }}
                       className="inline-flex"
                     >
                       <Icon
@@ -204,23 +212,26 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
         )}
       </AnimatePresence>
 
-      {/* Floating Action Button - Fixed to viewport, centered within max-w-md container */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-md justify-end print:hidden">
+      {/* FAB — bottom safe area for notched phones */}
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] mx-auto flex max-w-md justify-end print:hidden"
+        style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
+      >
         <motion.button
           data-floating-menu
           type="button"
           onClick={handleToggle}
-          whileHover={{ scale: 1.08, y: -2 }}
-          whileTap={{ scale: 0.92, y: 1 }}
+          whileHover={{ scale: 1.06, y: -2 }}
+          whileTap={{ scale: 0.94, y: 1 }}
           animate={{
             rotate: isOpen ? 180 : 0,
             boxShadow: isOpen
               ? `0 2px 0 ${theme.primaryDark}, 0 4px 12px rgba(0,0,0,0.18)`
               : `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
           }}
-          transition={{ type: "spring", stiffness: 300, damping: 22 }}
-          className="pointer-events-auto mb-6 mr-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ background: theme.primary }}
+          transition={{ type: "spring", stiffness: 420, damping: 26 }}
+          className="pointer-events-auto mr-4 flex h-14 w-14 items-center justify-center rounded-full"
+          style={{ background: theme.primary, marginBottom: 0 }}
           aria-label={isOpen ? t("menuClose") : t("menuOpen")}
           aria-expanded={isOpen}
         >
@@ -231,7 +242,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
               initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
               animate={{ rotate: 0, opacity: 1, scale: 1 }}
               exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: 0.12 }}
               className="inline-flex"
             >
               <X className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -242,7 +253,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
               initial={{ rotate: 90, opacity: 0, scale: 0.6 }}
               animate={{ rotate: 0, opacity: 1, scale: 1 }}
               exit={{ rotate: -90, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: 0.12 }}
               className="inline-flex"
             >
               <Menu className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -253,4 +264,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
       </div>
     </>
   );
+
+  if (!portalEl) return null;
+  return createPortal(shell, portalEl);
 }

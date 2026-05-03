@@ -44,14 +44,14 @@ export default function Template({ children }: { children: ReactNode }) {
   const variants = directionRef.current === "back" ? slideInLeft : slideInRight;
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence initial={false}>
       <motion.div
         key={pathname}
         variants={variants}
         initial="initial"
         animate="animate"
         exit="exit"
-        style={{ willChange: "transform, opacity, filter" }}
+        style={{ willChange: "transform, opacity" }}
       >
         {children}
       </motion.div>
