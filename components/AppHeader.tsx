@@ -9,18 +9,18 @@ export default function AppHeader() {
 
   return (
     <header
-      className="px-5 pt-3 pb-3"
+      className="px-5 pt-2 pb-2"
       style={{ background: theme.primary }}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Image
-            src="/logo-snelvink.png"
+            src="/logo-snelvink.png?v=2"
             alt="Snelvink"
-            width={48}
-            height={48}
+            width={72}
+            height={72}
             priority
-            className="h-12 w-12 shrink-0 select-none"
+            className="h-16 w-16 shrink-0 select-none"
           />
           <div
             style={{
