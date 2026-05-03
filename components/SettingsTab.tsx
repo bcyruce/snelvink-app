@@ -5,39 +5,15 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTranslation } from "@/hooks/useTranslation";
 import { planLabel, planStatusLabel } from "@/lib/plans";
-import { ChevronRight, Download, LogOut, RefreshCw } from "lucide-react";
-import autoTable from "jspdf-autotable";
-import jsPDF from "jspdf";
+import { ChevronRight, LogOut, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-
-type DocWithAutoTable = jsPDF & {
-  lastAutoTable?: { finalY: number };
-};
 
 type StaffMember = {
   id: string;
   email: string | null;
   full_name: string | null;
 };
-
-type ExportHaccpRow = {
-  recorded_at: string;
-  module_type: "koeling" | "kerntemperatuur" | "ontvangst" | "schoonmaak";
-  temperature: number | null;
-  product_name: string | null;
-  status: "goedgekeurd" | "afgekeurd" | null;
-  location_name: string | null;
-  completed_tasks: string[] | null;
-  haccp_equipments: { name: string | null } | { name: string | null }[] | null;
-};
-
-function formatNlDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function translatedPlanStatus(
   status: string | null | undefined,
@@ -74,7 +50,6 @@ export default function SettingsTab() {
     profile?.role === "admin" ||
     profile?.role === "eigenaar";
 
-  const [isExporting, setIsExporting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -148,103 +123,6 @@ export default function SettingsTab() {
       setIsRefreshing(false);
     }
   }, [refresh, loadStaff]);
-
-  const generatePDF = useCallback(async () => {
-    if (!restaurantId) {
-      console.error("Geen restaurant gekoppeld aan dit profiel.");
-      return;
-    }
-
-    setIsExporting(true);
-
-    try {
-      const { data, error } = await supabase
-        .from("haccp_records")
-        .select(
-          "recorded_at, module_type, temperature, product_name, status, location_name, completed_tasks, haccp_equipments(name)",
-        )
-        .eq("restaurant_id", restaurantId)
-        .order("recorded_at", { ascending: false })
-        .limit(10_000);
-
-      if (error) {
-        console.error("haccp_records ophalen mislukt:", error);
-      }
-
-      const haccpRows = (data ?? []) as ExportHaccpRow[];
-
-      const tempRows = haccpRows
-        .filter(
-          (row) =>
-            row.module_type === "koeling" || row.module_type === "kerntemperatuur",
-        )
-        .map((row) => {
-          const equipmentName = Array.isArray(row.haccp_equipments)
-            ? (row.haccp_equipments[0]?.name ?? "—")
-            : (row.haccp_equipments?.name ?? "—");
-          return [
-            formatNlDateTime(row.recorded_at),
-            String(equipmentName),
-            typeof row.temperature === "number"
-              ? `${Number(row.temperature).toFixed(1)} °C`
-              : "—",
-          ];
-        });
-
-      const cleanRows = haccpRows
-        .filter((row) => row.module_type === "schoonmaak")
-        .map((row) => [
-          formatNlDateTime(row.recorded_at),
-          String(row.location_name ?? "—"),
-          row.completed_tasks && row.completed_tasks.length > 0
-            ? t("completed")
-            : t("noTasksChecked"),
-        ]);
-
-      const doc = new jsPDF();
-      const margin = 14;
-      let cursorY = 18;
-
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text(t("haccpReportTitle"), margin, cursorY);
-
-      cursorY += 12;
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text(t("temperatureRegistration"), margin, cursorY);
-
-      autoTable(doc, {
-        startY: cursorY + 2,
-        head: [[t("dateTime"), t("equipment"), t("temperature")]],
-        body: tempRows,
-        theme: "striped",
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [55, 65, 81] },
-      });
-
-      const docExt = doc as DocWithAutoTable;
-      cursorY = (docExt.lastAutoTable?.finalY ?? cursorY) + 10;
-
-      doc.setFont("helvetica", "bold");
-      doc.text(t("cleaningRegistration"), margin, cursorY);
-
-      autoTable(doc, {
-        startY: cursorY + 2,
-        head: [[t("dateTime"), t("task"), t("status")]],
-        body: cleanRows,
-        theme: "striped",
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [55, 65, 81] },
-      });
-
-      doc.save("HACCP_Rapport.pdf");
-    } catch (err) {
-      console.error("PDF genereren mislukt:", err);
-    } finally {
-      setIsExporting(false);
-    }
-  }, [restaurantId, t]);
 
   const handleSignOut = useCallback(async () => {
     setIsSigningOut(true);
@@ -433,24 +311,6 @@ export default function SettingsTab() {
           )}
         </div>
       ) : null}
-
-      <p className="mb-5 text-sm font-semibold text-slate-600">
-        {t("exportIntro")}
-      </p>
-
-      <SupercellButton
-        type="button"
-        size="lg"
-        variant="primary"
-        onClick={() => void generatePDF()}
-        disabled={isExporting || !restaurantId}
-        aria-busy={isExporting}
-        textCase="normal"
-        className="mb-4 flex w-full items-center justify-center gap-3 py-6 text-xl"
-      >
-        <Download className="h-7 w-7 shrink-0 text-white" strokeWidth={2.5} />
-        {isExporting ? t("generating") : t("downloadHaccpReport")}
-      </SupercellButton>
 
       <SupercellButton
         type="button"
