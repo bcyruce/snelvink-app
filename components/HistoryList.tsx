@@ -2,6 +2,7 @@
 
 import ExportModal, { type ExportFormat } from "@/components/ExportModal";
 import SupercellButton from "@/components/SupercellButton";
+import { getLocale } from "@/context/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   exportHistoryAsCsv,
@@ -355,7 +356,7 @@ export default function HistoryList() {
   const { translateHaccpText, t, language } = useTranslation();
   const { profile, restaurant, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
-  const locale = language === "en" ? "en-GB" : "nl-NL";
+  const locale = getLocale(language);
 
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);

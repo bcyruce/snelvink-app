@@ -3,7 +3,9 @@ import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { NextResponse } from "next/server";
 
 function isEnglish(request: Request) {
-  return request.headers.get("x-snelvink-language") === "en";
+  // Any non-Dutch UI language uses the English error copy here.
+  const lang = (request.headers.get("x-snelvink-language") ?? "nl").toLowerCase();
+  return lang !== "nl";
 }
 
 function msg(request: Request, nl: string, en: string) {

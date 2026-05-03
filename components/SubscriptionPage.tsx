@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { getLocale } from "@/context/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -92,7 +93,7 @@ export default function SubscriptionPage() {
   const searchParams = useSearchParams();
   const { profile, restaurant } = useUser();
   const { t, language } = useTranslation();
-  const locale = language === "en" ? "en-GB" : "nl-NL";
+  const locale = getLocale(language);
 
   const [busy, setBusy] = useState<"checkout" | "portal" | null>(null);
   const [error, setError] = useState<string | null>(null);

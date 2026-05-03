@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { LANGUAGE_META } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -42,8 +43,9 @@ function translatedPlanStatus(
 
 export default function SettingsTab() {
   const router = useRouter();
-  const { language, setLanguage, t } = useTranslation();
+  const { language, t } = useTranslation();
   const { profile, restaurant, isFreePlan, refresh } = useUser();
+  const languageMeta = LANGUAGE_META[language];
   const restaurantId = profile?.restaurant_id ?? null;
   const isOwner =
     profile?.role === "owner" ||
@@ -146,30 +148,36 @@ export default function SettingsTab() {
       </h2>
 
       <section className="mb-6 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
-        <h3 className="text-base font-black text-slate-900">{t("languageSectionTitle")}</h3>
-        <p className="mt-1 text-sm font-semibold text-slate-500">{t("languageSectionSubtitle")}</p>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <SupercellButton
-            type="button"
-            size="sm"
-            variant={language === "nl" ? "primary" : "neutral"}
-            onClick={() => setLanguage("nl")}
-            aria-pressed={language === "nl"}
-            className="min-h-12 rounded-xl px-3 py-3 text-sm normal-case"
-          >
-            🇳🇱 Nederlands
-          </SupercellButton>
-          <SupercellButton
-            type="button"
-            size="sm"
-            variant={language === "en" ? "primary" : "neutral"}
-            onClick={() => setLanguage("en")}
-            aria-pressed={language === "en"}
-            className="min-h-12 rounded-xl px-3 py-3 text-sm normal-case"
-          >
-            EN English
-          </SupercellButton>
-        </div>
+        <SupercellButton
+          type="button"
+          size="lg"
+          variant="neutral"
+          onClick={() => router.push("/instellingen/taal")}
+          textCase="normal"
+          className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-2xl"
+            >
+              {languageMeta.flag}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-base font-black text-slate-900">
+                {t("language")}
+              </span>
+              <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">
+                {languageMeta.nativeName}
+              </span>
+            </span>
+          </span>
+          <ChevronRight
+            className="h-6 w-6 shrink-0 text-blue-600 rtl:rotate-180"
+            strokeWidth={2.75}
+            aria-hidden
+          />
+        </SupercellButton>
       </section>
 
       <div className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">

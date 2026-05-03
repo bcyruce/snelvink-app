@@ -8,12 +8,40 @@ type Body = {
   language?: string;
 };
 
+function getRequestLanguage(request: Request, body?: Body): string {
+  const fromBody = typeof body?.language === "string" ? body.language : null;
+  const fromHeader = request.headers.get("x-snelvink-language");
+  return (fromBody ?? fromHeader ?? "nl").toLowerCase();
+}
+
 function isEnglish(request: Request, body?: Body) {
-  return body?.language === "en" || request.headers.get("x-snelvink-language") === "en";
+  // For now non-Dutch locales fall back to the English copy in this API
+  // (the user-facing app text is fully localized; only Stripe-side messages flow through here).
+  return getRequestLanguage(request, body) !== "nl";
 }
 
 function msg(request: Request, body: Body | undefined, nl: string, en: string) {
   return isEnglish(request, body) ? en : nl;
+}
+
+// Map our app language codes to a Stripe Checkout `locale` value.
+// Stripe Checkout supports a fixed list of locales (see Stripe.Checkout.Session.Locale).
+// Languages without a Stripe equivalent (e.g. Arabic) fall back to "auto",
+// which lets Stripe pick the best match from the browser.
+function toStripeLocale(language: string): "nl" | "en" | "zh" | "tr" | "auto" {
+  switch (language) {
+    case "nl":
+      return "nl";
+    case "en":
+      return "en";
+    case "zh":
+      return "zh";
+    case "tr":
+      return "tr";
+    case "ar":
+    default:
+      return "auto";
+  }
 }
 
 function isPaidPlan(value: string): value is Extract<PlanId, "basic" | "pro"> {
@@ -42,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     const plan = String(body.plan ?? "");
-    const locale = body.language === "en" ? "en" : "nl";
+    const locale = toStripeLocale(getRequestLanguage(request, body));
     if (!isPaidPlan(plan)) {
       return NextResponse.json(
         { error: msg(request, body, "Ongeldig plan. Kies Basic of Pro.", "Invalid plan. Choose Basic or Pro.") },

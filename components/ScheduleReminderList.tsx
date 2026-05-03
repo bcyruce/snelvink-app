@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { getLocale } from "@/context/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -516,7 +517,7 @@ function CalendarMonth({
 export default function ScheduleReminderList() {
   const { profile, restaurant } = useUser();
   const { t, language } = useTranslation();
-  const locale = language === "en" ? "en-GB" : "nl-NL";
+  const locale = getLocale(language);
   const monthNames = t("months").split("|");
   const weekdayNames = t("weekdaysShort").split("|");
   const restaurantId = profile?.restaurant_id ?? null;
