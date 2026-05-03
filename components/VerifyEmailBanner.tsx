@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { Mail } from "lucide-react";
@@ -8,6 +9,7 @@ import { useState } from "react";
 
 export default function VerifyEmailBanner() {
   const { user, profile, refresh } = useUser();
+  const { t } = useTranslation();
   const [isSending, setIsSending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function VerifyEmailBanner() {
     setErrorMessage(null);
 
     if (!email) {
-      setErrorMessage("Geen e-mailadres gevonden op dit account.");
+      setErrorMessage(t("verifyEmailMissing"));
       return;
     }
 
@@ -50,18 +52,16 @@ export default function VerifyEmailBanner() {
         console.error("Verificatie-e-mail versturen mislukt:", error.message);
         setErrorMessage(
           error.message ||
-            "Kon geen e-mail versturen. Controleer SMTP in Supabase of probeer later opnieuw.",
+            t("verifyEmailSendFailed"),
         );
         return;
       }
 
-      setFeedback(
-        "Bevestigingsmail verstuurd. Open de link in je inbox om je e-mailadres te verifiëren.",
-      );
+      setFeedback(t("verifyEmailSent"));
       void refresh();
     } catch (e) {
       console.error(e);
-      setErrorMessage("Er ging iets mis. Probeer het opnieuw.");
+      setErrorMessage(t("retryError"));
     } finally {
       setIsSending(false);
     }
@@ -71,8 +71,7 @@ export default function VerifyEmailBanner() {
     <div className="sticky top-0 z-30 border-b-4 border-amber-500 bg-amber-300 px-4 py-4 sm:px-6">
       <div className="mx-auto flex max-w-md flex-col gap-3">
         <p className="text-center text-base font-black leading-snug text-amber-950 sm:text-lg">
-          E-mailadres nog niet geverifieerd. Bevestig je account om je gegevens
-          veilig te stellen.
+          {t("emailNotVerified")}
         </p>
         <SupercellButton
           type="button"
@@ -85,7 +84,7 @@ export default function VerifyEmailBanner() {
           className="flex h-16 w-full items-center justify-center gap-3 text-lg"
         >
           <Mail className="h-6 w-6 shrink-0" strokeWidth={2.5} aria-hidden />
-          {isSending ? "Versturen…" : "Nu verifiëren"}
+          {isSending ? t("sending") : t("verifyNow")}
         </SupercellButton>
         {feedback ? (
           <p

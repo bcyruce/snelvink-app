@@ -69,13 +69,13 @@ export default function OntvangstCheck({
     ? `/taken/custom/${customModuleId}/edit`
     : "/taken/ontvangst/edit";
   const recordModuleType = isCustom ? "custom_boolean" : "ontvangst";
-  const headingTitle = title ?? "Ontvangst";
-  const itemSingular = isCustom ? "Item" : "Product";
-  const itemSingularLower = isCustom ? "item" : "product";
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
+  const headingTitle = title ?? t("ontvangst");
+  const itemSingular = isCustom ? t("item") : t("product");
+  const itemSingularLower = itemSingular.toLowerCase();
 
   // ---------- form state ----------
   const [recordedAtLocal, setRecordedAtLocal] = useState<string>(() =>
@@ -115,12 +115,12 @@ export default function OntvangstCheck({
 
     if (error) {
       console.error("haccp_products laden mislukt:", error);
-      setErrorMessage("Producten laden mislukt. Probeer opnieuw.");
+      setErrorMessage(t("loadProductsFailed"));
     } else {
       setProducts((data ?? []) as Product[]);
     }
     setLoadingProducts(false);
-  }, [restaurantId, customModuleId, isCustom]);
+  }, [restaurantId, customModuleId, isCustom, t]);
 
   useEffect(() => {
     void loadProducts();
@@ -149,7 +149,7 @@ export default function OntvangstCheck({
 
       if (error) {
         console.error("Product toevoegen mislukt:", error);
-        setErrorMessage("Product toevoegen mislukt.");
+        setErrorMessage(t("productAddFailed"));
         return;
       }
       if (data) {
@@ -160,13 +160,13 @@ export default function OntvangstCheck({
         }
       }
     },
-    [restaurantId, mode, customModuleId, isCustom],
+    [restaurantId, mode, customModuleId, isCustom, t],
   );
 
   const handleDeleteProduct = useCallback(
     async (product: Product) => {
       const ok = window.confirm(
-        `"${product.name}" verwijderen? De historie blijft bewaard.`,
+        t("confirmDeleteHistoryKept", { name: product.name }),
       );
       if (!ok) return;
 
@@ -177,12 +177,12 @@ export default function OntvangstCheck({
 
       if (error) {
         console.error("Verwijderen mislukt:", error);
-        setErrorMessage("Verwijderen mislukt.");
+        setErrorMessage(t("deleteFailed"));
         return;
       }
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
     },
-    [],
+    [t],
   );
 
   // ---------- photo handling ----------
@@ -299,7 +299,7 @@ export default function OntvangstCheck({
             .upload(path, file, { cacheControl: "3600", upsert: false });
           if (uploadError) {
             console.error("Foto upload mislukt:", uploadError);
-            setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
+            setErrorMessage(t("photoUploadFailed"));
             return;
           }
           const { data } = supabase.storage
@@ -340,14 +340,14 @@ export default function OntvangstCheck({
 
       if (insertError) {
         console.error("Registratie opslaan mislukt:", insertError);
-        setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
+        setErrorMessage(t("saveFailed"));
         return;
       }
 
       router.push("/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
-      setErrorMessage("Onverwachte fout. Probeer opnieuw.");
+      setErrorMessage(t("unexpectedErrorRetry"));
     } finally {
       setIsSaving(false);
     }
@@ -376,12 +376,12 @@ export default function OntvangstCheck({
 
         {!restaurantId ? (
           <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
-            Geen restaurant gekoppeld aan je account.
+            {t("noRestaurantLinked")}
           </p>
         ) : null}
 
         {loadingProducts ? (
-          <p className="text-center text-slate-500">Producten laden…</p>
+          <p className="text-center text-slate-500">{t("loadingProducts")}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {products.map((p) => (
@@ -395,7 +395,7 @@ export default function OntvangstCheck({
                   <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                     <a
                       href={`${editBasePath}/${p.id}`}
-                      aria-label={`Bewerk ${p.name}`}
+                      aria-label={`${t("edit")} ${p.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                     >
                       <Pencil className="h-5 w-5" aria-hidden />
@@ -403,7 +403,7 @@ export default function OntvangstCheck({
                     <button
                       type="button"
                       onClick={() => handleDeleteProduct(p)}
-                      aria-label={`Verwijder ${p.name}`}
+                      aria-label={`${t("delete")} ${p.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
                     >
                       <Trash2 className="h-5 w-5" aria-hidden />
@@ -416,8 +416,8 @@ export default function OntvangstCheck({
         )}
 
         <InlineAddInput
-          label={`${itemSingular} toevoegen`}
-          placeholder={`Naam van het ${itemSingularLower}`}
+          label={t("addProduct", { name: itemSingularLower })}
+          placeholder={t("nameOfProduct", { name: itemSingularLower })}
           onAdd={handleAddProduct}
           disabled={!restaurantId}
         />
@@ -449,7 +449,7 @@ export default function OntvangstCheck({
 
       {!restaurantId ? (
         <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
-          Geen restaurant gekoppeld aan je account.
+          {t("noRestaurantLinked")}
         </p>
       ) : null}
 
@@ -461,7 +461,7 @@ export default function OntvangstCheck({
         collapsed={currentStep !== "product"}
       >
         {loadingProducts ? (
-          <p className="text-center text-slate-500">Producten laden…</p>
+          <p className="text-center text-slate-500">{t("loadingProducts")}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {products.map((p) => (
@@ -477,8 +477,8 @@ export default function OntvangstCheck({
             ))}
 
             <InlineAddInput
-              label={`${itemSingular} toevoegen`}
-              placeholder={`Naam van het ${itemSingularLower}`}
+              label={t("addProduct", { name: itemSingularLower })}
+              placeholder={t("nameOfProduct", { name: itemSingularLower })}
               onAdd={handleAddProduct}
             />
           </div>
@@ -489,7 +489,7 @@ export default function OntvangstCheck({
       {selectedProduct ? (
         <label className="flex flex-col gap-2">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Datum &amp; tijd van ontvangst
+            {t("receivedDateTimeLabel")}
           </span>
           <input
             type="datetime-local"
@@ -504,7 +504,7 @@ export default function OntvangstCheck({
       {selectedProduct ? (
         <div className="flex flex-col gap-3">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Beoordeling
+            {t("rating")}
           </span>
           <div className="grid grid-cols-2 gap-3">
             <button
@@ -519,7 +519,7 @@ export default function OntvangstCheck({
               ].join(" ")}
             >
               <Check className="h-9 w-9" strokeWidth={3} aria-hidden />
-              <span className="text-lg font-black">Goedgekeurd</span>
+              <span className="text-lg font-black">{t("goedgekeurd")}</span>
             </button>
 
             <button
@@ -534,7 +534,7 @@ export default function OntvangstCheck({
               ].join(" ")}
             >
               <X className="h-9 w-9" strokeWidth={3} aria-hidden />
-              <span className="text-lg font-black">Afgekeurd</span>
+              <span className="text-lg font-black">{t("afgekeurd")}</span>
             </button>
           </div>
         </div>
@@ -557,13 +557,13 @@ export default function OntvangstCheck({
             ].join(" ")}
           >
             {status === "goedgekeurd"
-              ? "Redenen voor goedkeuring"
-              : "Redenen voor afkeuring"}
+              ? t("acceptReasonsTitle")
+              : t("rejectReasonsTitle")}
           </h3>
 
           {reasonsForStatus.length === 0 ? (
             <p className="rounded-xl bg-white px-4 py-4 text-center text-sm font-semibold text-slate-500">
-              Geen redenen geconfigureerd voor dit product.
+              {t("noReasonsConfigured")}
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -588,7 +588,7 @@ export default function OntvangstCheck({
                         accent,
                       ].join(" ")}
                     >
-                      <span className="min-w-0 flex-1 truncate">{r}</span>
+                      <span className="min-w-0 flex-1 truncate">{r === "Anders" ? t("other") : r}</span>
                       {isSelected ? (
                         <Check
                           className="h-6 w-6 shrink-0"
@@ -605,7 +605,7 @@ export default function OntvangstCheck({
                         type="text"
                         value={andersText}
                         onChange={(e) => setAndersText(e.target.value)}
-                        placeholder="Beschrijf (optioneel)"
+                        placeholder={t("describeOptional")}
                         autoFocus
                         className={[
                           "min-h-[56px] w-full rounded-xl border-2 border-b-4 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:ring-4",
@@ -628,8 +628,9 @@ export default function OntvangstCheck({
                 status === "goedgekeurd" ? "text-emerald-800" : "text-red-800",
               ].join(" ")}
             >
-              {selectedReasons.length} reden
-              {selectedReasons.length === 1 ? "" : "en"} geselecteerd
+              {selectedReasons.length === 1
+                ? t("reasonSelected", { count: selectedReasons.length })
+                : t("reasonsSelected", { count: selectedReasons.length })}
             </p>
           ) : null}
         </div>
@@ -641,19 +642,19 @@ export default function OntvangstCheck({
           {/* Opmerking */}
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Opmerking (optioneel)
+              {t("noteOptional")}
             </span>
             <textarea
               value={opmerking}
               onChange={(e) => setOpmerking(e.target.value)}
-              placeholder="Voeg een opmerking toe..."
+              placeholder={t("notePlaceholder")}
               rows={3}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
             />
           </label>
 
           <h3 className="text-xl font-black uppercase tracking-wide text-slate-500">
-            Foto&apos;s (optioneel)
+            {t("photosOptional")}
           </h3>
 
           <input
@@ -674,10 +675,10 @@ export default function OntvangstCheck({
           >
             <Camera className="h-7 w-7" aria-hidden />
             {photoSlotsLeft <= 0
-              ? `Maximaal ${MAX_PHOTOS} foto's`
+              ? t("maxPhotos", { count: MAX_PHOTOS })
               : photoFiles.length > 0
-                ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
-                : "Foto maken of kiezen (max 5)"}
+                ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
+                : t("pickPhoto", { count: MAX_PHOTOS })}
           </SupercellButton>
 
           {photoPreviews.length > 0 ? (
@@ -686,14 +687,14 @@ export default function OntvangstCheck({
                 <div key={url} className="relative">
                   <img
                     src={url}
-                    alt={`Foto ${i + 1}`}
+                    alt={t("photoAlt", { number: i + 1 })}
                     className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
                   />
                   <SupercellButton
                     size="icon"
                     variant="danger"
                     onClick={() => removePhoto(i)}
-                    aria-label={`Foto ${i + 1} verwijderen`}
+                    aria-label={t("removePhoto", { number: i + 1 })}
                     className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
                   >
                     <X className="h-4 w-4" strokeWidth={3} aria-hidden />
@@ -712,11 +713,11 @@ export default function OntvangstCheck({
             className="flex min-h-[96px] w-full items-center justify-center gap-3 text-2xl normal-case"
           >
             {isSaving ? (
-              "Opslaan…"
+              t("saving")
             ) : (
               <>
                 <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
-                Opslaan
+                {t("save")}
               </>
             )}
           </SupercellButton>
@@ -747,6 +748,7 @@ function Section({
   summaryAccentClass,
   children,
 }: SectionProps) {
+  const { t } = useTranslation();
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
@@ -761,7 +763,7 @@ function Section({
             className="flex min-h-[64px] items-center gap-2 text-base normal-case"
           >
             <Pencil className="h-4 w-4" aria-hidden />
-            Wijzigen
+            {t("edit")}
           </SupercellButton>
         ) : null}
       </div>

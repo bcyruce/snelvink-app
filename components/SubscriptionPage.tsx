@@ -1,11 +1,11 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import {
   PLAN_DEFINITIONS,
   planLabel,
-  planStatusLabel,
   type PlanDefinition,
   type PlanId,
 } from "@/lib/plans";
@@ -21,18 +21,78 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-function formatPeriodEnd(iso: string | null | undefined): string | null {
+function formatPeriodEnd(
+  iso: string | null | undefined,
+  locale: string,
+): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+  return new Intl.DateTimeFormat(locale).format(d);
+}
+
+function translatedPlanStatus(
+  status: string | null | undefined,
+  t: ReturnType<typeof useTranslation>["t"],
+): { label: string; tone: "ok" | "warn" | "bad" | "muted" } {
+  switch (status) {
+    case "active":
+      return { label: t("planStatusActive"), tone: "ok" };
+    case "trialing":
+      return { label: t("planStatusTrialing"), tone: "ok" };
+    case "past_due":
+      return { label: t("planStatusPastDue"), tone: "warn" };
+    case "canceled":
+      return { label: t("planStatusCanceled"), tone: "warn" };
+    case "incomplete":
+    case "incomplete_expired":
+      return { label: t("planStatusIncomplete"), tone: "warn" };
+    case "unpaid":
+      return { label: t("planStatusUnpaid"), tone: "bad" };
+    case "paused":
+      return { label: t("planStatusPaused"), tone: "muted" };
+    default:
+      return { label: status ?? "—", tone: "muted" };
+  }
+}
+
+function planTagline(plan: PlanDefinition, t: ReturnType<typeof useTranslation>["t"]) {
+  if (plan.id === "free") return t("planFreeTagline");
+  if (plan.id === "basic") return t("planBasicTagline");
+  return t("planProTagline");
+}
+
+function planFeatures(plan: PlanDefinition, t: ReturnType<typeof useTranslation>["t"]) {
+  if (plan.id === "free") {
+    return [
+      t("planFreeFeature1"),
+      t("planFreeFeature2"),
+      t("planFreeFeature3"),
+      t("planFreeFeature4"),
+    ];
+  }
+  if (plan.id === "basic") {
+    return [
+      t("planBasicFeature1"),
+      t("planBasicFeature2"),
+      t("planBasicFeature3"),
+      t("planBasicFeature4"),
+    ];
+  }
+  return [
+    t("planProFeature1"),
+    t("planProFeature2"),
+    t("planProFeature3"),
+    t("planProFeature4"),
+  ];
 }
 
 export default function SubscriptionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { profile, restaurant } = useUser();
+  const { t, language } = useTranslation();
+  const locale = language === "en" ? "en-GB" : "nl-NL";
 
   const [busy, setBusy] = useState<"checkout" | "portal" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,19 +102,17 @@ export default function SubscriptionPage() {
   useEffect(() => {
     const status = searchParams.get("status");
     if (status === "success") {
-      setFlash(
-        "Betaling geslaagd – je abonnement wordt binnen enkele seconden bijgewerkt.",
-      );
+      setFlash(t("paymentSuccess"));
     } else if (status === "cancel") {
-      setFlash("Betaling geannuleerd. Je plan is niet gewijzigd.");
+      setFlash(t("paymentCanceled"));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const currentPlan = (restaurant?.plan ??
     restaurant?.plan_type ??
     "free") as PlanId;
-  const statusBadge = planStatusLabel(restaurant?.plan_status);
-  const periodEnd = formatPeriodEnd(restaurant?.plan_period_end);
+  const statusBadge = translatedPlanStatus(restaurant?.plan_status, t);
+  const periodEnd = formatPeriodEnd(restaurant?.plan_period_end, locale);
 
   const isOwner =
     profile?.role === "owner" ||
@@ -82,22 +140,23 @@ export default function SubscriptionPage() {
     try {
       const token = await getAccessToken();
       if (!token) {
-        throw new Error("Niet ingelogd. Meld je opnieuw aan.");
+        throw new Error(t("notSignedIn"));
       }
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "x-snelvink-language": language,
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, language }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         url?: string;
         error?: string;
       };
       if (!res.ok || !data.url) {
-        throw new Error(data.error ?? "Kon Stripe Checkout niet starten.");
+        throw new Error(data.error ?? t("checkoutStartFailed"));
       }
       window.location.href = data.url;
     } catch (e) {
@@ -112,18 +171,21 @@ export default function SubscriptionPage() {
     try {
       const token = await getAccessToken();
       if (!token) {
-        throw new Error("Niet ingelogd. Meld je opnieuw aan.");
+        throw new Error(t("notSignedIn"));
       }
       const res = await fetch("/api/stripe/portal", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-snelvink-language": language,
+        },
       });
       const data = (await res.json().catch(() => ({}))) as {
         url?: string;
         error?: string;
       };
       if (!res.ok || !data.url) {
-        throw new Error(data.error ?? "Kon Customer Portal niet openen.");
+        throw new Error(data.error ?? t("portalOpenFailed"));
       }
       window.location.href = data.url;
     } catch (e) {
@@ -143,18 +205,18 @@ export default function SubscriptionPage() {
         className="mb-6 inline-flex items-center gap-2 px-4 py-3 text-base"
       >
         <ArrowLeft className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-        Terug
+        {t("back")}
       </SupercellButton>
 
       <header className="mb-8">
         <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-600">
-          Plannen
+          {t("plans")}
         </p>
         <h1 className="mt-1 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
-          Abonnement
+          {t("subscription")}
         </h1>
         <p className="mt-2 text-base font-bold text-slate-500 sm:text-lg">
-          Kies het plan dat past bij jouw keuken.
+          {t("choosePlan")}
         </p>
       </header>
 
@@ -172,7 +234,7 @@ export default function SubscriptionPage() {
       {/* Huidig plan */}
       <div className="mb-8 rounded-2xl border-2 border-blue-300 border-b-4 border-b-blue-400 bg-blue-50 p-6">
         <p className="text-xs font-black uppercase tracking-wide text-blue-700">
-          Huidig plan
+          {t("currentPlan")}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <p className="text-4xl font-black text-slate-900 sm:text-5xl">
@@ -187,7 +249,7 @@ export default function SubscriptionPage() {
         </div>
         {periodEnd ? (
           <p className="mt-3 text-sm font-semibold text-slate-600">
-            Huidige periode loopt tot <strong>{periodEnd}</strong>.
+            {t("currentPeriodEnds", { date: periodEnd })}
           </p>
         ) : null}
 
@@ -202,15 +264,14 @@ export default function SubscriptionPage() {
             className="mt-5 inline-flex items-center gap-2 px-4 py-3 text-sm"
           >
             <ExternalLink className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-            {busy === "portal" ? "Openen…" : "Abonnement beheren"}
+            {busy === "portal" ? t("opening") : t("manageSubscription")}
           </SupercellButton>
         ) : null}
       </div>
 
       {!isOwner ? (
         <p className="mb-8 rounded-2xl border-2 border-amber-300 border-b-4 border-b-amber-400 bg-amber-100 px-4 py-4 text-center font-bold text-amber-900">
-          Alleen de eigenaar kan het abonnement wijzigen. Vraag je baas om te
-          upgraden.
+          {t("ownerOnlySubscription")}
         </p>
       ) : null}
 
@@ -224,13 +285,13 @@ export default function SubscriptionPage() {
             canUpgrade={isOwner && plan.id !== currentPlan && plan.id !== "free"}
             isBusy={busy === "checkout"}
             onUpgrade={() => handleUpgrade(plan.id)}
+            t={t}
           />
         ))}
       </div>
 
       <p className="mt-10 text-center text-xs text-gray-500">
-        Facturen en betaalmethoden worden beheerd via Stripe. Je kunt je
-        abonnement op elk moment opzeggen.
+        {t("invoicesStripe")}
       </p>
     </section>
   );
@@ -245,6 +306,7 @@ type PlanCardProps = {
   canUpgrade: boolean;
   isBusy: boolean;
   onUpgrade: () => void;
+  t: ReturnType<typeof useTranslation>["t"];
 };
 
 function PlanCard({
@@ -253,6 +315,7 @@ function PlanCard({
   canUpgrade,
   isBusy,
   onUpgrade,
+  t,
 }: PlanCardProps) {
   const accent =
     plan.id === "pro"
@@ -277,8 +340,8 @@ function PlanCard({
 
   const priceLine =
     plan.pricePerMonth === 0
-      ? "Gratis"
-      : `€ ${plan.pricePerMonth},- / maand`;
+      ? t("free")
+      : t("perMonth", { price: plan.pricePerMonth });
 
   const taglineClass =
     plan.id === "pro" ? "text-blue-100" : "text-slate-500";
@@ -293,7 +356,7 @@ function PlanCard({
     >
       {isCurrent ? (
         <span className="absolute -top-3 right-6 rounded-full border-2 border-emerald-700 border-b-4 bg-emerald-500 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
-          Huidig plan
+          {t("currentPlan")}
         </span>
       ) : null}
 
@@ -306,7 +369,7 @@ function PlanCard({
         <div>
           <h2 className="text-3xl font-black tracking-tight">{plan.name}</h2>
           <p className={`text-sm font-bold ${taglineClass}`}>
-            {plan.tagline}
+            {planTagline(plan, t)}
           </p>
         </div>
       </div>
@@ -317,13 +380,13 @@ function PlanCard({
         </p>
         <p className={`mt-1 text-sm font-bold ${taglineClass}`}>
           {plan.maxStaff === 0
-            ? "Alleen eigenaar"
-            : `Tot ${plan.maxStaff} medewerkers`}
+            ? t("ownerOnly")
+            : t("upToStaff", { count: plan.maxStaff })}
         </p>
       </div>
 
       <ul className="flex flex-col gap-2.5">
-        {plan.features.map((f) => (
+        {planFeatures(plan, t).map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-base font-semibold">
             <Check
               className={`mt-0.5 h-5 w-5 shrink-0 ${checkClass}`}
@@ -347,10 +410,10 @@ function PlanCard({
           className="mt-2 flex h-16 w-full items-center justify-center gap-3 text-lg"
         >
           {isCurrent
-            ? "Actief"
+            ? t("planStatusActive")
             : isBusy
-              ? "Bezig…"
-              : `Upgraden naar ${plan.name}`}
+              ? t("busy")
+              : t("upgradeTo", { plan: plan.name })}
         </SupercellButton>
       )}
     </article>

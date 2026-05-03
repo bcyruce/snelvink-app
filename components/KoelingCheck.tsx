@@ -1,18 +1,20 @@
 "use client";
 
 import HaccpTemperatureModule from "@/components/HaccpTemperatureModule";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Props = {
   mode?: "manage" | "record";
 };
 
 export default function KoelingCheck({ mode = "record" }: Props) {
+  const { t } = useTranslation();
   return (
     <HaccpTemperatureModule
       moduleType="koeling"
-      title="Koeling"
+      title={t("koeling")}
       defaultTemperature={7}
-      firstEquipmentName="Koelkast 1"
+      firstEquipmentName={t("koelingOne")}
       mode={mode}
     />
   );

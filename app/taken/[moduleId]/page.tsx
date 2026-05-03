@@ -7,6 +7,7 @@ import KoelingCheck from "@/components/KoelingCheck";
 import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
+import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
@@ -26,6 +27,7 @@ function ModuleContent() {
   const searchParams = useSearchParams();
   const moduleId = params?.moduleId ?? "";
   const { user, isLoading } = useUser();
+  const { t } = useTranslation();
 
   // Determine where to go back based on source parameter
   const source = searchParams.get("source");
@@ -42,7 +44,7 @@ function ModuleContent() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-gray-600">
-          SnelVink laden...
+          {t("loadingApp")}
         </p>
       </div>
     );
@@ -74,7 +76,7 @@ function ModuleContent() {
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Terug
+          {t("back")}
         </SupercellButton>
 
         <ModuleComponent mode={componentMode} />
@@ -86,10 +88,11 @@ function ModuleContent() {
 }
 
 function ModuleLoading() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <p className="text-center text-lg font-semibold text-gray-600">
-        SnelVink laden...
+        {t("loadingApp")}
       </p>
     </div>
   );

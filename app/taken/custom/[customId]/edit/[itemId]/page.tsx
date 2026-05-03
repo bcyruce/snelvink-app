@@ -3,6 +3,7 @@
 import FrequencySelector from "@/components/FrequencySelector";
 import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import {
   normalizeSchedule,
@@ -35,6 +36,7 @@ function CustomItemEditContent() {
   const customId = params?.customId ?? "";
   const itemId = params?.itemId ?? "";
   const { profile } = useUser();
+  const { t } = useTranslation();
   const restaurantId = profile?.restaurant_id ?? null;
 
   const [customModule, setCustomModule] = useState<CustomModuleHeader | null>(
@@ -83,7 +85,7 @@ function CustomItemEditContent() {
       if (ignore) return;
 
       if (mError || !m) {
-        setErrorMessage("Onderdeel niet gevonden.");
+        setErrorMessage(t("moduleNotFound"));
         setLoading(false);
         return;
       }
@@ -91,7 +93,7 @@ function CustomItemEditContent() {
       const moduleType = normalizeModuleType(m.module_type);
       const header: CustomModuleHeader = {
         id: String(m.id),
-        name: m.name ?? "Aangepast onderdeel",
+        name: m.name ?? t("customModuleDefaultName"),
         moduleType,
       };
       setCustomModule(header);
@@ -106,7 +108,7 @@ function CustomItemEditContent() {
           .maybeSingle();
         if (ignore) return;
         if (error || !data) {
-          setErrorMessage("Item niet gevonden.");
+          setErrorMessage(t("itemNotFound"));
           setLoading(false);
           return;
         }
@@ -138,7 +140,7 @@ function CustomItemEditContent() {
           .maybeSingle();
         if (ignore) return;
         if (error || !data) {
-          setErrorMessage("Item niet gevonden.");
+          setErrorMessage(t("itemNotFound"));
           setLoading(false);
           return;
         }
@@ -162,7 +164,7 @@ function CustomItemEditContent() {
           .maybeSingle();
         if (ignore) return;
         if (error || !data) {
-          setErrorMessage("Item niet gevonden.");
+          setErrorMessage(t("itemNotFound"));
           setLoading(false);
           return;
         }
@@ -185,14 +187,14 @@ function CustomItemEditContent() {
     return () => {
       ignore = true;
     };
-  }, [customId, itemId]);
+  }, [customId, itemId, t]);
 
   const backToManage = `/taken/custom/${customId}`;
 
   const handleSave = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setErrorMessage("Vul een naam in.");
+      setErrorMessage(t("fillName"));
       return;
     }
     if (!customModule) return;
@@ -200,7 +202,7 @@ function CustomItemEditContent() {
     setSaving(true);
     setErrorMessage(null);
 
-    const scheduleError = validateSchedule(schedule);
+    const scheduleError = validateSchedule(schedule, t);
     if (scheduleError) {
       setErrorMessage(scheduleError);
       setSaving(false);
@@ -231,7 +233,7 @@ function CustomItemEditContent() {
 
       if (error) {
         console.error("Save failed:", error);
-        setErrorMessage("Opslaan mislukt.");
+        setErrorMessage(t("saveFailed"));
         setSaving(false);
         return;
       }
@@ -254,7 +256,7 @@ function CustomItemEditContent() {
 
       if (error) {
         console.error("Save failed:", error);
-        setErrorMessage("Opslaan mislukt.");
+        setErrorMessage(t("saveFailed"));
         setSaving(false);
         return;
       }
@@ -266,7 +268,7 @@ function CustomItemEditContent() {
 
       if (error) {
         console.error("Save failed:", error);
-        setErrorMessage("Opslaan mislukt.");
+        setErrorMessage(t("saveFailed"));
         setSaving(false);
         return;
       }
@@ -287,12 +289,13 @@ function CustomItemEditContent() {
     itemId,
     router,
     backToManage,
+    t,
   ]);
 
   const handleAddTask = useCallback(
     async (taskName: string) => {
       if (!restaurantId) {
-        setErrorMessage("Geen restaurant gekoppeld.");
+        setErrorMessage(t("noRestaurantLinked"));
         return;
       }
       const { data, error } = await supabase
@@ -305,55 +308,55 @@ function CustomItemEditContent() {
         .select("id, name")
         .single();
       if (error) {
-        setErrorMessage("Item toevoegen mislukt.");
+        setErrorMessage(t("addFailed"));
         return;
       }
       if (data) setTasks((prev) => [...prev, data as { id: string; name: string }]);
     },
-    [restaurantId, itemId],
+    [restaurantId, itemId, t],
   );
 
   const handleRenameTask = useCallback(
     async (task: { id: string; name: string }) => {
-      const next = window.prompt("Nieuwe naam", task.name);
+      const next = window.prompt(t("editNamePrompt"), task.name);
       if (!next?.trim() || next.trim() === task.name) return;
       const { error } = await supabase
         .from("haccp_cleaning_tasks")
         .update({ name: next.trim() })
         .eq("id", task.id);
       if (error) {
-        setErrorMessage("Hernoemen mislukt.");
+        setErrorMessage(t("renameFailed"));
         return;
       }
       setTasks((prev) =>
         prev.map((t) => (t.id === task.id ? { ...t, name: next.trim() } : t)),
       );
     },
-    [],
+    [t],
   );
 
   const handleDeleteTask = useCallback(
     async (task: { id: string; name: string }) => {
-      const ok = window.confirm(`"${task.name}" verwijderen?`);
+      const ok = window.confirm(t("confirmDelete", { name: task.name }));
       if (!ok) return;
       const { error } = await supabase
         .from("haccp_cleaning_tasks")
         .delete()
         .eq("id", task.id);
       if (error) {
-        setErrorMessage("Verwijderen mislukt.");
+        setErrorMessage(t("deleteFailed"));
         return;
       }
       setTasks((prev) => prev.filter((t) => t.id !== task.id));
     },
-    [],
+    [t],
   );
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-gray-600">
-          Laden...
+          {t("loading")}
         </p>
       </div>
     );
@@ -370,11 +373,11 @@ function CustomItemEditContent() {
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Terug
+          {t("back")}
         </SupercellButton>
 
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-slate-900">
-          Item bewerken
+          {t("editItem")}
         </h1>
 
         {errorMessage ? (
@@ -388,7 +391,7 @@ function CustomItemEditContent() {
             {/* Name */}
             <label className="flex flex-col gap-2">
               <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                Naam
+                {t("name")}
               </span>
               <input
                 type="text"
@@ -443,7 +446,7 @@ function CustomItemEditContent() {
               disabled={saving || !name.trim()}
               className="min-h-[72px] w-full text-2xl"
             >
-              {saving ? "Opslaan..." : "Opslaan"}
+              {saving ? t("saving") : t("save")}
             </SupercellButton>
           </div>
         )}
@@ -480,12 +483,13 @@ function NumberItemFields({
   unit,
   onChangeUnit,
 }: NumberItemFieldsProps) {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <span className="text-lg font-bold text-slate-800">
-            Standaardwaarde instellen
+            {t("setDefaultValue")}
           </span>
           <button
             type="button"
@@ -509,14 +513,14 @@ function NumberItemFields({
 
         <p className="text-sm text-slate-500">
           {hasDefault
-            ? "Bij elke nieuwe registratie start de waarde op deze standaardwaarde."
-            : "Bij elke nieuwe registratie start de waarde op de laatste meting."}
+            ? t("defaultValueUsesThis")
+            : t("defaultValueUsesLastMeasurement")}
         </p>
 
         {hasDefault ? (
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Standaardwaarde {unit ? `(${unit})` : ""}
+              {t("defaultValue")} {unit ? `(${unit})` : ""}
             </span>
             <input
               type="text"
@@ -531,14 +535,14 @@ function NumberItemFields({
 
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <span className="text-lg font-bold text-slate-800">
-          Limiet
+          {t("limit")}
         </span>
         <p className="text-sm text-slate-500">
-          Boven deze waarde moet een corrigerende maatregel worden ingevuld.
+          {t("limitValueHelp")}
         </p>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Limietwaarde {unit ? `(${unit})` : ""}
+            {t("limitValue")} {unit ? `(${unit})` : ""}
           </span>
           <input
             type="text"
@@ -553,7 +557,7 @@ function NumberItemFields({
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-2">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Stapgrootte
+            {t("stepSize")}
           </span>
           <input
             type="text"
@@ -565,13 +569,13 @@ function NumberItemFields({
         </label>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Eenheid
+            {t("unit")}
           </span>
           <input
             type="text"
             value={unit}
             onChange={(e) => onChangeUnit(e.target.value)}
-            placeholder="bv. °C, kg, %"
+            placeholder={t("unitPlaceholder")}
             className="min-h-[64px] rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-3 text-center text-xl font-black text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
           />
         </label>
@@ -600,6 +604,7 @@ function BooleanItemFields({
   rejectReasons,
   onChangeRejectReasons,
 }: BooleanItemFieldsProps) {
+  const { t } = useTranslation();
   const removeReason = (target: "accept" | "reject", reason: string) => {
     if (reason === "Anders") return;
     if (target === "accept") {
@@ -637,7 +642,7 @@ function BooleanItemFields({
   return (
     <div className="flex flex-col gap-3">
       <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-        Redenen per status
+        {t("reasonsPerStatus")}
       </span>
       <div className="grid grid-cols-2 gap-3">
         <button
@@ -652,7 +657,7 @@ function BooleanItemFields({
           ].join(" ")}
         >
           <Check className="h-8 w-8" strokeWidth={3} />
-          <span className="text-sm font-black">Goedgekeurd</span>
+          <span className="text-sm font-black">{t("goedgekeurd")}</span>
         </button>
         <button
           type="button"
@@ -666,15 +671,15 @@ function BooleanItemFields({
           ].join(" ")}
         >
           <X className="h-8 w-8" strokeWidth={3} />
-          <span className="text-sm font-black">Afgekeurd</span>
+          <span className="text-sm font-black">{t("afgekeurd")}</span>
         </button>
       </div>
 
       <div className={["rounded-2xl border-2 p-4", accentClass].join(" ")}>
         <h3 className={["mb-3 text-lg font-bold", headingColor].join(" ")}>
           {tab === "accept"
-            ? "Redenen voor goedkeuring"
-            : "Redenen voor afkeuring"}
+            ? t("acceptReasonsTitle")
+            : t("rejectReasonsTitle")}
         </h3>
         <ul className="mb-4 flex flex-col gap-2">
           {list.map((reason) => (
@@ -682,26 +687,28 @@ function BooleanItemFields({
               key={reason}
               className="flex items-center justify-between gap-2 rounded-xl bg-white px-4 py-3"
             >
-              <span className="font-semibold text-slate-800">{reason}</span>
+              <span className="font-semibold text-slate-800">
+                {reason === "Anders" ? t("other") : reason}
+              </span>
               {reason !== "Anders" ? (
                 <button
                   type="button"
                   onClick={() => removeReason(tab, reason)}
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
-                  aria-label={`Verwijder ${reason}`}
+                  aria-label={`${t("delete")} ${reason}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               ) : (
-                <span className="text-xs text-slate-400">Standaard</span>
+                <span className="text-xs text-slate-400">{t("defaultLabel")}</span>
               )}
             </li>
           ))}
         </ul>
 
         <InlineAddInput
-          label="Reden toevoegen"
-          placeholder="Nieuwe reden..."
+          label={t("addReason")}
+          placeholder={t("newReasonPlaceholder")}
           onAdd={(value) => addReason(tab, value)}
         />
       </div>
@@ -725,10 +732,11 @@ function ListItemFields({
   onRename,
   onDelete,
 }: ListItemFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3">
       <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-        Items
+        {t("items")}
       </span>
       <ul className="flex flex-col gap-2">
         {tasks.map((task) => (
@@ -743,7 +751,7 @@ function ListItemFields({
               type="button"
               onClick={() => onRename(task)}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-              aria-label={`Hernoem ${task.name}`}
+              aria-label={`${t("edit")} ${task.name}`}
             >
               <Pencil className="h-4 w-4" />
             </button>
@@ -751,7 +759,7 @@ function ListItemFields({
               type="button"
               onClick={() => onDelete(task)}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
-              aria-label={`Verwijder ${task.name}`}
+              aria-label={`${t("delete")} ${task.name}`}
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -760,8 +768,8 @@ function ListItemFields({
       </ul>
 
       <InlineAddInput
-        label="Item toevoegen"
-        placeholder="Naam van het item"
+        label={t("addItem")}
+        placeholder={t("itemNamePlaceholder")}
         onAdd={onAdd}
       />
     </div>

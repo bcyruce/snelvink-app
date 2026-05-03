@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Check, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -31,6 +32,7 @@ export default function InlineAddInput({
   disabled = false,
   className,
 }: InlineAddInputProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(defaultValue);
   const [busy, setBusy] = useState(false);
@@ -109,7 +111,7 @@ export default function InlineAddInput({
         variant="success"
         onClick={() => void submit()}
         disabled={!value.trim() || busy}
-        aria-label="Opslaan"
+        aria-label={t("save")}
         className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl"
       >
         <Check className="h-6 w-6" strokeWidth={3} aria-hidden />
@@ -119,7 +121,7 @@ export default function InlineAddInput({
         variant="neutral"
         onClick={close}
         disabled={busy}
-        aria-label="Annuleren"
+        aria-label={t("cancel")}
         className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl"
       >
         <X className="h-6 w-6" strokeWidth={3} aria-hidden />

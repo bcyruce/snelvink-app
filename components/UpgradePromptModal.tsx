@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser } from "@/hooks/useUser";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -20,6 +21,7 @@ export default function UpgradePromptModal({
   children,
 }: UpgradePromptModalProps) {
   const { profile } = useUser();
+  const { t } = useTranslation();
 
   const [mockVerified, setMockVerified] = useState(false);
   const [otp, setOtp] = useState("");
@@ -41,7 +43,7 @@ export default function UpgradePromptModal({
   const handleVerifyOTP = () => {
     const code = normalizeOtpDigits(otp);
     if (code.length !== 6) {
-      setOtpError("Voer de 6-cijferige code in.");
+      setOtpError(t("enterSixDigitCode"));
       return;
     }
 
@@ -67,7 +69,7 @@ export default function UpgradePromptModal({
     >
       <button
         type="button"
-        aria-label="Sluiten"
+        aria-label={t("close")}
         className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
         onClick={onClose}
       />
@@ -85,20 +87,20 @@ export default function UpgradePromptModal({
               textCase="normal"
               className="mt-6 h-16 w-full text-xl"
             >
-              Begrepen
+              {t("understood")}
             </SupercellButton>
           </>
         ) : (
           <>
             <p className="text-center text-xl font-black text-slate-900">
-              Bevestig je e-mailadres
+              {t("confirmEmail")}
             </p>
             <p className="mt-2 text-center text-base font-semibold text-slate-600">
-              Voer de 6-cijferige code uit je e-mail in om verder te gaan.
+              {t("enterOtpCode")}
             </p>
 
             <label htmlFor="upgrade-otp" className="sr-only">
-              Eenmalige code
+              {t("oneTimeCode")}
             </label>
             <input
               id="upgrade-otp"
@@ -131,7 +133,7 @@ export default function UpgradePromptModal({
               textCase="normal"
               className="mt-6 h-16 w-full text-xl"
             >
-              {verifying ? "Controleren…" : "Code controleren"}
+              {verifying ? t("checking") : t("checkCode")}
             </SupercellButton>
           </>
         )}

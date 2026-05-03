@@ -185,34 +185,57 @@ export function normalizeSchedule(value: unknown): FrequencySchedule | null {
   return { cadence, frequency, assignTimes, dates };
 }
 
-export function validateSchedule(schedule: FrequencySchedule | null): string | null {
+type ScheduleTranslate = (
+  key:
+    | "scheduleAtLeastOneReminder"
+    | "scheduleReminderDateTime"
+    | "scheduleMinFrequency"
+    | "scheduleDailyTimes"
+    | "scheduleWeeklyDays"
+    | "scheduleMonthlyDays"
+    | "scheduleYearlyDates",
+  vars?: Record<string, string | number>,
+) => string;
+
+export function validateSchedule(
+  schedule: FrequencySchedule | null,
+  t?: ScheduleTranslate,
+): string | null {
   if (!schedule) return null;
   if (schedule.cadence === "custom") {
     if (schedule.reminders.length === 0) {
-      return "Voeg minimaal één herinnering toe.";
+      return t ? t("scheduleAtLeastOneReminder") : "Voeg minimaal één herinnering toe.";
     }
     return schedule.reminders.every((item) => item.dateTime.trim())
       ? null
-      : "Vul voor elke herinnering een datum en tijd in.";
+      : t
+        ? t("scheduleReminderDateTime")
+        : "Vul voor elke herinnering een datum en tijd in.";
   }
 
   if (!Number.isFinite(schedule.frequency) || schedule.frequency < 1) {
-    return "Kies een frequentie van minimaal 1.";
+    return t ? t("scheduleMinFrequency") : "Kies een frequentie van minimaal 1.";
   }
 
   if (!schedule.assignTimes) return null;
 
   if (schedule.cadence === "daily" && schedule.times.length !== schedule.frequency) {
-    return "Vul voor elke dagelijkse registratie een tijd in.";
+    return t ? t("scheduleDailyTimes") : "Vul voor elke dagelijkse registratie een tijd in.";
   }
   if (schedule.cadence === "weekly" && schedule.days.length !== schedule.frequency) {
-    return `Kies ${schedule.frequency} dag(en) voor deze wekelijkse taak.`;
+    return t
+      ? t("scheduleWeeklyDays", { count: schedule.frequency })
+      : `Kies ${schedule.frequency} dag(en) voor deze wekelijkse taak.`;
   }
   if (schedule.cadence === "monthly" && schedule.days.length !== schedule.frequency) {
-    return `Kies ${schedule.frequency} dag(en) voor deze maandelijkse taak.`;
+    return t
+      ? t("scheduleMonthlyDays", { count: schedule.frequency })
+      : `Kies ${schedule.frequency} dag(en) voor deze maandelijkse taak.`;
   }
   if (schedule.cadence === "yearly" && schedule.dates.length !== schedule.frequency) {
-    return `Kies ${schedule.frequency} datum(s) voor deze jaarlijkse taak.`;
+    return t
+      ? t("scheduleYearlyDates", { count: schedule.frequency })
+      : `Kies ${schedule.frequency} datum(s) voor deze jaarlijkse taak.`;
   }
 
   return null;

@@ -9,6 +9,7 @@ import {
 } from "@/lib/taskModules";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
+import { useTranslation } from "@/hooks/useTranslation";
 import { X } from "lucide-react";
 import { createElement, useCallback, useEffect, useRef, useState } from "react";
 
@@ -41,6 +42,7 @@ export default function AddModuleModal({
   editingModule = null,
 }: AddModuleModalProps) {
   const { user, profile } = useUser();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<AddModuleTab>("standard");
   const [name, setName] = useState("");
   const [iconKey, setIconKey] = useState<string>(AVAILABLE_ICONS[0]);
@@ -85,7 +87,7 @@ export default function AddModuleModal({
       e.preventDefault();
       const trimmed = name.trim();
       if (!trimmed) {
-        setErrorMessage("Vul een naam voor het onderdeel in.");
+        setErrorMessage(t("customModuleNameRequired"));
         return;
       }
 
@@ -101,7 +103,7 @@ export default function AddModuleModal({
 
       const restaurantId = profile?.restaurant_id ?? null;
       if (!restaurantId) {
-        setErrorMessage("Geen restaurant gekoppeld aan je account.");
+        setErrorMessage(t("noRestaurantLinked"));
         return;
       }
 
@@ -128,7 +130,7 @@ export default function AddModuleModal({
 
         if (error) {
           console.error("Custom module opslaan mislukt:", error);
-          setErrorMessage(`Opslaan mislukt: ${error.message}`);
+          setErrorMessage(t("customModuleSaveFailed", { message: error.message }));
           return;
         }
 
@@ -147,8 +149,8 @@ export default function AddModuleModal({
         console.error("Onverwachte fout bij opslaan custom module:", error);
         setErrorMessage(
           error instanceof Error
-            ? `Onverwachte fout: ${error.message}`
-            : "Onverwachte fout. Probeer opnieuw.",
+            ? t("unexpectedError", { message: error.message })
+            : t("unexpectedErrorRetry"),
         );
       } finally {
         setIsSaving(false);
@@ -159,12 +161,13 @@ export default function AddModuleModal({
       name,
       iconKey,
       moduleType,
-      user?.id,
+      user,
       profile?.restaurant_id,
       onCustomModuleAdded,
       onClose,
       onUpdate,
       resetCustomForm,
+      t,
     ],
   );
 
@@ -190,13 +193,13 @@ export default function AddModuleModal({
             id="add-module-title"
             className="text-3xl font-black tracking-tight text-slate-900"
           >
-            {isEditing ? "Module bewerken" : "Nieuwe module"}
+            {isEditing ? t("moduleEdit") : t("newModule")}
           </h2>
           <SupercellButton
             size="icon"
             variant="neutral"
             onClick={onClose}
-            aria-label="Sluiten"
+            aria-label={t("close")}
             className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
           >
             <X className="h-6 w-6" strokeWidth={2.75} aria-hidden />
@@ -216,7 +219,7 @@ export default function AddModuleModal({
                   textCase="normal"
                   className="min-h-[56px] rounded-xl py-3 text-base"
                 >
-                  {tab === "standard" ? "Standaard" : "Aangepast"}
+                  {tab === "standard" ? t("standard") : t("custom")}
                 </SupercellButton>
               );
             })}
@@ -236,7 +239,7 @@ export default function AddModuleModal({
                   disabled={alreadyAdded}
                   onClick={() => {
                     if (alreadyAdded) {
-                      window.alert("Dit onderdeel is al toegevoegd");
+                      window.alert(t("moduleAlreadyAdded"));
                       return;
                     }
                     onCreate({ ...preset });
@@ -248,10 +251,20 @@ export default function AddModuleModal({
                     strokeWidth: 2.25,
                     "aria-hidden": true,
                   })}
-                  <span className="flex-1">{preset.name}</span>
+                  <span className="flex-1">
+                    {preset.id === "koeling"
+                      ? t("koeling")
+                      : preset.id === "kerntemperatuur"
+                        ? t("kerntemperatuur")
+                        : preset.id === "ontvangst"
+                          ? t("ontvangst")
+                          : preset.id === "schoonmaak"
+                            ? t("schoonmaak")
+                            : preset.name}
+                  </span>
                   {alreadyAdded ? (
                     <span className="text-sm font-bold text-slate-400">
-                      Toegevoegd
+                      {t("alreadyAdded")}
                     </span>
                   ) : null}
                 </SupercellButton>
@@ -272,7 +285,7 @@ export default function AddModuleModal({
                   htmlFor="module-name"
                   className="text-base font-bold text-slate-800"
                 >
-                  Naam onderdeel
+                  {t("moduleName")}
                 </label>
                 <input
                   id="module-name"
@@ -280,7 +293,7 @@ export default function AddModuleModal({
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Bijv. Kerntemperatuur soep"
+                  placeholder={t("moduleNamePlaceholder")}
                   maxLength={40}
                   className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-bold text-slate-900 outline-none transition-colors focus:border-blue-500 focus:border-b-blue-700"
                 />
@@ -288,7 +301,7 @@ export default function AddModuleModal({
 
               <div className="flex flex-col gap-3">
                 <span className="text-base font-bold text-slate-800">
-                  Kies een icoon
+                  {t("chooseIcon")}
                 </span>
                 <div className="grid grid-cols-4 gap-3">
                   {AVAILABLE_ICONS.map((key) => {
@@ -317,13 +330,13 @@ export default function AddModuleModal({
 
             <section className="flex flex-col gap-3">
               <span className="text-base font-bold text-slate-800">
-                Type onderdeel
+                {t("moduleType")}
               </span>
               <div className="grid grid-cols-1 gap-3">
                 {[
-                  ["number", "Getal/Temperatuur"],
-                  ["boolean", "Ja/Nee"],
-                  ["list", "Lijst"],
+                  ["number", t("moduleTypeNumber")],
+                  ["boolean", t("moduleTypeBoolean")],
+                  ["list", t("moduleTypeList")],
                 ].map(([value, label]) => {
                   const active = moduleType === value;
                   return (
@@ -344,7 +357,7 @@ export default function AddModuleModal({
             </section>
 
             <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
-              Na het aanmaken kun je items toevoegen in het beheerscherm.
+              {t("customModuleHelp")}
             </p>
 
             <div className="flex flex-col gap-3 pt-2">
@@ -356,10 +369,10 @@ export default function AddModuleModal({
                 className="min-h-[64px] w-full text-xl normal-case"
               >
                 {isSaving
-                  ? "Bezig met opslaan..."
+                  ? t("saving")
                   : isEditing
-                    ? "Wijzigingen opslaan"
-                    : "Opslaan"}
+                    ? t("savingChanges")
+                    : t("save")}
               </SupercellButton>
               <SupercellButton
                 type="button"
@@ -368,7 +381,7 @@ export default function AddModuleModal({
                 onClick={onClose}
                 className="min-h-[64px] w-full text-lg normal-case"
               >
-                Annuleren
+                {t("cancel")}
               </SupercellButton>
             </div>
           </form>

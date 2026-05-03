@@ -77,7 +77,7 @@ function RegistrerenContent() {
                 whiteSpace: "nowrap",
               }}
             >
-              Meten · Vinken · Weten
+              {t("brandTagline")}
             </div>
           </div>
           <ThemePicker />

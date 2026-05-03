@@ -39,6 +39,31 @@ function formatNlDateTime(iso: string): string {
   return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function translatedPlanStatus(
+  status: string | null | undefined,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  switch (status) {
+    case "active":
+      return t("planStatusActive");
+    case "trialing":
+      return t("planStatusTrialing");
+    case "past_due":
+      return t("planStatusPastDue");
+    case "canceled":
+      return t("planStatusCanceled");
+    case "incomplete":
+    case "incomplete_expired":
+      return t("planStatusIncomplete");
+    case "unpaid":
+      return t("planStatusUnpaid");
+    case "paused":
+      return t("planStatusPaused");
+    default:
+      return planStatusLabel(status).label;
+  }
+}
+
 export default function SettingsTab() {
   const router = useRouter();
   const { language, setLanguage, t } = useTranslation();
@@ -172,8 +197,8 @@ export default function SettingsTab() {
           formatNlDateTime(row.recorded_at),
           String(row.location_name ?? "—"),
           row.completed_tasks && row.completed_tasks.length > 0
-            ? "Voltooid"
-            : "Geen taken aangevinkt",
+            ? t("completed")
+            : t("noTasksChecked"),
         ]);
 
       const doc = new jsPDF();
@@ -182,16 +207,16 @@ export default function SettingsTab() {
 
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("SnelVink - HACCP Rapportage", margin, cursorY);
+      doc.text(t("haccpReportTitle"), margin, cursorY);
 
       cursorY += 12;
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
-      doc.text("Temperatuur Registratie", margin, cursorY);
+      doc.text(t("temperatureRegistration"), margin, cursorY);
 
       autoTable(doc, {
         startY: cursorY + 2,
-        head: [["Datum/Tijd", "Apparaat", "Temperatuur"]],
+        head: [[t("dateTime"), t("equipment"), t("temperature")]],
         body: tempRows,
         theme: "striped",
         styles: { fontSize: 9, cellPadding: 3 },
@@ -202,11 +227,11 @@ export default function SettingsTab() {
       cursorY = (docExt.lastAutoTable?.finalY ?? cursorY) + 10;
 
       doc.setFont("helvetica", "bold");
-      doc.text("Schoonmaak Registratie", margin, cursorY);
+      doc.text(t("cleaningRegistration"), margin, cursorY);
 
       autoTable(doc, {
         startY: cursorY + 2,
-        head: [["Datum/Tijd", "Taak", "Status"]],
+        head: [[t("dateTime"), t("task"), t("status")]],
         body: cleanRows,
         theme: "striped",
         styles: { fontSize: 9, cellPadding: 3 },
@@ -219,7 +244,7 @@ export default function SettingsTab() {
     } finally {
       setIsExporting(false);
     }
-  }, [restaurantId]);
+  }, [restaurantId, t]);
 
   const handleSignOut = useCallback(async () => {
     setIsSigningOut(true);
@@ -239,7 +264,7 @@ export default function SettingsTab() {
   return (
     <div className="mt-2">
       <h2 className="mb-5 text-3xl font-black tracking-tight text-slate-900">
-        Instellingen
+        {t("settingsTitle")}
       </h2>
 
       <section className="mb-6 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
@@ -273,7 +298,7 @@ export default function SettingsTab() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-              Restaurant
+              {t("restaurant")}
             </p>
             <p className="mt-1 truncate text-2xl font-black text-slate-900">
               {restaurant?.name ?? "—"}
@@ -286,7 +311,7 @@ export default function SettingsTab() {
             onClick={() => void handleRefresh()}
             disabled={isRefreshing}
             aria-busy={isRefreshing}
-            title="Vernieuwen"
+            title={t("refresh")}
             className="shrink-0 rounded-lg p-2"
           >
             <RefreshCw
@@ -297,7 +322,7 @@ export default function SettingsTab() {
         </div>
 
         <p className="mt-5 text-xs font-black uppercase tracking-wide text-slate-500">
-          Abonnement
+          {t("subscription")}
         </p>
         <SupercellButton
           type="button"
@@ -313,13 +338,13 @@ export default function SettingsTab() {
             </p>
             {restaurant?.plan_status ? (
               <p className="mt-0.5 truncate text-xs font-bold text-slate-500">
-                {planStatusLabel(restaurant.plan_status).label}
+                {translatedPlanStatus(restaurant.plan_status, t)}
               </p>
             ) : (
               <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
                 {isOwner
-                  ? "Beheer abonnement"
-                  : "Bekijk het abonnement van dit restaurant"}
+                  ? t("manageSubscription")
+                  : t("viewRestaurantSubscription")}
               </p>
             )}
           </div>
@@ -333,20 +358,19 @@ export default function SettingsTab() {
         {isOwner ? (
           <div className="mt-6 border-t-2 border-slate-200 pt-6">
             <p className="text-center text-xs font-black uppercase tracking-wide text-slate-500">
-              Koppelcode
+              {t("inviteCode")}
             </p>
             {!restaurant ? (
               <p className="mt-3 text-center text-sm font-bold text-slate-500">
-                Laden...
+                {t("loading")}
               </p>
             ) : isFreePlan ? (
               <div className="mt-3 rounded-2xl border-2 border-amber-300 border-b-4 border-b-amber-400 bg-amber-100 px-4 py-5 text-center">
                 <p className="text-base font-black text-amber-900">
-                  Nog geen koppelcode beschikbaar
+                  {t("inviteCodeUnavailableTitle")}
                 </p>
                 <p className="mt-2 text-sm font-semibold leading-relaxed text-amber-900">
-                  Upgrade je abonnement naar Basic of Pro om medewerkers te kunnen
-                  koppelen en de koppelcode te ontgrendelen.
+                  {t("inviteCodeUpgradeMessage")}
                 </p>
               </div>
             ) : restaurant.invite_code ? (
@@ -355,12 +379,12 @@ export default function SettingsTab() {
                   {restaurant.invite_code}
                 </p>
                 <p className="mt-4 text-center text-sm font-semibold leading-relaxed text-slate-600">
-                  Deel deze code met je werknemers om ze te koppelen.
+                  {t("inviteCodeShareMessage")}
                 </p>
               </div>
             ) : (
               <p className="mt-3 text-center text-sm font-bold text-slate-500">
-                Geen koppelcode beschikbaar.
+                {t("inviteCodeUnavailable")}
               </p>
             )}
           </div>
@@ -369,14 +393,14 @@ export default function SettingsTab() {
 
       {isOwner ? (
         <div className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5">
-          <h3 className="text-lg font-black text-slate-900">Personeel</h3>
+          <h3 className="text-lg font-black text-slate-900">{t("staff")}</h3>
           <p className="mt-1 text-sm font-semibold text-slate-500">
-            Gekoppelde medewerkers van dit restaurant.
+            {t("linkedStaffIntro")}
           </p>
           {isLoadingStaff ? (
-            <p className="mt-4 text-sm font-bold text-slate-500">Laden...</p>
+            <p className="mt-4 text-sm font-bold text-slate-500">{t("loading")}</p>
           ) : staff.length === 0 ? (
-            <p className="mt-4 text-sm font-bold text-slate-500">Nog geen personeel gekoppeld.</p>
+            <p className="mt-4 text-sm font-bold text-slate-500">{t("noLinkedStaff")}</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {staff.map((member) => (
@@ -386,10 +410,10 @@ export default function SettingsTab() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-black text-slate-900">
-                      {member.full_name?.trim() || "Naamloos"}
+                      {member.full_name?.trim() || t("unnamed")}
                     </p>
                     <p className="truncate text-xs font-semibold text-slate-500">
-                      {member.email ?? "Onbekend e-mailadres"}
+                      {member.email ?? t("unknownEmail")}
                     </p>
                   </div>
                   <SupercellButton
@@ -401,7 +425,7 @@ export default function SettingsTab() {
                     textCase="normal"
                     className="shrink-0 rounded-xl px-3 py-2 text-sm"
                   >
-                    {deletingStaffId === member.id ? "Bezig..." : "Verwijderen"}
+                    {deletingStaffId === member.id ? t("busy") : t("delete")}
                   </SupercellButton>
                 </li>
               ))}
@@ -411,7 +435,7 @@ export default function SettingsTab() {
       ) : null}
 
       <p className="mb-5 text-sm font-semibold text-slate-600">
-        Download een overzicht van alle temperatuur- en schoonmaakregistraties.
+        {t("exportIntro")}
       </p>
 
       <SupercellButton
@@ -425,7 +449,7 @@ export default function SettingsTab() {
         className="mb-4 flex w-full items-center justify-center gap-3 py-6 text-xl"
       >
         <Download className="h-7 w-7 shrink-0 text-white" strokeWidth={2.5} />
-        {isExporting ? "Genereren..." : "Download HACCP Rapport"}
+        {isExporting ? t("generating") : t("downloadHaccpReport")}
       </SupercellButton>
 
       <SupercellButton
@@ -438,7 +462,7 @@ export default function SettingsTab() {
         className="flex min-h-14 w-full items-center justify-center gap-2 px-4 py-3 text-base"
       >
         <LogOut className="h-5 w-5 shrink-0 text-white" strokeWidth={2.5} />
-        {isSigningOut ? "Uitloggen..." : "Uitloggen"}
+        {isSigningOut ? t("signingOut") : t("signOut")}
       </SupercellButton>
     </div>
   );

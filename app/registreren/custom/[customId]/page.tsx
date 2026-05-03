@@ -6,6 +6,7 @@ import OntvangstCheck from "@/components/OntvangstCheck";
 import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import SupercellButton from "@/components/SupercellButton";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
+import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Wrench } from "lucide-react";
@@ -31,6 +32,7 @@ function CustomModuleRecordContent() {
   const params = useParams<{ customId: string }>();
   const customId = params?.customId ?? "";
   const { user, isLoading } = useUser();
+  const { t } = useTranslation();
 
   const [module, setModule] = useState<CustomModuleHeader | null>(null);
   const [isModuleLoading, setIsModuleLoading] = useState(true);
@@ -56,12 +58,12 @@ function CustomModuleRecordContent() {
 
       if (error || !data) {
         console.error("Custom module laden mislukt:", error);
-        setErrorMessage("Onderdeel niet gevonden.");
+        setErrorMessage(t("moduleNotFound"));
         setModule(null);
       } else {
         setModule({
           id: String(data.id),
-          name: data.name ?? "Aangepast onderdeel",
+          name: data.name ?? t("customModuleDefaultName"),
           moduleType: normalizeModuleType(data.module_type),
         });
       }
@@ -73,7 +75,7 @@ function CustomModuleRecordContent() {
     return () => {
       ignore = true;
     };
-  }, [customId, user]);
+  }, [customId, user, t]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -91,7 +93,7 @@ function CustomModuleRecordContent() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-slate-500">
-          SnelVink laden...
+          {t("loadingApp")}
         </p>
       </div>
     );
@@ -109,7 +111,7 @@ function CustomModuleRecordContent() {
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Terug
+          {t("back")}
         </SupercellButton>
 
         {module ? (
@@ -118,7 +120,7 @@ function CustomModuleRecordContent() {
               moduleType="custom_number"
               title={module.name}
               defaultTemperature={0}
-              firstEquipmentName="Item 1"
+              firstEquipmentName={t("itemOne")}
               mode="record"
               customModuleId={module.id}
               stepLayout="single"
@@ -144,10 +146,10 @@ function CustomModuleRecordContent() {
               aria-hidden
             />
             <p className="text-xl font-bold text-slate-900">
-              {errorMessage ?? "Onderdeel niet gevonden"}
+              {errorMessage ?? t("moduleNotFound")}
             </p>
             <p className="max-w-sm text-base text-slate-500">
-              Dit onderdeel bestaat niet meer of is niet beschikbaar.
+              {t("moduleUnavailable")}
             </p>
           </div>
         )}

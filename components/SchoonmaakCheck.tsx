@@ -54,13 +54,13 @@ export default function SchoonmaakCheck({
     ? `/taken/custom/${customModuleId}/edit`
     : "/taken/schoonmaak/edit";
   const recordModuleType = isCustom ? "custom_list" : "schoonmaak";
-  const headingTitle = title ?? "Schoonmaak";
-  const groupSingular = isCustom ? "Groep" : "Locatie";
-  const groupSingularLower = isCustom ? "groep" : "locatie";
   const router = useRouter();
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
+  const headingTitle = title ?? t("schoonmaak");
+  const groupSingular = isCustom ? t("group") : t("location");
+  const groupSingularLower = groupSingular.toLowerCase();
 
   // ---------- state ----------
   const [recordedAtLocal, setRecordedAtLocal] = useState<string>(() =>
@@ -106,12 +106,12 @@ export default function SchoonmaakCheck({
 
     if (error) {
       console.error("haccp_locations laden mislukt:", error);
-      setErrorMessage("Locaties laden mislukt. Probeer opnieuw.");
+      setErrorMessage(t("loadLocationsFailed"));
     } else {
       setLocations((data ?? []) as Location[]);
     }
     setLoadingLocations(false);
-  }, [restaurantId, customModuleId, isCustom]);
+  }, [restaurantId, customModuleId, isCustom, t]);
 
   useEffect(() => {
     void loadLocations();
@@ -133,7 +133,7 @@ export default function SchoonmaakCheck({
 
       if (error) {
         console.error("Locatie toevoegen mislukt:", error);
-        setErrorMessage("Locatie toevoegen mislukt.");
+        setErrorMessage(t("locationAddFailed"));
         return;
       }
       if (data) {
@@ -144,13 +144,13 @@ export default function SchoonmaakCheck({
         }
       }
     },
-    [restaurantId, mode, customModuleId],
+    [restaurantId, mode, customModuleId, t],
   );
 
   const handleDeleteLocation = useCallback(
     async (location: Location) => {
       const ok = window.confirm(
-        `"${location.name}" verwijderen? Alle taken in deze locatie worden ook verwijderd.`,
+        t("confirmDeleteLocation", { name: location.name }),
       );
       if (!ok) return;
 
@@ -161,12 +161,12 @@ export default function SchoonmaakCheck({
 
       if (error) {
         console.error("Verwijderen mislukt:", error);
-        setErrorMessage("Verwijderen mislukt.");
+        setErrorMessage(t("deleteFailed"));
         return;
       }
       setLocations((prev) => prev.filter((l) => l.id !== location.id));
     },
-    [],
+    [t],
   );
 
   // ---------- tasks ----------
@@ -185,7 +185,7 @@ export default function SchoonmaakCheck({
 
       if (error) {
         console.error("haccp_cleaning_tasks laden mislukt:", error);
-        setErrorMessage("Taken laden mislukt. Probeer opnieuw.");
+        setErrorMessage(t("recordsLoadFailed"));
         setLoadingTasks(false);
         return;
       }
@@ -214,7 +214,7 @@ export default function SchoonmaakCheck({
 
         if (seedError) {
           console.error("Standaard taken aanmaken mislukt:", seedError);
-          setErrorMessage("Standaard taken aanmaken mislukt.");
+          setErrorMessage(t("standardTasksCreateFailed"));
         } else {
           setTasks((seeded ?? []) as CleaningTask[]);
         }
@@ -225,7 +225,7 @@ export default function SchoonmaakCheck({
       setCheckedTaskIds(new Set());
       setLoadingTasks(false);
     },
-    [restaurantId, isCustom],
+    [restaurantId, isCustom, t],
   );
 
   // Laad taken bij wisselen locatie
@@ -310,7 +310,7 @@ export default function SchoonmaakCheck({
             .upload(path, file, { cacheControl: "3600", upsert: false });
           if (uploadError) {
             console.error("Foto upload mislukt:", uploadError);
-            setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
+            setErrorMessage(t("photoUploadFailed"));
             return;
           }
           const { data } = supabase.storage
@@ -339,14 +339,14 @@ export default function SchoonmaakCheck({
 
       if (insertError) {
         console.error("Registratie opslaan mislukt:", insertError);
-        setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
+        setErrorMessage(t("saveFailed"));
         return;
       }
 
       router.push("/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
-      setErrorMessage("Onverwachte fout. Probeer opnieuw.");
+      setErrorMessage(t("unexpectedErrorRetry"));
     } finally {
       setIsSaving(false);
     }
@@ -375,18 +375,18 @@ export default function SchoonmaakCheck({
 
         {!restaurantId ? (
           <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
-            Geen restaurant gekoppeld aan je account.
+            {t("noRestaurantLinked")}
           </p>
         ) : null}
 
         {/* ===== Locaties beheer ===== */}
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            {isCustom ? "Groepen" : "Locaties"}
+            {isCustom ? t("groups") : t("locations")}
           </h3>
 
           {loadingLocations ? (
-            <p className="text-center text-slate-500">Locaties laden…</p>
+            <p className="text-center text-slate-500">{t("loadingLocations")}</p>
           ) : (
             <ul className="flex flex-col gap-3">
               {locations.map((loc) => (
@@ -400,7 +400,7 @@ export default function SchoonmaakCheck({
                     <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                       <a
                         href={`${editBasePath}/${loc.id}`}
-                        aria-label={`Bewerk ${loc.name}`}
+                        aria-label={`${t("edit")} ${loc.name}`}
                         className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                       >
                         <Pencil className="h-5 w-5" aria-hidden />
@@ -408,7 +408,7 @@ export default function SchoonmaakCheck({
                       <button
                         type="button"
                         onClick={() => handleDeleteLocation(loc)}
-                        aria-label={`Verwijder ${loc.name}`}
+                        aria-label={`${t("delete")} ${loc.name}`}
                         className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
                       >
                         <Trash2 className="h-5 w-5" aria-hidden />
@@ -421,8 +421,8 @@ export default function SchoonmaakCheck({
           )}
 
           <InlineAddInput
-            label={`${groupSingular} toevoegen`}
-            placeholder={`Naam van de ${groupSingularLower}`}
+            label={t("addLocation", { name: groupSingularLower })}
+            placeholder={t("nameOfLocation", { name: groupSingularLower })}
             onAdd={handleAddLocation}
             disabled={!restaurantId}
           />
@@ -455,7 +455,7 @@ export default function SchoonmaakCheck({
 
       {!restaurantId ? (
         <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-slate-600">
-          Geen restaurant gekoppeld aan je account.
+          {t("noRestaurantLinked")}
         </p>
       ) : null}
 
@@ -463,7 +463,7 @@ export default function SchoonmaakCheck({
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Kies een {groupSingularLower}
+            {t("chooseLocation", { name: groupSingularLower })}
           </h3>
         </div>
 
@@ -472,7 +472,7 @@ export default function SchoonmaakCheck({
             {selectedLocation.name}
           </p>
         ) : loadingLocations ? (
-          <p className="text-center text-slate-500">Locaties laden…</p>
+          <p className="text-center text-slate-500">{t("loadingLocations")}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {locations.map((loc) => (
@@ -487,8 +487,8 @@ export default function SchoonmaakCheck({
               </SupercellButton>
             ))}
             <InlineAddInput
-              label={`${groupSingular} toevoegen`}
-              placeholder={`Naam van de ${groupSingularLower}`}
+              label={t("addLocation", { name: groupSingularLower })}
+              placeholder={t("nameOfLocation", { name: groupSingularLower })}
               onAdd={handleAddLocation}
             />
           </div>
@@ -499,7 +499,7 @@ export default function SchoonmaakCheck({
       {selectedLocation ? (
         <label className="flex flex-col gap-2">
           <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Datum &amp; tijd
+            {t("dateTimeLabel")}
           </span>
           <input
             type="datetime-local"
@@ -515,15 +515,15 @@ export default function SchoonmaakCheck({
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              {isCustom ? "Items" : "Schoonmaaktaken"}
+              {isCustom ? t("items") : t("cleaningTasks")}
             </h3>
             <span className="text-sm font-bold text-slate-500">
-              {completedCount}/{tasks.length} voltooid
+              {t("completedCount", { done: completedCount, total: tasks.length })}
             </span>
           </div>
 
           {loadingTasks ? (
-            <p className="text-center text-slate-500">Taken laden…</p>
+            <p className="text-center text-slate-500">{t("loadingTasks")}</p>
           ) : (
             <ul className="flex flex-col gap-3">
               {tasks.map((task) => {
@@ -566,19 +566,19 @@ export default function SchoonmaakCheck({
           {/* Opmerking */}
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Opmerking (optioneel)
+              {t("noteOptional")}
             </span>
             <textarea
               value={opmerking}
               onChange={(e) => setOpmerking(e.target.value)}
-              placeholder="Voeg een opmerking toe..."
+              placeholder={t("notePlaceholder")}
               rows={3}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
             />
           </label>
 
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-            Foto&apos;s (optioneel)
+            {t("photosOptional")}
           </h3>
 
           <input
@@ -599,10 +599,10 @@ export default function SchoonmaakCheck({
           >
             <Camera className="h-7 w-7" aria-hidden />
             {photoSlotsLeft <= 0
-              ? `Maximaal ${MAX_PHOTOS} foto's`
+              ? t("maxPhotos", { count: MAX_PHOTOS })
               : photoFiles.length > 0
-                ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
-                : "Foto maken of kiezen (max 5)"}
+                ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
+                : t("pickPhoto", { count: MAX_PHOTOS })}
           </SupercellButton>
 
           {photoPreviews.length > 0 ? (
@@ -611,14 +611,14 @@ export default function SchoonmaakCheck({
                 <div key={url} className="relative">
                   <img
                     src={url}
-                    alt={`Foto ${i + 1}`}
+                    alt={t("photoAlt", { number: i + 1 })}
                     className="h-28 w-full rounded-xl border border-slate-200 object-cover shadow-sm"
                   />
                   <SupercellButton
                     size="icon"
                     variant="danger"
                     onClick={() => removePhoto(i)}
-                    aria-label={`Foto ${i + 1} verwijderen`}
+                    aria-label={t("removePhoto", { number: i + 1 })}
                     className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
                   >
                     <X className="h-4 w-4" strokeWidth={3} aria-hidden />
@@ -637,18 +637,18 @@ export default function SchoonmaakCheck({
             className="flex h-24 w-full items-center justify-center gap-3 text-2xl normal-case"
           >
             {isSaving ? (
-              "Opslaan…"
+              t("saving")
             ) : (
               <>
                 <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
-                Opslaan ({completedCount})
+                {t("save")} ({completedCount})
               </>
             )}
           </SupercellButton>
 
           {completedCount === 0 ? (
             <p className="text-center text-sm text-slate-500">
-              Vink minstens één taak aan om op te slaan.
+              {t("selectAtLeastOneTask")}
             </p>
           ) : null}
         </section>

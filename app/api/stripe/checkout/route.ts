@@ -5,7 +5,16 @@ import { NextResponse } from "next/server";
 
 type Body = {
   plan?: string;
+  language?: string;
 };
+
+function isEnglish(request: Request, body?: Body) {
+  return body?.language === "en" || request.headers.get("x-snelvink-language") === "en";
+}
+
+function msg(request: Request, body: Body | undefined, nl: string, en: string) {
+  return isEnglish(request, body) ? en : nl;
+}
 
 function isPaidPlan(value: string): value is Extract<PlanId, "basic" | "pro"> {
   return value === "basic" || value === "pro";
@@ -17,7 +26,7 @@ export async function POST(request: Request) {
     const token = authHeader?.replace(/^Bearer\s+/i, "").trim();
     if (!token) {
       return NextResponse.json(
-        { error: "Niet ingelogd. Meld je opnieuw aan." },
+        { error: msg(request, undefined, "Niet ingelogd. Meld je opnieuw aan.", "Not signed in. Please sign in again.") },
         { status: 401 },
       );
     }
@@ -27,15 +36,16 @@ export async function POST(request: Request) {
       body = (await request.json()) as Body;
     } catch {
       return NextResponse.json(
-        { error: "Ongeldige aanvraag." },
+        { error: msg(request, undefined, "Ongeldige aanvraag.", "Invalid request.") },
         { status: 400 },
       );
     }
 
     const plan = String(body.plan ?? "");
+    const locale = body.language === "en" ? "en" : "nl";
     if (!isPaidPlan(plan)) {
       return NextResponse.json(
-        { error: "Ongeldig plan. Kies Basic of Pro." },
+        { error: msg(request, body, "Ongeldig plan. Kies Basic of Pro.", "Invalid plan. Choose Basic or Pro.") },
         { status: 400 },
       );
     }
@@ -48,7 +58,7 @@ export async function POST(request: Request) {
     } = await admin.auth.getUser(token);
 
     if (userError || !user?.id) {
-      return NextResponse.json({ error: "Sessie ongeldig." }, { status: 401 });
+      return NextResponse.json({ error: msg(request, body, "Sessie ongeldig.", "Invalid session.") }, { status: 401 });
     }
 
     // Haal profiel op – alleen eigenaar mag betalen.
@@ -61,18 +71,18 @@ export async function POST(request: Request) {
     if (profileError) {
       console.error("Profile lookup mislukt:", profileError);
       return NextResponse.json(
-        { error: "Profiel ophalen mislukt." },
+        { error: msg(request, body, "Profiel ophalen mislukt.", "Failed to load profile.") },
         { status: 500 },
       );
     }
     if (!profileRow) {
-      return NextResponse.json({ error: "Profiel niet gevonden." }, { status: 404 });
+      return NextResponse.json({ error: msg(request, body, "Profiel niet gevonden.", "Profile not found.") }, { status: 404 });
     }
 
     const role = String(profileRow.role ?? "").toLowerCase();
     if (!["owner", "admin", "eigenaar"].includes(role)) {
       return NextResponse.json(
-        { error: "Alleen de eigenaar kan het abonnement wijzigen." },
+        { error: msg(request, body, "Alleen de eigenaar kan het abonnement wijzigen.", "Only the owner can change the subscription.") },
         { status: 403 },
       );
     }
@@ -80,7 +90,7 @@ export async function POST(request: Request) {
     const restaurantId = profileRow.restaurant_id as string | null;
     if (!restaurantId) {
       return NextResponse.json(
-        { error: "Geen restaurant gekoppeld aan dit profiel." },
+        { error: msg(request, body, "Geen restaurant gekoppeld aan dit profiel.", "No restaurant is linked to this profile.") },
         { status: 400 },
       );
     }
@@ -94,7 +104,7 @@ export async function POST(request: Request) {
     if (restaurantError) {
       console.error("Restaurant lookup mislukt:", restaurantError);
       return NextResponse.json(
-        { error: "Restaurant ophalen mislukt." },
+        { error: msg(request, body, "Restaurant ophalen mislukt.", "Failed to load restaurant.") },
         { status: 500 },
       );
     }
@@ -152,12 +162,12 @@ export async function POST(request: Request) {
       success_url: `${appUrl}/dashboard/subscription?status=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/dashboard/subscription?status=cancel`,
       allow_promotion_codes: true,
-      locale: "nl",
+      locale,
     });
 
     if (!session.url) {
       return NextResponse.json(
-        { error: "Geen Checkout URL ontvangen van Stripe." },
+        { error: msg(request, body, "Geen Checkout URL ontvangen van Stripe.", "No Checkout URL received from Stripe.") },
         { status: 500 },
       );
     }
@@ -166,7 +176,9 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("Stripe checkout mislukt:", err);
     const message =
-      err instanceof Error ? err.message : "Onbekende fout bij Stripe checkout.";
+      err instanceof Error
+        ? err.message
+        : msg(request, undefined, "Onbekende fout bij Stripe checkout.", "Unknown Stripe checkout error.");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

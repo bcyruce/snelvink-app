@@ -2,6 +2,7 @@
 
 import FrequencySelector from "@/components/FrequencySelector";
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser, UserProvider } from "@/hooks/useUser";
 import {
   normalizeSchedule,
@@ -27,6 +28,7 @@ function ProductEditContent() {
   const params = useParams<{ productId: string }>();
   const productId = params?.productId ?? "";
   useUser();
+  const { t } = useTranslation();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ function ProductEditContent() {
 
       if (error || !data) {
         console.error("Product not found:", error);
-        setErrorMessage("Product niet gevonden.");
+        setErrorMessage(t("productNotFound"));
         setLoading(false);
         return;
       }
@@ -91,19 +93,19 @@ function ProductEditContent() {
     }
 
     loadProduct();
-  }, [productId]);
+  }, [productId, t]);
 
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setErrorMessage("Vul een naam in.");
+      setErrorMessage(t("fillName"));
       return;
     }
 
     setSaving(true);
     setErrorMessage(null);
 
-    const scheduleError = validateSchedule(schedule);
+    const scheduleError = validateSchedule(schedule, t);
     if (scheduleError) {
       setErrorMessage(scheduleError);
       setSaving(false);
@@ -130,13 +132,13 @@ function ProductEditContent() {
 
     if (error) {
       console.error("Save failed:", error);
-      setErrorMessage("Opslaan mislukt: " + (error.message ?? "Onbekende fout."));
+      setErrorMessage(t("customModuleSaveFailed", { message: error.message ?? t("unknown") }));
       setSaving(false);
       return;
     }
 
     router.push("/taken/ontvangst");
-  }, [name, acceptReasons, rejectReasons, schedule, productId, router]);
+  }, [name, acceptReasons, rejectReasons, schedule, productId, router, t]);
 
   const addAcceptReason = () => {
     const trimmed = newAcceptReason.trim();
@@ -176,7 +178,7 @@ function ProductEditContent() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-gray-600">
-          Laden...
+          {t("loading")}
         </p>
       </div>
     );
@@ -186,7 +188,7 @@ function ProductEditContent() {
     return (
       <main className="min-h-screen bg-slate-50 px-4 pb-32 pt-8 sm:px-6">
         <div className="mx-auto max-w-md">
-          <p className="text-center text-red-600">Product niet gevonden.</p>
+          <p className="text-center text-red-600">{t("productNotFound")}</p>
         </div>
       </main>
     );
@@ -203,11 +205,11 @@ function ProductEditContent() {
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Terug
+          {t("back")}
         </SupercellButton>
 
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-slate-900">
-          Product bewerken
+          {t("editProduct")}
         </h1>
 
         {errorMessage ? (
@@ -220,7 +222,7 @@ function ProductEditContent() {
           {/* Name */}
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Productnaam
+              {t("productName")}
             </span>
             <input
               type="text"
@@ -233,7 +235,7 @@ function ProductEditContent() {
           {/* Status buttons row */}
           <div className="flex flex-col gap-3">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Redenen per status
+              {t("reasonsPerStatus")}
             </span>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -250,7 +252,7 @@ function ProductEditContent() {
                 ].join(" ")}
               >
                 <Check className="h-8 w-8" strokeWidth={3} />
-                <span className="text-sm font-bold">Goedgekeurd</span>
+                <span className="text-sm font-bold">{t("goedgekeurd")}</span>
               </button>
 
               <button
@@ -267,7 +269,7 @@ function ProductEditContent() {
                 ].join(" ")}
               >
                 <X className="h-8 w-8" strokeWidth={3} />
-                <span className="text-sm font-bold">Afgekeurd</span>
+                <span className="text-sm font-bold">{t("afgekeurd")}</span>
               </button>
             </div>
           </div>
@@ -276,11 +278,10 @@ function ProductEditContent() {
           {showAcceptReasons ? (
             <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
               <h3 className="mb-3 text-lg font-bold text-emerald-800">
-                Redenen voor goedkeuring
+                {t("acceptReasonsTitle")}
               </h3>
               <p className="mb-4 text-sm text-emerald-700">
-                Kies de mogelijke redenen die medewerkers kunnen selecteren bij
-                goedkeuring.
+                {t("acceptReasonsHelp")}
               </p>
 
               <ul className="mb-4 flex flex-col gap-2">
@@ -289,7 +290,9 @@ function ProductEditContent() {
                     key={reason}
                     className="flex items-center justify-between gap-2 rounded-xl bg-white px-4 py-3"
                   >
-                    <span className="font-semibold text-slate-800">{reason}</span>
+                    <span className="font-semibold text-slate-800">
+                      {reason === "Anders" ? t("other") : reason}
+                    </span>
                     {reason !== "Anders" ? (
                       <button
                         type="button"
@@ -299,7 +302,7 @@ function ProductEditContent() {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-400">Standaard</span>
+                      <span className="text-xs text-slate-400">{t("defaultLabel")}</span>
                     )}
                   </li>
                 ))}
@@ -313,7 +316,7 @@ function ProductEditContent() {
                   onKeyDown={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addAcceptReason())
                   }
-                  placeholder="Nieuwe reden..."
+                  placeholder={t("newReasonPlaceholder")}
                   className="min-h-[48px] flex-1 rounded-xl border-2 border-emerald-300 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:border-emerald-500"
                 />
                 <SupercellButton
@@ -333,11 +336,10 @@ function ProductEditContent() {
           {showRejectReasons ? (
             <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4">
               <h3 className="mb-3 text-lg font-bold text-red-800">
-                Redenen voor afkeuring
+                {t("rejectReasonsTitle")}
               </h3>
               <p className="mb-4 text-sm text-red-700">
-                Kies de mogelijke redenen die medewerkers kunnen selecteren bij
-                afkeuring.
+                {t("rejectReasonsHelp")}
               </p>
 
               <ul className="mb-4 flex flex-col gap-2">
@@ -346,7 +348,9 @@ function ProductEditContent() {
                     key={reason}
                     className="flex items-center justify-between gap-2 rounded-xl bg-white px-4 py-3"
                   >
-                    <span className="font-semibold text-slate-800">{reason}</span>
+                    <span className="font-semibold text-slate-800">
+                      {reason === "Anders" ? t("other") : reason}
+                    </span>
                     {reason !== "Anders" ? (
                       <button
                         type="button"
@@ -356,7 +360,7 @@ function ProductEditContent() {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-400">Standaard</span>
+                      <span className="text-xs text-slate-400">{t("defaultLabel")}</span>
                     )}
                   </li>
                 ))}
@@ -370,7 +374,7 @@ function ProductEditContent() {
                   onKeyDown={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addRejectReason())
                   }
-                  placeholder="Nieuwe reden..."
+                  placeholder={t("newReasonPlaceholder")}
                   className="min-h-[48px] flex-1 rounded-xl border-2 border-red-300 bg-white px-4 text-base font-semibold text-slate-900 outline-none focus:border-red-500"
                 />
                 <SupercellButton
@@ -397,7 +401,7 @@ function ProductEditContent() {
             disabled={saving || !name.trim()}
             className="min-h-[72px] w-full text-2xl"
           >
-            {saving ? "Opslaan..." : "Opslaan"}
+            {saving ? t("saving") : t("save")}
           </SupercellButton>
         </div>
       </div>

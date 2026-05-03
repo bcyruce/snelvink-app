@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/hooks/useTranslation";
 import { ClipboardCheck, History, Settings } from "lucide-react";
 
 export type BottomNavTab = "tasks" | "history" | "settings";
@@ -12,16 +13,17 @@ type BottomNavProps = {
 
 const tabs: {
   id: BottomNavTab;
-  label: string;
+  labelKey: "navTaken" | "navGeschiedenis" | "navInstellingen";
   Icon: typeof ClipboardCheck;
 }[] = [
-  { id: "tasks", label: "Taken", Icon: ClipboardCheck },
-  { id: "history", label: "Geschiedenis", Icon: History },
-  { id: "settings", label: "Instellingen", Icon: Settings },
+  { id: "tasks", labelKey: "navTaken", Icon: ClipboardCheck },
+  { id: "history", labelKey: "navGeschiedenis", Icon: History },
+  { id: "settings", labelKey: "navInstellingen", Icon: Settings },
 ];
 
 export default function BottomNav({ active, onChange }: BottomNavProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <nav
@@ -31,10 +33,10 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
         borderColor: theme.navBorder,
         backdropFilter: "blur(16px)",
       }}
-      aria-label="Hoofdnavigatie"
+      aria-label={t("mainNavigation")}
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2.5">
-        {tabs.map(({ id, label, Icon }) => {
+        {tabs.map(({ id, labelKey, Icon }) => {
           const isActive = active === id;
           return (
             <button
@@ -60,7 +62,7 @@ export default function BottomNav({ active, onChange }: BottomNavProps) {
                 aria-hidden
               />
               <span className="max-w-full truncate">
-                {label}
+                {t(labelKey)}
               </span>
             </button>
           );

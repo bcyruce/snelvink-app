@@ -87,14 +87,17 @@ type CustomModuleLogRow = {
   log_data: unknown;
 };
 
-function moduleLabel(type: HaccpModuleType): string {
-  if (type === "koeling") return "Koeling";
-  if (type === "kerntemperatuur") return "Kerntemperatuur";
-  if (type === "ontvangst") return "Ontvangst";
-  if (type === "schoonmaak") return "Schoonmaak";
-  if (type === "custom_number") return "Getal";
-  if (type === "custom_boolean") return "Ja/Nee";
-  if (type === "custom_list") return "Lijst";
+function moduleLabel(
+  type: HaccpModuleType,
+  t: ReturnType<typeof useTranslation>["t"],
+): string {
+  if (type === "koeling") return t("koeling");
+  if (type === "kerntemperatuur") return t("kerntemperatuur");
+  if (type === "ontvangst") return t("ontvangst");
+  if (type === "schoonmaak") return t("schoonmaak");
+  if (type === "custom_number") return t("moduleTypeNumber");
+  if (type === "custom_boolean") return t("moduleTypeBoolean");
+  if (type === "custom_list") return t("moduleTypeList");
   return type;
 }
 
@@ -105,11 +108,14 @@ function customModuleName(row: HaccpRecordRow): string | null {
   return entry?.name ?? null;
 }
 
-function equipmentName(row: HaccpRecordRow): string {
+function equipmentName(
+  row: HaccpRecordRow,
+  t: ReturnType<typeof useTranslation>["t"],
+): string {
   const e = row.haccp_equipments;
-  if (!e) return "Onbekend apparaat";
-  if (Array.isArray(e)) return e[0]?.name ?? "Onbekend apparaat";
-  return e.name ?? "Onbekend apparaat";
+  if (!e) return t("unknownEquipment");
+  if (Array.isArray(e)) return e[0]?.name ?? t("unknownEquipment");
+  return e.name ?? t("unknownEquipment");
 }
 
 function equipmentLimit(row: HaccpRecordRow): number | null {
@@ -126,7 +132,10 @@ function equipmentUnit(row: HaccpRecordRow): string {
   return entry?.unit && entry.unit.length > 0 ? entry.unit : "°C";
 }
 
-function describeHaccpRow(row: HaccpRecordRow): {
+function describeHaccpRow(
+  row: HaccpRecordRow,
+  t: ReturnType<typeof useTranslation>["t"],
+): {
   apparaat: string;
   taskName: string;
   valueOrStatus: string;
@@ -135,42 +144,42 @@ function describeHaccpRow(row: HaccpRecordRow): {
   const customName = customModuleName(row);
 
   if (row.module_type === "ontvangst" || row.module_type === "custom_boolean") {
-    const productName = row.product_name ?? "Onbekend item";
+    const productName = row.product_name ?? t("unknownItem");
     const status =
       row.status === "goedgekeurd"
-        ? "Goedgekeurd"
+        ? t("goedgekeurd")
         : row.status === "afgekeurd"
-          ? "Afgekeurd"
-          : "Onbekend";
+          ? t("afgekeurd")
+          : t("unknown");
     const reasonsList =
       Array.isArray(row.reasons) && row.reasons.length > 0
         ? row.reasons.join(", ")
         : (row.reason ?? "");
     return {
       apparaat: productName,
-      taskName: customName ?? moduleLabel(row.module_type),
+      taskName: customName ?? moduleLabel(row.module_type, t),
       valueOrStatus: status,
       remarks: reasonsList,
     };
   }
   if (row.module_type === "schoonmaak" || row.module_type === "custom_list") {
-    const location = row.location_name ?? "Onbekende groep";
+    const location = row.location_name ?? t("unknownGroup");
     const tasks = row.completed_tasks ?? [];
     return {
       apparaat: location,
-      taskName: customName ?? moduleLabel(row.module_type),
-      valueOrStatus: tasks.length > 0 ? "Voltooid" : "Geen items aangevinkt",
+      taskName: customName ?? moduleLabel(row.module_type, t),
+      valueOrStatus: tasks.length > 0 ? t("completed") : t("noItemsChecked"),
       remarks: tasks.length > 0 ? tasks.join(", ") : "",
     };
   }
   // Koeling / kerntemperatuur / custom_number
   const unit = equipmentUnit(row);
   return {
-    apparaat: equipmentName(row),
+    apparaat: equipmentName(row, t),
     taskName:
       row.module_type === "koeling"
-        ? "Temperatuur check"
-        : (customName ?? moduleLabel(row.module_type)),
+        ? t("temperatureRegistration")
+        : (customName ?? moduleLabel(row.module_type, t)),
     valueOrStatus:
       typeof row.temperature === "number"
         ? `${Number(row.temperature).toFixed(1)} ${unit}`
@@ -179,18 +188,22 @@ function describeHaccpRow(row: HaccpRecordRow): {
   };
 }
 
-function formatLogTime(iso: string): string {
+function formatLogTime(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("nl-NL", {
+  return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
   }).format(d);
 }
 
-function groupDateLabel(iso: string): string {
+function groupDateLabel(
+  iso: string,
+  t: ReturnType<typeof useTranslation>["t"],
+  locale: string,
+): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "Onbekende datum";
+  if (Number.isNaN(d.getTime())) return t("unknownDate");
 
   const today = new Date();
   const yesterday = new Date();
@@ -201,10 +214,10 @@ function groupDateLabel(iso: string): string {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  if (sameDay(d, today)) return "Vandaag";
-  if (sameDay(d, yesterday)) return "Gisteren";
+  if (sameDay(d, today)) return t("today");
+  if (sameDay(d, yesterday)) return t("yesterday");
 
-  return new Intl.DateTimeFormat("nl-NL", {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -214,11 +227,13 @@ function groupDateLabel(iso: string): string {
 
 function groupRowsByDate(
   rows: ReportRow[],
+  t: ReturnType<typeof useTranslation>["t"],
+  locale: string,
 ): { label: string; rows: ReportRow[] }[] {
   const groups = new Map<string, ReportRow[]>();
 
   rows.forEach((row) => {
-    const label = groupDateLabel(row.created_at);
+    const label = groupDateLabel(row.created_at, t, locale);
     groups.set(label, [...(groups.get(label) ?? []), row]);
   });
 
@@ -237,9 +252,10 @@ function isCustomLogData(value: unknown): value is CustomModuleLogData {
 const FREE_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
 
 export default function HistoryList() {
-  const { translateHaccpText } = useTranslation();
+  const { translateHaccpText, t, language } = useTranslation();
   const { profile, isFreePlan } = useUser();
   const restaurantId = profile?.restaurant_id ?? null;
+  const locale = language === "en" ? "en-GB" : "nl-NL";
 
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,7 +300,7 @@ export default function HistoryList() {
     const haccpRows =
       (haccpRes.data as HaccpRecordRow[] | null)?.map((row) => {
         const { apparaat, taskName, valueOrStatus, remarks } =
-          describeHaccpRow(row);
+          describeHaccpRow(row, t);
         const limit = equipmentLimit(row);
         const isOverLimit =
           (row.module_type === "koeling" ||
@@ -328,7 +344,7 @@ export default function HistoryList() {
         if (!isCustomLogData(logData)) return [];
 
         const moduleName =
-          logData.module_name ?? "Aangepast onderdeel";
+          logData.module_name ?? t("custom");
         const photoUrls = Array.isArray(logData.photo_urls)
           ? logData.photo_urls.filter(
               (value): value is string => typeof value === "string",
@@ -338,7 +354,7 @@ export default function HistoryList() {
         return (logData.values ?? []).map((value, index) => ({
           id: `custom-${row.id}-${value.field_id}-${index}`,
           created_at: row.created_at,
-          apparaat: value.name ?? "Getalveld",
+          apparaat: value.name ?? t("moduleTypeNumber"),
           taskName: moduleName,
           valueOrStatus: `${value.value} ${value.unit ?? ""}`.trim(),
           remarks: value.remark ?? "",
@@ -361,7 +377,7 @@ export default function HistoryList() {
 
     setRows(merged);
     setLoading(false);
-  }, [restaurantId, isFreePlan]);
+  }, [restaurantId, isFreePlan, t]);
 
   useEffect(() => {
     void fetchLogs();
@@ -375,7 +391,7 @@ export default function HistoryList() {
     window.print();
   };
 
-  const groupedRows = groupRowsByDate(rows);
+  const groupedRows = groupRowsByDate(rows, t, locale);
 
   return (
     <div className="mt-2 print:mt-0">
@@ -383,17 +399,16 @@ export default function HistoryList() {
         open={showPrintUpgradeModal}
         onClose={() => setShowPrintUpgradeModal(false)}
       >
-        Alleen beschikbaar voor Basic-abonnement. Upgrade om het NVWA-rapport te
-        genereren en te printen.
+        {t("reportUpgradeMessage")}
       </UpgradePromptModal>
 
       <h1 className="hidden print:mb-6 print:block print:text-4xl print:font-black print:tracking-tight print:text-black">
-        HACCP Logboek - SnelVink
+        {t("haccpLogbookTitle")}
       </h1>
 
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl print:text-black">
-          {isFreePlan ? "Laatste 30 dagen" : "Geschiedenis"}
+          {isFreePlan ? t("latest30Days") : t("navGeschiedenis")}
         </h2>
       </div>
 
@@ -406,7 +421,7 @@ export default function HistoryList() {
         className="mb-5 flex h-20 w-full items-center justify-center gap-3 text-xl print:hidden"
       >
         <Printer className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
-        Genereer NVWA Rapport
+        {t("generateNvwaReport")}
       </SupercellButton>
 
       <div className="mb-4 flex items-center justify-end gap-3 print:hidden">
@@ -419,25 +434,25 @@ export default function HistoryList() {
           textCase="normal"
           className="min-h-[44px] shrink-0 rounded-xl px-4 py-2 text-sm"
         >
-          Vernieuwen
+          {t("refresh")}
         </SupercellButton>
       </div>
 
       {loading && rows.length === 0 ? (
-        <p className="text-center text-sm font-bold text-slate-500">Laden…</p>
+        <p className="text-center text-sm font-bold text-slate-500">{t("loading")}</p>
       ) : null}
 
       {!loading && !restaurantId ? (
         <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:border print:border-black print:bg-white print:text-black">
-          Geen restaurant gekoppeld aan je account.
+          {t("noRestaurantLinked")}
         </p>
       ) : null}
 
       {!loading && restaurantId && rows.length === 0 ? (
         <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:border print:border-black print:bg-white print:text-black">
           {isFreePlan
-            ? "Geen registraties in de afgelopen 30 dagen."
-            : "Geen registraties gevonden."}
+            ? t("noRegistrationsLast30Days")
+            : t("noRegistrationsFound")}
         </p>
       ) : null}
 
@@ -447,19 +462,19 @@ export default function HistoryList() {
             <thead>
               <tr className="bg-blue-500 print:bg-white">
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  Tijd
+                  {t("time")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  Apparaat
+                  {t("equipment")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  Taak
+                  {t("task")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  Waarde/Status
+                  {t("valueStatus")}
                 </th>
                 <th className="border-b-2 border-blue-700 px-4 py-4 text-sm font-black uppercase tracking-wide text-white print:border-black print:text-black">
-                  Opmerkingen
+                  {t("remarks")}
                 </th>
               </tr>
             </thead>
@@ -477,7 +492,7 @@ export default function HistoryList() {
                   {group.rows.map((row) => (
                     <tr key={row.id} className="align-top">
                       <td className="whitespace-nowrap border-b border-slate-100 px-4 py-5 text-base font-black tabular-nums text-slate-900 print:border-black print:text-black">
-                        {formatLogTime(row.created_at)}
+                        {formatLogTime(row.created_at, locale)}
                       </td>
                       <td className="border-b border-slate-100 px-4 py-5 text-base font-bold text-slate-900 print:border-black print:text-black">
                         {translateHaccpText(row.apparaat)}
@@ -496,7 +511,7 @@ export default function HistoryList() {
                         {translateHaccpText(row.valueOrStatus)}
                         {row.isOverLimit ? (
                           <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-black uppercase tracking-wide text-red-700 print:bg-white print:text-black">
-                            Boven limiet
+                            {t("overLimit")}
                           </span>
                         ) : null}
                       </td>
@@ -530,7 +545,7 @@ export default function HistoryList() {
                           </p>
                           {row.correctionAction ? (
                             <p className="mt-1 font-bold text-black">
-                              Corrigerende maatregel:{" "}
+                          {t("correctiveAction")}:{" "}
                               {translateHaccpText(row.correctionAction)}
                             </p>
                           ) : null}
@@ -540,7 +555,7 @@ export default function HistoryList() {
                                 <img
                                   key={`${row.id}-print-${i}`}
                                   src={url}
-                                  alt={`Foto ${i + 1} bij registratie`}
+                                  alt={t("photoAlt", { number: i + 1 })}
                                   className="h-[3cm] w-auto max-w-[6cm] rounded-none border border-black object-cover"
                                 />
                               ))}
@@ -559,7 +574,7 @@ export default function HistoryList() {
 
       {isFreePlan && restaurantId ? (
         <p className="mt-4 text-center text-xs text-slate-500 print:hidden">
-          Gratis versie toont maximaal 30 dagen historie.
+          {t("freeHistoryLimit")}
         </p>
       ) : null}
 
@@ -567,6 +582,8 @@ export default function HistoryList() {
         row={detailRow}
         onClose={() => setDetailRow(null)}
         translate={translateHaccpText}
+        t={t}
+        locale={locale}
       />
     </div>
   );
@@ -576,9 +593,11 @@ type DetailModalProps = {
   row: ReportRow | null;
   onClose: () => void;
   translate: (text: string) => string;
+  t: ReturnType<typeof useTranslation>["t"];
+  locale: string;
 };
 
-function DetailModal({ row, onClose, translate }: DetailModalProps) {
+function DetailModal({ row, onClose, translate, t, locale }: DetailModalProps) {
   useEffect(() => {
     if (!row) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -590,7 +609,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
 
   if (!row) return null;
 
-  const dateLabel = new Intl.DateTimeFormat("nl-NL", {
+  const dateLabel = new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "2-digit",
     month: "long",
@@ -631,7 +650,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
             size="icon"
             variant="neutral"
             onClick={onClose}
-            aria-label="Sluiten"
+            aria-label={t("close")}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-b-[4px]"
           >
             <X className="h-5 w-5" strokeWidth={2.5} aria-hidden />
@@ -653,7 +672,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
                 row.isOverLimit ? "text-red-700" : "text-slate-500",
               ].join(" ")}
             >
-              Waarde / status
+              {t("valueStatus")}
             </p>
             <p
               className={[
@@ -664,7 +683,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
               {translate(row.valueOrStatus)}
               {row.isOverLimit ? (
                 <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 align-middle text-xs font-black uppercase tracking-wide text-red-700">
-                  Boven limiet
+                  {t("overLimit")}
                 </span>
               ) : null}
             </p>
@@ -680,7 +699,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
                     : "text-emerald-700",
                 ].join(" ")}
               >
-                Geselecteerde redenen ({row.ontvangstReasons.length})
+                {t("selectedReasons", { count: row.ontvangstReasons.length })}
               </h3>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {row.ontvangstReasons.map((reason, i) => (
@@ -703,7 +722,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
           {row.correctionAction ? (
             <section className="mt-5">
               <h3 className="text-xs font-bold uppercase tracking-wide text-red-700">
-                Corrigerende maatregel
+                {t("correctiveAction")}
               </h3>
               <p className="mt-2 whitespace-pre-wrap rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-base font-semibold leading-relaxed text-red-800 shadow-sm">
                 {translate(row.correctionAction)}
@@ -713,17 +732,17 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
 
           <section className="mt-5">
             <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              Opmerkingen
+              {t("remarks")}
             </h3>
             <p className="mt-2 whitespace-pre-wrap rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-semibold leading-relaxed text-slate-800 shadow-sm">
-              {row.remarks ? translate(row.remarks) : "Geen opmerkingen."}
+              {row.remarks ? translate(row.remarks) : t("noRemarks")}
             </p>
           </section>
 
           {row.photoUrls.length > 0 ? (
             <section className="mt-6">
               <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                Foto&apos;s ({row.photoUrls.length})
+                {t("photos")} ({row.photoUrls.length})
               </h3>
               <div className="mt-3 flex flex-col gap-4">
                 {row.photoUrls.map((url, i) => (
@@ -736,7 +755,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
                   >
                     <img
                       src={url}
-                      alt={`Foto ${i + 1} bij registratie`}
+                      alt={t("photoAlt", { number: i + 1 })}
                       className="h-72 w-full object-cover sm:h-80"
                       loading="lazy"
                     />
@@ -755,7 +774,7 @@ function DetailModal({ row, onClose, translate }: DetailModalProps) {
             onClick={onClose}
             className="min-h-[56px] w-full text-lg normal-case"
           >
-            Sluiten
+            {t("close")}
           </SupercellButton>
         </div>
       </div>

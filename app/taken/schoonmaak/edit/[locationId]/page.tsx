@@ -3,6 +3,7 @@
 import FrequencySelector from "@/components/FrequencySelector";
 import InlineAddInput from "@/components/InlineAddInput";
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser, UserProvider } from "@/hooks/useUser";
 import {
   normalizeSchedule,
@@ -32,6 +33,7 @@ function LocationEditContent() {
   const params = useParams<{ locationId: string }>();
   const locationId = params?.locationId ?? "";
   const { profile } = useUser();
+  const { t } = useTranslation();
   const restaurantId = profile?.restaurant_id ?? null;
 
   const [location, setLocation] = useState<Location | null>(null);
@@ -57,7 +59,7 @@ function LocationEditContent() {
 
       if (error || !data) {
         console.error("Location not found:", error);
-        setErrorMessage("Locatie niet gevonden.");
+        setErrorMessage(t("locationNotFound"));
         setLoading(false);
         return;
       }
@@ -69,7 +71,7 @@ function LocationEditContent() {
     }
 
     loadLocation();
-  }, [locationId]);
+  }, [locationId, t]);
 
   useEffect(() => {
     async function loadTasks() {
@@ -97,14 +99,14 @@ function LocationEditContent() {
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setErrorMessage("Vul een naam in.");
+      setErrorMessage(t("fillName"));
       return;
     }
 
     setSaving(true);
     setErrorMessage(null);
 
-    const scheduleError = validateSchedule(schedule);
+    const scheduleError = validateSchedule(schedule, t);
     if (scheduleError) {
       setErrorMessage(scheduleError);
       setSaving(false);
@@ -118,19 +120,19 @@ function LocationEditContent() {
 
     if (error) {
       console.error("Save failed:", error);
-      setErrorMessage("Opslaan mislukt.");
+      setErrorMessage(t("saveFailed"));
       setSaving(false);
       return;
     }
 
     router.push("/taken/schoonmaak");
-  }, [name, schedule, locationId, router]);
+  }, [name, schedule, locationId, router, t]);
 
   const handleAddTask = useCallback(
     async (taskName: string) => {
       const restaurantId = profile?.restaurant_id ?? "";
       if (!restaurantId) {
-        setErrorMessage("Geen restaurant gekoppeld.");
+        setErrorMessage(t("noRestaurantLinked"));
         return;
       }
 
@@ -146,7 +148,7 @@ function LocationEditContent() {
 
       if (error) {
         console.error("Failed to add task:", error);
-        setErrorMessage("Taak toevoegen mislukt.");
+        setErrorMessage(t("taskAddFailed"));
         return;
       }
 
@@ -154,11 +156,11 @@ function LocationEditContent() {
         setTasks((prev) => [...prev, data]);
       }
     },
-    [locationId, profile],
+    [locationId, profile, t],
   );
 
   const handleRenameTask = useCallback(async (task: CleaningTask) => {
-    const newName = window.prompt("Nieuwe naam voor de taak", task.name);
+    const newName = window.prompt(t("editTaskNamePrompt"), task.name);
     if (!newName?.trim() || newName.trim() === task.name) return;
 
     const { error } = await supabase
@@ -168,17 +170,17 @@ function LocationEditContent() {
 
     if (error) {
       console.error("Failed to rename task:", error);
-      setErrorMessage("Hernoemen mislukt.");
+      setErrorMessage(t("renameFailed"));
       return;
     }
 
     setTasks((prev) =>
       prev.map((t) => (t.id === task.id ? { ...t, name: newName.trim() } : t))
     );
-  }, []);
+  }, [t]);
 
   const handleDeleteTask = useCallback(async (task: CleaningTask) => {
-    const ok = window.confirm(`"${task.name}" verwijderen?`);
+    const ok = window.confirm(t("confirmDelete", { name: task.name }));
     if (!ok) return;
 
     const { error } = await supabase
@@ -188,18 +190,18 @@ function LocationEditContent() {
 
     if (error) {
       console.error("Failed to delete task:", error);
-      setErrorMessage("Verwijderen mislukt.");
+      setErrorMessage(t("deleteFailed"));
       return;
     }
 
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-gray-600">
-          Laden...
+          {t("loading")}
         </p>
       </div>
     );
@@ -209,7 +211,7 @@ function LocationEditContent() {
     return (
       <main className="min-h-screen bg-slate-50 px-4 pb-32 pt-8 sm:px-6">
         <div className="mx-auto max-w-md">
-          <p className="text-center text-red-600">Locatie niet gevonden.</p>
+          <p className="text-center text-red-600">{t("locationNotFound")}</p>
         </div>
       </main>
     );
@@ -226,11 +228,11 @@ function LocationEditContent() {
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Terug
+          {t("back")}
         </SupercellButton>
 
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-slate-900">
-          Locatie bewerken
+          {t("editLocation")}
         </h1>
 
         {errorMessage ? (
@@ -243,7 +245,7 @@ function LocationEditContent() {
           {/* Location name */}
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Locatienaam
+              {t("locationName")}
             </span>
             <input
               type="text"
@@ -256,11 +258,11 @@ function LocationEditContent() {
           {/* Tasks section */}
           <div className="flex flex-col gap-3">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Schoonmaaktaken
+              {t("cleaningTasks")}
             </span>
 
             {loadingTasks ? (
-              <p className="text-center text-slate-500">Taken laden...</p>
+              <p className="text-center text-slate-500">{t("loadingTasks")}</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {tasks.map((task) => (
@@ -274,6 +276,7 @@ function LocationEditContent() {
                     <button
                       type="button"
                       onClick={() => handleRenameTask(task)}
+                      aria-label={`${t("edit")} ${task.name}`}
                       className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
                     >
                       <Pencil className="h-4 w-4" />
@@ -281,6 +284,7 @@ function LocationEditContent() {
                     <button
                       type="button"
                       onClick={() => handleDeleteTask(task)}
+                      aria-label={`${t("delete")} ${task.name}`}
                       className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -291,8 +295,8 @@ function LocationEditContent() {
             )}
 
             <InlineAddInput
-              label="Taak toevoegen"
-              placeholder="Naam van de taak"
+              label={t("addTask")}
+              placeholder={t("taskNamePlaceholder")}
               onAdd={handleAddTask}
             />
           </div>
@@ -308,7 +312,7 @@ function LocationEditContent() {
             disabled={saving || !name.trim()}
             className="min-h-[72px] w-full text-2xl"
           >
-            {saving ? "Opslaan..." : "Opslaan"}
+            {saving ? t("saving") : t("save")}
           </SupercellButton>
         </div>
       </div>

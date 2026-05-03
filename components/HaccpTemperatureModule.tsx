@@ -141,7 +141,7 @@ export default function HaccpTemperatureModule({
 
     if (error) {
       console.error("haccp_equipments laden mislukt:", error);
-      setErrorMessage("Apparaten laden mislukt. Probeer opnieuw.");
+      setErrorMessage(t("recordsLoadFailed"));
       setLoadingEquipments(false);
       return;
     }
@@ -167,7 +167,7 @@ export default function HaccpTemperatureModule({
 
       if (insertError) {
         console.error("Standaard apparaat aanmaken mislukt:", insertError);
-        setErrorMessage("Kon geen standaard apparaat aanmaken.");
+        setErrorMessage(t("equipmentAddFailed"));
       } else if (created) {
         setEquipments([created as Equipment]);
       }
@@ -175,7 +175,7 @@ export default function HaccpTemperatureModule({
       setEquipments(rows);
     }
     setLoadingEquipments(false);
-  }, [restaurantId, moduleType, firstEquipmentName, customModuleId, isCustom]);
+  }, [restaurantId, moduleType, firstEquipmentName, customModuleId, isCustom, t]);
 
   useEffect(() => {
     void loadEquipments();
@@ -203,18 +203,18 @@ export default function HaccpTemperatureModule({
 
       if (error) {
         console.error("Apparaat toevoegen mislukt:", error);
-        setErrorMessage("Apparaat toevoegen mislukt.");
+        setErrorMessage(t("equipmentAddFailed"));
         return;
       }
       if (data) setEquipments((prev) => [...prev, data as Equipment]);
     },
-    [restaurantId, moduleType, customModuleId, isCustom],
+    [restaurantId, moduleType, customModuleId, isCustom, t],
   );
 
   const handleDeleteEquipment = useCallback(
     async (eq: Equipment) => {
       const ok = window.confirm(
-        `"${eq.name}" verwijderen? De historie blijft bewaard.`,
+        t("confirmDeleteHistoryKept", { name: eq.name }),
       );
       if (!ok) return;
 
@@ -225,12 +225,12 @@ export default function HaccpTemperatureModule({
 
       if (error) {
         console.error("Verwijderen mislukt:", error);
-        setErrorMessage("Verwijderen mislukt.");
+        setErrorMessage(t("deleteFailed"));
         return;
       }
       setEquipments((prev) => prev.filter((p) => p.id !== eq.id));
     },
-    [],
+    [t],
   );
 
   // ---------- enter recorder ----------
@@ -358,7 +358,7 @@ export default function HaccpTemperatureModule({
             .upload(path, file, { cacheControl: "3600", upsert: false });
           if (uploadError) {
             console.error("Foto upload mislukt:", uploadError);
-            setErrorMessage("Foto upload mislukt. Probeer opnieuw.");
+            setErrorMessage(t("photoUploadFailed"));
             return;
           }
           const { data } = supabase.storage
@@ -389,7 +389,7 @@ export default function HaccpTemperatureModule({
 
       if (insertError) {
         console.error("Registratie opslaan mislukt:", insertError);
-        setErrorMessage("Opslaan mislukt. Probeer opnieuw.");
+        setErrorMessage(t("saveFailed"));
         return;
       }
 
@@ -411,7 +411,7 @@ export default function HaccpTemperatureModule({
       exitRecord();
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
-      setErrorMessage("Onverwachte fout. Probeer opnieuw.");
+      setErrorMessage(t("unexpectedErrorRetry"));
     } finally {
       setIsSaving(false);
     }
@@ -509,6 +509,7 @@ function ListView({
   errorMessage,
   restaurantReady,
 }: ListViewProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-5">
       <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
@@ -517,7 +518,7 @@ function ListView({
 
       {!restaurantReady ? (
         <p className="rounded-2xl border border-slate-100 bg-white px-4 py-6 text-center text-slate-500 shadow-sm">
-          Geen restaurant gekoppeld aan je account.
+          {t("noRestaurantLinked")}
         </p>
       ) : null}
 
@@ -528,7 +529,7 @@ function ListView({
       ) : null}
 
       {loading ? (
-        <p className="text-center text-slate-500">Apparaten laden…</p>
+        <p className="text-center text-slate-500">{t("loadingEquipment")}</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {equipments.map((eq) => (
@@ -566,7 +567,7 @@ function ListView({
                   <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
                     <a
                       href={`${editBasePath}/${eq.id}`}
-                      aria-label={`Bewerk ${eq.name}`}
+                      aria-label={`${t("edit")} ${eq.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200"
                     >
                       <Pencil className="h-5 w-5" aria-hidden />
@@ -574,7 +575,7 @@ function ListView({
                     <button
                       type="button"
                       onClick={() => onDelete(eq)}
-                      aria-label={`Verwijder ${eq.name}`}
+                      aria-label={`${t("delete")} ${eq.name}`}
                       className="flex h-11 w-11 items-center justify-center rounded-xl text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
                     >
                       <Trash2 className="h-5 w-5" aria-hidden />
@@ -590,8 +591,8 @@ function ListView({
       {/* Add button only in manage mode */}
       {mode === "manage" ? (
         <InlineAddInput
-          label="Apparaat toevoegen"
-          placeholder="Naam van het apparaat"
+          label={t("addProduct", { name: t("equipment").toLowerCase() })}
+          placeholder={t("equipmentName")}
           onAdd={onAdd}
           disabled={!restaurantReady}
         />
@@ -670,6 +671,7 @@ function RecordView({
   onSave,
   errorMessage,
 }: RecordViewProps) {
+  const { t } = useTranslation();
   // Manueel typen via klik op de temperatuur
   const [isManualEdit, setIsManualEdit] = useState(false);
   const [manualText, setManualText] = useState("");
@@ -714,7 +716,7 @@ function RecordView({
       {/* Datum & tijd van meting */}
       <label className="flex flex-col gap-2">
         <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Datum &amp; tijd van meting
+          {t("measurementDateTimeLabel")}
         </span>
         <input
           type="datetime-local"
@@ -731,7 +733,7 @@ function RecordView({
       {/* Limit info */}
       {limitTemp !== null ? (
         <p className="text-center text-sm font-semibold text-slate-500">
-          Limiet: {limitTemp.toFixed(1)} {unitLabel}
+          {t("limitLabel", { value: limitTemp.toFixed(1), unit: unitLabel })}
         </p>
       ) : null}
 
@@ -754,7 +756,7 @@ function RecordView({
               size="lg"
               variant="neutral"
               {...incOnePress}
-              aria-label="Eén graad hoger (houd ingedrukt voor sneller)"
+              aria-label={t("increaseOneDegreeFast")}
               className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
             >
               + 1°
@@ -763,7 +765,7 @@ function RecordView({
               size="lg"
               variant="neutral"
               {...incTenthPress}
-              aria-label="0,1 graad hoger (houd ingedrukt voor sneller)"
+              aria-label={t("increaseTenthDegreeFast")}
               className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
             >
               + 0,1°
@@ -774,7 +776,7 @@ function RecordView({
             size="lg"
             variant="neutral"
             {...incCustomPress}
-            aria-label={`${stepLabel} ${unitLabel} hoger (houd ingedrukt voor sneller)`}
+            aria-label={t("increaseStepFast", { step: stepLabel, unit: unitLabel })}
             className="flex min-h-[96px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
           >
             + {stepLabel}
@@ -800,14 +802,14 @@ function RecordView({
                 if (e.key === "Escape") setIsManualEdit(false);
               }}
               className={`w-full rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center text-7xl font-black tabular-nums leading-none shadow-sm outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10 ${tempColorClass}`}
-              aria-label="Temperatuur handmatig invoeren"
+              aria-label={t("manualTemperatureInput")}
             />
           ) : (
             <SupercellButton
               size="lg"
               variant="neutral"
               onClick={startManual}
-              aria-label={`Huidige temperatuur ${tempLabel}, tik om handmatig in te voeren`}
+              aria-label={t("currentTemperatureAria", { temp: tempLabel })}
               className={`min-h-[112px] w-full rounded-3xl border border-slate-100 px-2 py-4 text-center text-8xl tabular-nums leading-none normal-case ${tempColorClass}`}
             >
               {tempLabel}
@@ -821,7 +823,7 @@ function RecordView({
               size="lg"
               variant="neutral"
               {...decOnePress}
-              aria-label="Eén graad lager (houd ingedrukt voor sneller)"
+              aria-label={t("decreaseOneDegreeFast")}
               className="flex min-h-[96px] flex-[2] select-none items-center justify-center rounded-3xl text-4xl normal-case"
             >
               − 1°
@@ -830,7 +832,7 @@ function RecordView({
               size="lg"
               variant="neutral"
               {...decTenthPress}
-              aria-label="0,1 graad lager (houd ingedrukt voor sneller)"
+              aria-label={t("decreaseTenthDegreeFast")}
               className="flex min-h-[96px] flex-1 select-none items-center justify-center rounded-3xl border border-slate-100 text-2xl normal-case"
             >
               − 0,1°
@@ -841,7 +843,7 @@ function RecordView({
             size="lg"
             variant="neutral"
             {...decCustomPress}
-            aria-label={`${stepLabel} ${unitLabel} lager (houd ingedrukt voor sneller)`}
+            aria-label={t("decreaseStepFast", { step: stepLabel, unit: unitLabel })}
             className="flex min-h-[96px] w-full select-none items-center justify-center rounded-3xl text-3xl normal-case"
           >
             − {stepLabel}
@@ -851,8 +853,7 @@ function RecordView({
       </div>
 
       <p className="text-center text-sm text-slate-500">
-        Houd een knop ingedrukt om snel aan te passen. Tik op het getal om
-        handmatig in te voeren.
+        {t("holdButtonHint")}
       </p>
 
       {/* Limit waarschuwing + corrigerende maatregel */}
@@ -868,21 +869,21 @@ function RecordView({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-base font-black text-red-700">
-                Waarde boven limiet ({limitTemp.toFixed(1)} {unitLabel})
+                {t("valueOverLimit", { value: limitTemp.toFixed(1), unit: unitLabel })}
               </p>
               <p className="mt-1 text-sm font-semibold text-red-700/90">
-                Vul een corrigerende maatregel in om door te gaan.
+                {t("correctiveActionRequiredHelp")}
               </p>
             </div>
           </div>
           <label className="flex flex-col gap-2">
             <span className="text-xs font-bold uppercase tracking-wide text-red-700">
-              Corrigerende maatregel
+              {t("correctiveAction")}
             </span>
             <textarea
               value={correctionAction}
               onChange={(e) => onCorrectionActionChange(e.target.value)}
-              placeholder="Bijv. Koeling op stand 4 gezet, deur gecontroleerd…"
+              placeholder={t("correctiveActionPlaceholder")}
               rows={3}
               autoFocus
               className={[
@@ -896,7 +897,7 @@ function RecordView({
             />
             {correctionRequired ? (
               <span className="text-xs font-bold text-red-700">
-                Verplicht: vul een corrigerende maatregel in.
+                {t("correctiveActionRequired")}
               </span>
             ) : null}
           </label>
@@ -906,12 +907,12 @@ function RecordView({
       {/* Opmerking */}
       <label className="flex flex-col gap-2">
         <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          Opmerking (optioneel)
+          {t("noteOptional")}
         </span>
         <textarea
           value={opmerking}
           onChange={(e) => onOpmerkingChange(e.target.value)}
-          placeholder="Voeg een opmerking toe..."
+          placeholder={t("notePlaceholder")}
           rows={3}
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow-sm outline-none resize-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/10"
         />
@@ -935,10 +936,10 @@ function RecordView({
       >
         <Camera className="h-7 w-7" aria-hidden />
         {photoSlotsLeft <= 0
-          ? `Maximaal ${MAX_PHOTOS} foto's`
+          ? t("maxPhotos", { count: MAX_PHOTOS })
           : photoFiles.length > 0
-            ? `Foto toevoegen (${photoFiles.length}/${MAX_PHOTOS})`
-            : "Foto maken of kiezen (max 5)"}
+            ? t("addPhotoProgress", { current: photoFiles.length, max: MAX_PHOTOS })
+            : t("pickPhoto", { count: MAX_PHOTOS })}
       </SupercellButton>
 
       {photoPreviews.length > 0 ? (
@@ -947,14 +948,14 @@ function RecordView({
             <div key={url} className="relative">
               <img
                 src={url}
-                alt={`Foto ${i + 1}`}
+                alt={t("photoAlt", { number: i + 1 })}
                 className="h-28 w-full rounded-xl border border-slate-100 object-cover shadow-sm"
               />
               <SupercellButton
                 size="icon"
                 variant="danger"
                 onClick={() => onRemovePhoto(i)}
-                aria-label={`Foto ${i + 1} verwijderen`}
+                aria-label={t("removePhoto", { number: i + 1 })}
                 className="absolute -right-3 -top-3 flex h-16 w-16 items-center justify-center rounded-full border-b-[4px] ring-4 ring-white"
               >
                 <X className="h-4 w-4" strokeWidth={3} aria-hidden />
@@ -974,11 +975,11 @@ function RecordView({
         className="flex min-h-[96px] w-full items-center justify-center gap-3 text-2xl normal-case"
       >
         {isSaving ? (
-          "Opslaan…"
+          t("saving")
         ) : (
           <>
             <Check className="h-7 w-7" strokeWidth={3} aria-hidden />
-            Opslaan
+            {t("save")}
           </>
         )}
       </SupercellButton>

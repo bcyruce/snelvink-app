@@ -2,6 +2,7 @@
 
 import FrequencySelector from "@/components/FrequencySelector";
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useUser, UserProvider } from "@/hooks/useUser";
 import {
   normalizeSchedule,
@@ -30,6 +31,7 @@ function EquipmentEditContent() {
   const moduleIdParam = (params?.moduleId ?? "").toLowerCase();
   const equipmentId = params?.equipmentId ?? "";
   useUser();
+  const { t } = useTranslation();
 
   const isValidModule =
     moduleIdParam === "koeling" || moduleIdParam === "kerntemperatuur";
@@ -48,7 +50,7 @@ function EquipmentEditContent() {
   const [schedule, setSchedule] = useState<FrequencySchedule | null>(null);
 
   const moduleTitle =
-    moduleIdParam === "koeling" ? "Koeling" : "Kerntemperatuur";
+    moduleIdParam === "koeling" ? t("koeling") : t("kerntemperatuur");
   const defaultTemp = moduleIdParam === "koeling" ? 7 : 75;
   const unit = "°C";
 
@@ -72,7 +74,7 @@ function EquipmentEditContent() {
 
       if (error || !data) {
         console.error("Equipment not found:", error);
-        setErrorMessage("Apparaat niet gevonden.");
+        setErrorMessage(t("equipmentNotFound"));
         setLoading(false);
         return;
       }
@@ -101,19 +103,19 @@ function EquipmentEditContent() {
     }
 
     void loadEquipment();
-  }, [equipmentId, moduleIdParam, defaultTemp, isValidModule]);
+  }, [equipmentId, moduleIdParam, defaultTemp, isValidModule, t]);
 
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setErrorMessage("Vul een naam in.");
+      setErrorMessage(t("fillName"));
       return;
     }
 
     setSaving(true);
     setErrorMessage(null);
 
-    const scheduleError = validateSchedule(schedule);
+    const scheduleError = validateSchedule(schedule, t);
     if (scheduleError) {
       setErrorMessage(scheduleError);
       setSaving(false);
@@ -152,7 +154,7 @@ function EquipmentEditContent() {
 
     if (error) {
       console.error("Save failed:", error);
-      setErrorMessage("Opslaan mislukt.");
+      setErrorMessage(t("saveFailed"));
       setSaving(false);
       return;
     }
@@ -167,6 +169,7 @@ function EquipmentEditContent() {
     equipmentId,
     moduleIdParam,
     router,
+    t,
   ]);
 
   if (!isValidModule) {
@@ -199,7 +202,7 @@ function EquipmentEditContent() {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <p className="text-center text-lg font-semibold text-gray-600">
-          Laden...
+          {t("loading")}
         </p>
       </div>
     );
@@ -217,10 +220,10 @@ function EquipmentEditContent() {
             className="flex h-20 w-full items-center justify-center gap-3 text-2xl"
           >
             <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-            Terug
+            {t("back")}
           </SupercellButton>
           <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-center font-bold text-red-700">
-            {errorMessage ?? "Apparaat niet gevonden."}
+            {errorMessage ?? t("equipmentNotFound")}
           </p>
         </div>
       </main>
@@ -238,11 +241,11 @@ function EquipmentEditContent() {
           className="mb-8 flex h-20 w-full items-center justify-center gap-3 text-2xl"
         >
           <ArrowLeft className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-          Terug
+          {t("back")}
         </SupercellButton>
 
         <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-slate-900">
-          {moduleTitle} - Bewerken
+          {t("editModuleTitle", { module: moduleTitle })}
         </h1>
 
         {errorMessage ? (
@@ -255,7 +258,7 @@ function EquipmentEditContent() {
           {/* Name */}
           <label className="flex flex-col gap-2">
             <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-              Naam apparaat
+              {t("equipmentName")}
             </span>
             <input
               type="text"
@@ -269,7 +272,7 @@ function EquipmentEditContent() {
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <span className="text-lg font-bold text-slate-800">
-                Standaardwaarde instellen
+                {t("setDefaultValue")}
               </span>
               <button
                 type="button"
@@ -293,14 +296,14 @@ function EquipmentEditContent() {
 
             <p className="text-sm text-slate-500">
               {hasDefaultValue
-                ? `Bij elke nieuwe registratie start de waarde op ${defaultValue.toFixed(1)} ${unit}.`
-                : "Bij elke nieuwe registratie start de waarde op de laatst opgeslagen meting."}
+                ? t("defaultValueStartsAt", { value: defaultValue.toFixed(1), unit })
+                : t("defaultValueUsesLast")}
             </p>
 
             {hasDefaultValue ? (
               <label className="flex flex-col gap-2">
                 <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                  Standaardwaarde ({unit})
+                  {t("defaultValue")} ({unit})
                 </span>
                 <input
                   type="text"
@@ -324,18 +327,17 @@ function EquipmentEditContent() {
           <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <span className="text-lg font-bold text-slate-800">
-                Limiet temperatuur
+                {t("limitTemperature")}
               </span>
             </div>
 
             <p className="text-sm text-slate-500">
-              Boven deze temperatuur moet een corrigerende maatregel worden
-              ingevuld.
+              {t("limitTemperatureHelp")}
             </p>
 
             <label className="flex flex-col gap-2">
               <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                Limiet ({unit})
+                {t("limit")} ({unit})
               </span>
               <input
                 type="text"
@@ -365,7 +367,7 @@ function EquipmentEditContent() {
             disabled={saving || !name.trim()}
             className="min-h-[72px] w-full text-2xl"
           >
-            {saving ? "Opslaan..." : "Opslaan"}
+            {saving ? t("saving") : t("save")}
           </SupercellButton>
         </div>
       </div>

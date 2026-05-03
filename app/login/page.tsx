@@ -1,6 +1,7 @@
 "use client";
 
 import SupercellButton from "@/components/SupercellButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/lib/supabase";
 import { ChefHat } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,7 @@ const labelClass = "text-sm font-black uppercase tracking-wide text-slate-700";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [authView, setAuthView] = useState<AuthView>("login");
   const [registerRole, setRegisterRole] = useState<RegisterRole>("owner");
 
@@ -71,7 +73,7 @@ export default function LoginPage() {
           setUnconfirmedEmail(trimmedEmail);
           setError(null);
         } else {
-          setError("Inloggen mislukt. Controleer je gegevens.");
+          setError(t("loginFailedCheck"));
         }
         return;
       }
@@ -80,7 +82,7 @@ export default function LoginPage() {
       router.refresh();
     } catch (err) {
       console.error("Inloggen mislukt:", err);
-      setError("Inloggen mislukt. Probeer het opnieuw.");
+      setError(t("loginFailedRetry"));
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ export default function LoginPage() {
         setResendState("error");
         setResendError(
           resendError.message ||
-            "Kon geen nieuwe bevestigingsmail versturen. Probeer het later opnieuw.",
+            t("resendConfirmationFailed"),
         );
         return;
       }
@@ -121,7 +123,7 @@ export default function LoginPage() {
     } catch (err) {
       console.error("Bevestigingsmail opnieuw versturen mislukt:", err);
       setResendState("error");
-      setResendError("Er ging iets mis. Probeer het opnieuw.");
+      setResendError(t("retryError"));
     }
   }
 
@@ -135,20 +137,20 @@ export default function LoginPage() {
 
     const trimmedFullName = fullName.trim();
     if (!trimmedFullName) {
-      setError("Vul je naam in.");
+      setError(t("fillFullName"));
       setLoading(false);
       return;
     }
 
     if (registerRole === "owner" && !restaurantName.trim()) {
-      setError("Vul de restaurantnaam in.");
+      setError(t("fillRestaurantName"));
       setLoading(false);
       return;
     }
 
     const normalizedInviteCode = inviteCode.replace(/\D/g, "").slice(0, 6);
     if (registerRole === "employee" && normalizedInviteCode.length !== 6) {
-      setError("Vul een geldige 6-cijferige uitnodigingscode in.");
+      setError(t("invalidInviteCode"));
       setLoading(false);
       return;
     }
@@ -188,23 +190,21 @@ export default function LoginPage() {
         const lowered = rawMessage.toLowerCase();
         let friendly: string;
         if (lowered.includes("plan limiet bereikt")) {
-          friendly =
-            "Het restaurant heeft het maximale aantal medewerkers bereikt. Vraag je werkgever om zijn abonnement te upgraden.";
+          friendly = t("staffLimitReached");
         } else if (
           lowered.includes("ongeldige invite code") ||
           lowered.includes("invite code is verplicht")
         ) {
-          friendly =
-            "De uitnodigingscode klopt niet. Vraag je werkgever om de juiste 6-cijferige code.";
+          friendly = t("inviteCodeInvalid");
         } else {
-          friendly = rawMessage || "Registreren mislukt.";
+          friendly = rawMessage || t("registerFailed");
         }
         setError(friendly);
         return;
       }
 
       if (!signUpData.user) {
-        setError("Registreren mislukt. Probeer opnieuw.");
+        setError(t("registerFailedRetry"));
         return;
       }
 
@@ -231,7 +231,7 @@ export default function LoginPage() {
         setInviteCode("");
         setFullName("");
         setInfo(
-          `Dit e-mailadres is al geregistreerd. Log in of klik hieronder op 'Wachtwoord vergeten?'.`,
+          t("emailAlreadyRegistered"),
         );
         return;
       }
@@ -246,7 +246,7 @@ export default function LoginPage() {
         setInviteCode("");
         setFullName("");
         setInfo(
-          `We hebben een bevestigingsmail naar ${trimmedEmail} gestuurd. Controleer je inbox én je spam-/reclamemap. Klik op de link om je account te activeren en log daarna in.`,
+          t("confirmationMailSent", { email: trimmedEmail }),
         );
         return;
       }
@@ -255,7 +255,7 @@ export default function LoginPage() {
       router.refresh();
     } catch (err) {
       console.error("Registreren mislukt:", err);
-      setError("Er ging iets mis. Probeer het opnieuw.");
+      setError(t("retryError"));
     } finally {
       setLoading(false);
     }
@@ -277,7 +277,7 @@ export default function LoginPage() {
         </header>
 
         <h1 className="mb-8 text-center text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-          {authView === "login" ? "Aanmelden" : "Registreren"}
+          {authView === "login" ? t("loginTitle") : t("registerTitle")}
         </h1>
 
         {authView === "login" ? (
@@ -288,7 +288,7 @@ export default function LoginPage() {
           >
             <div className="flex flex-col gap-2">
               <label htmlFor="login-email" className={labelClass}>
-                E-mailadres
+                {t("emailAddress")}
               </label>
               <input
                 id="login-email"
@@ -306,7 +306,7 @@ export default function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="login-password" className={labelClass}>
-                Wachtwoord
+                {t("password")}
               </label>
               <input
                 id="login-password"
@@ -336,9 +336,7 @@ export default function LoginPage() {
                 role="status"
               >
                 <p className="text-center text-base font-bold leading-snug">
-                  Je e-mailadres is nog niet bevestigd. Controleer je inbox én
-                  je spam-/reclamemap voor de bevestigingsmail naar{" "}
-                  <span className="break-all">{unconfirmedEmail}</span>.
+                  {t("unconfirmedEmailMessage", { email: unconfirmedEmail })}
                 </p>
                 <SupercellButton
                   type="button"
@@ -350,14 +348,14 @@ export default function LoginPage() {
                   className="h-14 w-full rounded-xl border-2 border-amber-900/30 text-base normal-case text-amber-950"
                 >
                   {resendState === "sending"
-                    ? "Versturen…"
+                    ? t("sending")
                     : resendState === "sent"
-                      ? "Verzonden ✓"
-                      : "Bevestigingsmail opnieuw versturen"}
+                      ? `${t("sent")} ✓`
+                      : t("resendConfirmation")}
                 </SupercellButton>
                 {resendState === "sent" ? (
                   <p className="text-center text-sm font-semibold text-green-900">
-                    Nieuwe bevestigingsmail verstuurd. Vergeet je spam-map niet.
+                    {t("newConfirmationSent")}
                   </p>
                 ) : null}
                 {resendState === "error" && resendError ? (
@@ -386,7 +384,7 @@ export default function LoginPage() {
               textCase="normal"
               className="mt-2 h-16 w-full text-xl"
             >
-              {loading ? "Bezig…" : "Aanmelden"}
+              {loading ? t("working") : t("loginTitle")}
             </SupercellButton>
           </form>
         ) : (
@@ -396,9 +394,9 @@ export default function LoginPage() {
             noValidate
           >
             <fieldset className="flex flex-col gap-3 border-0 p-0">
-              <legend className="sr-only">Accounttype</legend>
+              <legend className="sr-only">{t("accountType")}</legend>
               <p className="text-center text-sm font-semibold text-gray-600">
-                Kies je accounttype
+                {t("chooseAccountType")}
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label
@@ -417,7 +415,7 @@ export default function LoginPage() {
                     onChange={() => setRegisterRole("owner")}
                     className="sr-only"
                   />
-                  Eigenaar
+                  {t("owner")}
                 </label>
                 <label
                   className={[
@@ -435,14 +433,14 @@ export default function LoginPage() {
                     onChange={() => setRegisterRole("employee")}
                     className="sr-only"
                   />
-                  Personeel
+                  {t("employee")}
                 </label>
               </div>
             </fieldset>
 
             <div className="flex flex-col gap-2">
               <label htmlFor="register-fullname" className={labelClass}>
-                Naam
+                {t("name")}
               </label>
               <input
                 id="register-fullname"
@@ -458,7 +456,7 @@ export default function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="register-email" className={labelClass}>
-                E-mailadres
+                {t("emailAddress")}
               </label>
               <input
                 id="register-email"
@@ -475,7 +473,7 @@ export default function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <label htmlFor="register-password" className={labelClass}>
-                Wachtwoord
+                {t("password")}
               </label>
               <input
                 id="register-password"
@@ -493,7 +491,7 @@ export default function LoginPage() {
             {registerRole === "owner" ? (
               <div className="flex flex-col gap-2">
                 <label htmlFor="restaurant-naam" className={labelClass}>
-                  Restaurantnaam
+                  {t("restaurantName")}
                 </label>
                 <input
                   id="restaurant-naam"
@@ -509,7 +507,7 @@ export default function LoginPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 <label htmlFor="invite-code" className={labelClass}>
-                  Uitnodigingscode
+                  {t("inviteCodeLabel")}
                 </label>
                 <input
                   id="invite-code"
@@ -523,11 +521,11 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setInviteCode(e.target.value.replace(/\D/g, "").slice(0, 6))
                   }
-                  placeholder="Bijv. 123456"
+                  placeholder={t("inviteCodePlaceholder")}
                   className={inputClass}
                 />
                 <p className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-center text-sm font-medium text-gray-600">
-                  Vraag deze 6-cijferige code aan je werkgever.
+                  {t("inviteCodeHelp")}
                 </p>
               </div>
             )}
@@ -550,7 +548,7 @@ export default function LoginPage() {
               textCase="normal"
               className="mt-2 h-16 w-full text-xl"
             >
-              {loading ? "Bezig…" : "Account aanmaken"}
+              {loading ? t("working") : t("createAccount")}
             </SupercellButton>
           </form>
         )}
@@ -558,7 +556,7 @@ export default function LoginPage() {
         <p className="mt-10 text-center text-base leading-relaxed text-gray-600">
           {authView === "login" ? (
             <>
-              Nog geen account?{" "}
+              {t("noAccount")}{" "}
               <SupercellButton
                 type="button"
                 size="sm"
@@ -575,12 +573,12 @@ export default function LoginPage() {
                 }}
                 className="px-2 py-1 text-base normal-case"
               >
-                Registreren
+                {t("registerTitle")}
               </SupercellButton>
             </>
           ) : (
             <>
-              Al een account?{" "}
+              {t("alreadyHaveAccount")}{" "}
               <SupercellButton
                 type="button"
                 size="sm"
@@ -597,7 +595,7 @@ export default function LoginPage() {
                 }}
                 className="px-2 py-1 text-base normal-case"
               >
-                Aanmelden
+                {t("loginTitle")}
               </SupercellButton>
             </>
           )}
