@@ -8,6 +8,14 @@ import { useLongPress } from "@/hooks/useLongPress";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
 import {
+  listContainerVariants,
+  listItemVariants,
+  cardPressMotionProps,
+  iconPressMotionProps,
+  modalSheetVariants,
+} from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
+import {
   AlertTriangle,
   Camera,
   Check,
@@ -583,85 +591,116 @@ function ListView({
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--theme-primary)] border-t-transparent" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="h-8 w-8 rounded-full border-3 border-[var(--theme-primary)] border-t-transparent"
+          />
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {equipments.map((eq, index) => (
-            <li key={eq.id}>
-              <div 
-                className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4 transition-all hover:border-[var(--theme-primary)]/30 hover:shadow-md"
-                style={{ animationDelay: `${index * 50}ms` }}
+        <motion.ul
+          className="flex flex-col gap-2"
+          variants={listContainerVariants}
+          initial="initial"
+          animate="animate"
+        >
+          <AnimatePresence>
+            {equipments.map((eq) => (
+              <motion.li
+                key={eq.id}
+                layout
+                variants={listItemVariants}
+                exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
               >
-                {/* Record mode: click to record */}
-                {mode === "record" ? (
-                  <button
-                    type="button"
-                    onClick={() => onPick(eq)}
-                    className="flex flex-1 items-center gap-3 text-left"
-                  >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
-                      <span className="text-lg font-black text-[var(--theme-primary)]">
-                        {eq.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
-                        {eq.name}
-                      </span>
-                      {eq.last_temp !== null ? (
-                        <span className="text-sm font-medium text-[var(--theme-muted)]">
-                          {t("lastValue")}: {eq.last_temp.toFixed(1)}
-                          {eq.unit ?? "°C"}
-                        </span>
-                      ) : null}
-                    </div>
-                    <ChevronRight
-                      className="h-5 w-5 shrink-0 text-[var(--theme-muted)] transition-transform group-hover:translate-x-1"
-                      strokeWidth={2.5}
-                      aria-hidden
-                    />
-                  </button>
-                ) : (
-                  /* Manage mode: display name with edit/delete buttons */
-                  <>
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10">
-                      <span className="text-lg font-black text-[var(--theme-primary)]">
-                        {eq.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
-                        {eq.name}
-                      </span>
-                    </div>
-                  </>
-                )}
-
-                {/* Right: edit and delete buttons - only in manage mode */}
-                {mode === "manage" ? (
-                  <div className="flex items-center gap-1">
-                    <a
-                      href={`${editBasePath}/${eq.id}`}
-                      aria-label={`${t("edit")} ${eq.name}`}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)]"
-                    >
-                      <Pencil className="h-4 w-4" aria-hidden />
-                    </a>
+                <motion.div
+                  {...cardPressMotionProps}
+                  className="group flex items-center gap-3 rounded-xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4"
+                >
+                  {/* Record mode: click to record */}
+                  {mode === "record" ? (
                     <button
                       type="button"
-                      onClick={() => onDelete(eq)}
-                      aria-label={`${t("delete")} ${eq.name}`}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-red-50 hover:text-red-500"
+                      onClick={() => onPick(eq)}
+                      className="flex flex-1 items-center gap-3 text-left"
                     >
-                      <Trash2 className="h-4 w-4" aria-hidden />
+                      <motion.div
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10"
+                      >
+                        <span className="text-lg font-black text-[var(--theme-primary)]">
+                          {eq.name.charAt(0).toUpperCase()}
+                        </span>
+                      </motion.div>
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
+                          {eq.name}
+                        </span>
+                        {eq.last_temp !== null ? (
+                          <span className="text-sm font-medium text-[var(--theme-muted)]">
+                            {t("lastValue")}: {eq.last_temp.toFixed(1)}
+                            {eq.unit ?? "°C"}
+                          </span>
+                        ) : null}
+                      </div>
+                      <motion.span
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 4 }}
+                        className="inline-flex"
+                      >
+                        <ChevronRight
+                          className="h-5 w-5 shrink-0 text-[var(--theme-muted)]"
+                          strokeWidth={2.5}
+                          aria-hidden
+                        />
+                      </motion.span>
                     </button>
-                  </div>
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
+                  ) : (
+                    /* Manage mode: display name with edit/delete buttons */
+                    <>
+                      <motion.div
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10"
+                      >
+                        <span className="text-lg font-black text-[var(--theme-primary)]">
+                          {eq.name.charAt(0).toUpperCase()}
+                        </span>
+                      </motion.div>
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate text-base font-bold text-[var(--theme-fg)]">
+                          {eq.name}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Right: edit and delete buttons - only in manage mode */}
+                  {mode === "manage" ? (
+                    <div className="flex items-center gap-1">
+                      <motion.a
+                        href={`${editBasePath}/${eq.id}`}
+                        aria-label={`${t("edit")} ${eq.name}`}
+                        {...iconPressMotionProps}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)]"
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden />
+                      </motion.a>
+                      <motion.button
+                        type="button"
+                        onClick={() => onDelete(eq)}
+                        aria-label={`${t("delete")} ${eq.name}`}
+                        {...iconPressMotionProps}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--theme-muted)] transition-colors hover:bg-red-50 hover:text-red-500"
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                      </motion.button>
+                    </div>
+                  ) : null}
+                </motion.div>
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </motion.ul>
       )}
 
       {/* Add button only in manage mode */}
@@ -814,9 +853,19 @@ function RecordView({
     : t("valueOverLimit", { value: limitTemp?.toFixed(1) ?? "0.0", unit: unitLabel });
 
   return (
-    <div className="flex flex-col gap-5">
+    <motion.div
+      className="flex flex-col gap-5"
+      variants={modalSheetVariants}
+      initial="initial"
+      animate="animate"
+    >
       {/* Header Card */}
-      <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05, type: "spring", stiffness: 300, damping: 25 }}
+        className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4"
+      >
         <h3 className="text-center text-xl font-black text-[var(--theme-fg)]">
           {equipment?.name ?? title}
         </h3>
@@ -830,7 +879,7 @@ function RecordView({
             {t("limitLabel", { value: limitTemp.toFixed(1), unit: unitLabel })}
           </p>
         ) : null}
-      </div>
+      </motion.div>
 
       {/* Date/Time Input */}
       <div className="rounded-2xl border border-[var(--theme-card-border)] bg-[var(--theme-card-bg)] p-4">
@@ -1076,27 +1125,37 @@ function RecordView({
       </div>
 
       {/* Save Button */}
-      <SupercellButton
-        size="lg"
-        variant="success"
-        onClick={onSave}
-        disabled={!canSave}
-        aria-busy={isSaving}
-        className="flex h-14 w-full items-center justify-center gap-2 rounded-xl text-lg font-black normal-case"
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, type: "spring", stiffness: 280, damping: 24 }}
       >
-        {isSaving ? (
-          <span className="flex items-center gap-2">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            {t("saving")}
-          </span>
-        ) : (
-          <>
-            <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
-            {t("save")}
-          </>
-        )}
-      </SupercellButton>
-    </div>
+        <SupercellButton
+          size="lg"
+          variant="success"
+          onClick={onSave}
+          disabled={!canSave}
+          aria-busy={isSaving}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl text-lg font-black normal-case"
+        >
+          {isSaving ? (
+            <span className="flex items-center gap-2">
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="h-5 w-5 rounded-full border-2 border-white border-t-transparent"
+              />
+              {t("saving")}
+            </span>
+          ) : (
+            <>
+              <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
+              {t("save")}
+            </>
+          )}
+        </SupercellButton>
+      </motion.div>
+    </motion.div>
   );
 }
 

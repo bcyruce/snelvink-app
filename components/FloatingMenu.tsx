@@ -123,22 +123,23 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
         )}
       </AnimatePresence>
 
-      {/* Menu Panel */}
+      {/* Menu Panel - Fixed to viewport, centered within max-w-md container */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            data-floating-menu
-            initial={{ opacity: 0, scale: 0.85, y: 24, originX: 1, originY: 1 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 16 }}
-            transition={{ type: "spring", stiffness: 320, damping: 26 }}
-            className="fixed bottom-24 right-4 z-50 w-56 overflow-hidden rounded-2xl shadow-2xl print:hidden"
-            style={{
-              background: theme.cardBg,
-              border: `1.5px solid ${theme.cardBorder}`,
-              transformOrigin: "bottom right",
-            }}
-          >
+          <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 mx-auto flex max-w-md justify-end print:hidden">
+            <motion.div
+              data-floating-menu
+              initial={{ opacity: 0, scale: 0.85, y: 24, originX: 1, originY: 1 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 16 }}
+              transition={{ type: "spring", stiffness: 320, damping: 26 }}
+              className="pointer-events-auto mr-4 w-56 overflow-hidden rounded-2xl shadow-2xl"
+              style={{
+                background: theme.cardBg,
+                border: `1.5px solid ${theme.cardBorder}`,
+                transformOrigin: "bottom right",
+              }}
+            >
             <motion.nav
               className="py-2"
               variants={listContainerVariants}
@@ -199,28 +200,30 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
               })}
             </motion.nav>
           </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* Floating Action Button */}
-      <motion.button
-        data-floating-menu
-        type="button"
-        onClick={handleToggle}
-        whileHover={{ scale: 1.08, y: -2 }}
-        whileTap={{ scale: 0.92, y: 1 }}
-        animate={{
-          rotate: isOpen ? 180 : 0,
-          boxShadow: isOpen
-            ? `0 2px 0 ${theme.primaryDark}, 0 4px 12px rgba(0,0,0,0.18)`
-            : `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 22 }}
-        className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full print:hidden"
-        style={{ background: theme.primary }}
-        aria-label={isOpen ? t("menuClose") : t("menuOpen")}
-        aria-expanded={isOpen}
-      >
+      {/* Floating Action Button - Fixed to viewport, centered within max-w-md container */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-md justify-end print:hidden">
+        <motion.button
+          data-floating-menu
+          type="button"
+          onClick={handleToggle}
+          whileHover={{ scale: 1.08, y: -2 }}
+          whileTap={{ scale: 0.92, y: 1 }}
+          animate={{
+            rotate: isOpen ? 180 : 0,
+            boxShadow: isOpen
+              ? `0 2px 0 ${theme.primaryDark}, 0 4px 12px rgba(0,0,0,0.18)`
+              : `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 22 }}
+          className="pointer-events-auto mb-6 mr-4 flex h-14 w-14 items-center justify-center rounded-full"
+          style={{ background: theme.primary }}
+          aria-label={isOpen ? t("menuClose") : t("menuOpen")}
+          aria-expanded={isOpen}
+        >
         <AnimatePresence mode="wait" initial={false}>
           {isOpen ? (
             <motion.span
@@ -247,6 +250,7 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
           )}
         </AnimatePresence>
       </motion.button>
+      </div>
     </>
   );
 }

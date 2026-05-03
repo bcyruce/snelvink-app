@@ -2,6 +2,8 @@
 
 import SupercellButton from "@/components/SupercellButton";
 import { useTranslation } from "@/hooks/useTranslation";
+import { modalSheetVariants, springSnappy } from "@/lib/uiMotion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Check, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -62,70 +64,88 @@ export default function InlineAddInput({
     }
   };
 
-  if (!open) {
-    return (
-      <SupercellButton
-        size="lg"
-        variant="neutral"
-        onClick={() => setOpen(true)}
-        disabled={disabled}
-        className={[
-          "flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case",
-          className ?? "",
-        ].join(" ")}
-      >
-        <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
-        {label}
-      </SupercellButton>
-    );
-  }
-
   return (
-    <div
-      className={[
-        "flex min-h-[80px] w-full items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-2",
-        className ?? "",
-      ].join(" ")}
-    >
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder ?? label}
-        disabled={busy}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void submit();
-          }
-          if (e.key === "Escape") {
-            e.preventDefault();
-            close();
-          }
-        }}
-        className="min-h-[64px] flex-1 rounded-xl border-2 border-b-4 border-slate-300 bg-white px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
-      />
-      <SupercellButton
-        size="icon"
-        variant="success"
-        onClick={() => void submit()}
-        disabled={!value.trim() || busy}
-        aria-label={t("save")}
-        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl"
-      >
-        <Check className="h-6 w-6" strokeWidth={3} aria-hidden />
-      </SupercellButton>
-      <SupercellButton
-        size="icon"
-        variant="neutral"
-        onClick={close}
-        disabled={busy}
-        aria-label={t("cancel")}
-        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl"
-      >
-        <X className="h-6 w-6" strokeWidth={3} aria-hidden />
-      </SupercellButton>
+    <div className={["relative w-full", className ?? ""].join(" ")}>
+      <AnimatePresence mode="wait" initial={false}>
+        {!open ? (
+          <motion.div
+            key="button"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={springSnappy}
+          >
+            <SupercellButton
+              size="lg"
+              variant="neutral"
+              onClick={() => setOpen(true)}
+              disabled={disabled}
+              className="flex min-h-[80px] w-full items-center justify-center gap-3 border-2 border-dashed border-slate-200 text-xl normal-case"
+            >
+              <motion.span
+                initial={{ rotate: 0 }}
+                whileHover={{ rotate: 90, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                className="inline-flex"
+              >
+                <Plus className="h-7 w-7" strokeWidth={2.5} aria-hidden />
+              </motion.span>
+              {label}
+            </SupercellButton>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="input"
+            variants={modalSheetVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex min-h-[80px] w-full flex-col gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-3 sm:flex-row sm:items-center"
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={placeholder ?? label}
+              disabled={busy}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void submit();
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  close();
+                }
+              }}
+              className="min-h-[56px] w-full flex-1 rounded-xl border-2 border-b-4 border-slate-300 bg-white px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500 focus:border-b-blue-700"
+            />
+            <div className="flex shrink-0 gap-2">
+              <SupercellButton
+                size="icon"
+                variant="success"
+                onClick={() => void submit()}
+                disabled={!value.trim() || busy}
+                aria-label={t("save")}
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+              >
+                <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
+              </SupercellButton>
+              <SupercellButton
+                size="icon"
+                variant="neutral"
+                onClick={close}
+                disabled={busy}
+                aria-label={t("cancel")}
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+              >
+                <X className="h-5 w-5" strokeWidth={3} aria-hidden />
+              </SupercellButton>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

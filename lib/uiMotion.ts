@@ -56,22 +56,66 @@ export const iconPressMotionProps = {
 
 /** Page-level transition used by {@link app/template.tsx}. */
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 12, filter: "blur(4px)" },
+  initial: { opacity: 0, x: 40, filter: "blur(4px)" },
   animate: {
     opacity: 1,
-    y: 0,
+    x: 0,
     filter: "blur(0px)",
     transition: {
-      duration: 0.32,
+      duration: 0.28,
       ease: [0.22, 1, 0.36, 1],
       when: "beforeChildren",
     },
   },
   exit: {
     opacity: 0,
-    y: -8,
+    x: -30,
     filter: "blur(2px)",
     transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
+  },
+};
+
+/** Slide-in from right for forward navigation. */
+export const slideInRight: Variants = {
+  initial: { opacity: 0, x: 60, filter: "blur(3px)" },
+  animate: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 28,
+      mass: 0.8,
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: -40,
+    filter: "blur(2px)",
+    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
+  },
+};
+
+/** Slide-in from left for backward navigation. */
+export const slideInLeft: Variants = {
+  initial: { opacity: 0, x: -60, filter: "blur(3px)" },
+  animate: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 28,
+      mass: 0.8,
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: 40,
+    filter: "blur(2px)",
+    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
   },
 };
 
