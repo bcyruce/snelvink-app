@@ -12,7 +12,7 @@ function SubscriptionRouteContent() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login");
+      router.push("/app/login");
     }
   }, [isLoading, user, router]);
 

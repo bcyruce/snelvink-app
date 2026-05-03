@@ -37,7 +37,7 @@ function ModuleContent() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login");
+      router.push("/app/login");
     }
   }, [isLoading, user, router]);
 
@@ -60,8 +60,8 @@ function ModuleContent() {
   const componentMode = source === "registreren" ? "record" : "manage";
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") router.push("/registreren");
-    else if (tab === "taken") router.push("/");
+    if (tab === "registreren") router.push("/app/registreren");
+    else if (tab === "taken") router.push("/app");
     else router.push(`/?tab=${tab}`);
   };
 

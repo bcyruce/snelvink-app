@@ -29,7 +29,7 @@ function LanguageSettingsContent() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login");
+      router.push("/app/login");
     }
   }, [isLoading, user, router]);
 
@@ -45,10 +45,10 @@ function LanguageSettingsContent() {
 
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") {
-      router.push("/registreren");
+      router.push("/app/registreren");
       return;
     }
-    if (tab === "taken") router.push("/");
+    if (tab === "taken") router.push("/app");
     else router.push(`/?tab=${tab}`);
   };
 

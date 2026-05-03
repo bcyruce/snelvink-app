@@ -1,17 +1,25 @@
-import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import Providers from "./providers";
 
-const nunito = Nunito({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800", "900"],
-  variable: "--font-nunito",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: "SnelVink",
-  description: "De keuken is open.",
+  title: {
+    template: "%s | Snelvink",
+    default: "Snelvink - Digital HACCP & Food Safety",
+  },
+  description:
+    "Digitize your HACCP compliance. Save time on temperature checks, cleaning schedules, and deliveries.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#2D5C3C",
 };
 
 export default function RootLayout({
@@ -20,16 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl" className="bg-[var(--theme-bg,#F5F3EF)]">
+    <html lang="en" className="scroll-smooth bg-white">
       <body
-        className={`${nunito.className} ${nunito.variable} antialiased`}
-        style={{ background: "var(--theme-bg, #F5F3EF)", color: "var(--theme-fg, #1A2520)" }}
+        className={`${inter.className} ${inter.variable} antialiased`}
+        style={{ background: "#FAFAFA", color: "#171717" }}
       >
-        <Providers>
-          <main className="relative mx-auto min-h-screen max-w-md overflow-x-hidden" style={{ background: "var(--theme-bg, #F5F3EF)" }}>
-            {children}
-          </main>
-        </Providers>
+        {children}
       </body>
     </html>
   );

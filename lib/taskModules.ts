@@ -50,28 +50,28 @@ export const DEFAULT_MODULES: TaskModule[] = [
     name: "Koeling",
     icon: "thermometer",
     isCustom: false,
-    href: "/taken/koeling",
+    href: "/app/taken/koeling",
   },
   {
     id: "ontvangst",
     name: "Ontvangst",
     icon: "truck",
     isCustom: false,
-    href: "/taken/ontvangst",
+    href: "/app/taken/ontvangst",
   },
   {
     id: "schoonmaak",
     name: "Schoonmaak",
     icon: "sparkles",
     isCustom: false,
-    href: "/taken/schoonmaak",
+    href: "/app/taken/schoonmaak",
   },
   {
     id: "kerntemperatuur",
     name: "Kerntemperatuur",
     icon: "thermometer",
     isCustom: false,
-    href: "/taken/kerntemperatuur",
+    href: "/app/taken/kerntemperatuur",
   },
 ];
 

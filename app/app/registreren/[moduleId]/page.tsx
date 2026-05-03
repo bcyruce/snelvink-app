@@ -38,7 +38,7 @@ function ModuleContent() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login");
+      router.push("/app/login");
     }
   }, [isLoading, user, router]);
 
@@ -58,8 +58,8 @@ function ModuleContent() {
   }
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") router.push("/registreren");
-    else if (tab === "taken") router.push("/");
+    if (tab === "registreren") router.push("/app/registreren");
+    else if (tab === "taken") router.push("/app");
     else router.push(`/?tab=${tab}`);
   };
 
@@ -71,7 +71,7 @@ function ModuleContent() {
           type="button"
           size="iconSm"
           variant="neutral"
-          onClick={() => router.push("/registreren")}
+          onClick={() => router.push("/app/registreren")}
           aria-label={t("back")}
           className="mb-4 rounded-full"
         >
