@@ -230,10 +230,10 @@ function HomeContent() {
             <Image
               src="/logo-snelvink.png"
               alt="Snelvink"
-              width={44}
-              height={44}
+              width={64}
+              height={64}
               priority
-              className="h-11 w-11 shrink-0 select-none"
+              className="h-16 w-16 shrink-0 select-none"
             />
             <div style={{
               fontSize: 34,
@@ -244,7 +244,7 @@ function HomeContent() {
               fontFamily: "'Trebuchet MS', sans-serif",
               textTransform: "uppercase",
             }}>
-              SNEL<span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
+              SNEL<span style={{ color: "#B6DEC4", marginLeft: "0.1em" }}>VINK</span>
             </div>
           </div>
 
