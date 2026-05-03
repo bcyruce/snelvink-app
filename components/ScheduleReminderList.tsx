@@ -811,8 +811,8 @@ export default function ScheduleReminderList() {
           ? String(row.custom_module_id)
           : String(row.type);
         const baseRoute = row.custom_module_id
-          ? `/registreren/custom/${row.custom_module_id}`
-          : `/registreren/${row.type}`;
+          ? `/app/registreren/custom/${row.custom_module_id}`
+          : `/app/registreren/${row.type}`;
         nextItems.push({
           id,
           title: row.name ?? "Item",
@@ -835,8 +835,8 @@ export default function ScheduleReminderList() {
           ? String(row.custom_module_id)
           : "ontvangst";
         const baseRoute = row.custom_module_id
-          ? `/registreren/custom/${row.custom_module_id}`
-          : "/registreren/ontvangst";
+          ? `/app/registreren/custom/${row.custom_module_id}`
+          : "/app/registreren/ontvangst";
         nextItems.push({
           id,
           title: row.name ?? "Item",
@@ -857,8 +857,8 @@ export default function ScheduleReminderList() {
           ? String(row.custom_module_id)
           : "schoonmaak";
         const baseRoute = row.custom_module_id
-          ? `/registreren/custom/${row.custom_module_id}`
-          : "/registreren/schoonmaak";
+          ? `/app/registreren/custom/${row.custom_module_id}`
+          : "/app/registreren/schoonmaak";
         nextItems.push({
           id,
           title: row.name ?? "Item",

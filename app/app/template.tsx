@@ -31,9 +31,9 @@ export default function Template({ children }: { children: ReactNode }) {
       } else {
         // Same depth - default to forward unless going to root or registreren from detail
         const isGoingBack = 
-          pathname === "/" || 
-          pathname === "/registreren" || 
-          pathname === "/taken" ||
+          pathname === "/app" || 
+          pathname === "/app/registreren" || 
+          pathname === "/app/taken" ||
           (prevPathnameRef.current.includes("/edit/") && !pathname.includes("/edit/"));
         directionRef.current = isGoingBack ? "back" : "forward";
       }

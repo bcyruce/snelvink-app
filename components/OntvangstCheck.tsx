@@ -70,8 +70,8 @@ export default function OntvangstCheck({
 }: Props) {
   const isCustom = !!customModuleId;
   const editBasePath = isCustom
-    ? `/taken/custom/${customModuleId}/edit`
-    : "/taken/ontvangst/edit";
+    ? `/app/taken/custom/${customModuleId}/edit`
+    : "/app/taken/ontvangst/edit";
   const recordModuleType = isCustom ? "custom_boolean" : "ontvangst";
   const router = useRouter();
   const { t } = useTranslation();
@@ -374,7 +374,7 @@ export default function OntvangstCheck({
         return;
       }
 
-      router.push("/registreren");
+      router.push("/app/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
       setErrorMessage(t("unexpectedErrorRetry"));

@@ -203,7 +203,7 @@ function CustomItemEditContent() {
     };
   }, [customId, itemId, t]);
 
-  const backToManage = `/taken/custom/${customId}`;
+  const backToManage = `/app/taken/custom/${customId}`;
 
   const handleSave = useCallback(async () => {
     const trimmed = name.trim();

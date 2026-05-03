@@ -125,7 +125,7 @@ function LocationEditContent() {
       return;
     }
 
-    router.push("/taken/schoonmaak");
+    router.push("/app/taken/schoonmaak");
   }, [name, schedule, locationId, router, t]);
 
   const handleAddTask = useCallback(
@@ -224,7 +224,7 @@ function LocationEditContent() {
           type="button"
           size="iconSm"
           variant="neutral"
-          onClick={() => router.push("/taken/schoonmaak")}
+          onClick={() => router.push("/app/taken/schoonmaak")}
           aria-label={t("back")}
           className="mb-4 rounded-full"
         >

@@ -32,7 +32,7 @@ function ModuleContent() {
 
   // Determine where to go back based on source parameter
   const source = searchParams.get("source");
-  const backPath = source === "registreren" ? "/registreren" : "/";
+  const backPath = source === "registreren" ? "/app/registreren" : "/app";
   const activeMenu = source === "registreren" ? "registreren" : "taken";
 
   useEffect(() => {
@@ -62,7 +62,7 @@ function ModuleContent() {
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") router.push("/app/registreren");
     else if (tab === "taken") router.push("/app");
-    else router.push(`/?tab=${tab}`);
+    else router.push(`/app?tab=${tab}`);
   };
 
   return (

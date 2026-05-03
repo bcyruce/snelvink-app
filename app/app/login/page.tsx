@@ -78,7 +78,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/");
+      router.replace("/app");
       router.refresh();
     } catch (err) {
       console.error("Inloggen mislukt:", err);
@@ -97,7 +97,7 @@ export default function LoginPage() {
     try {
       const emailRedirectTo =
         typeof window !== "undefined"
-          ? `${window.location.origin}/login`
+          ? `${window.location.origin}/app/login`
           : undefined;
 
       const { error: resendError } = await supabase.auth.resend({
@@ -171,7 +171,7 @@ export default function LoginPage() {
 
       const emailRedirectTo =
         typeof window !== "undefined"
-          ? `${window.location.origin}/login`
+          ? `${window.location.origin}/app/login`
           : undefined;
 
       const { data: signUpData, error: signUpError } =
@@ -251,7 +251,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/");
+      router.replace("/app");
       router.refresh();
     } catch (err) {
       console.error("Registreren mislukt:", err);

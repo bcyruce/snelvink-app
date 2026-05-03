@@ -697,7 +697,7 @@ export default function HistoryList() {
         type="button"
         size="lg"
         variant="neutral"
-        onClick={() => router.push("/geschiedenis/onvoltooid")}
+        onClick={() => router.push("/app/geschiedenis/onvoltooid")}
         textCase="normal"
         className="mb-4 flex h-16 w-full items-center justify-center gap-3 text-base print:hidden"
       >

@@ -138,7 +138,7 @@ export default function SettingsTab() {
     } catch (err) {
       console.error("Uitloggen mislukt:", err);
     } finally {
-      router.push("/login");
+      router.push("/app/login");
       setIsSigningOut(false);
     }
   }, [router]);
@@ -165,7 +165,7 @@ export default function SettingsTab() {
           type="button"
           size="lg"
           variant="neutral"
-          onClick={() => router.push("/instellingen/taal")}
+          onClick={() => router.push("/app/instellingen/taal")}
           textCase="normal"
           className="group flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
         >
@@ -232,7 +232,7 @@ export default function SettingsTab() {
           type="button"
           size="lg"
           variant="neutral"
-          onClick={() => router.push("/dashboard/subscription")}
+          onClick={() => router.push("/app/dashboard/subscription")}
           textCase="normal"
           className="mt-2 flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
         >

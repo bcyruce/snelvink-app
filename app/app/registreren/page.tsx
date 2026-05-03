@@ -39,7 +39,7 @@ function RegistrerenContent() {
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") return; // Already on this page
     if (tab === "taken") router.push("/app");
-    else router.push(`/?tab=${tab}`);
+    else router.push(`/app?tab=${tab}`);
   };
 
   return (

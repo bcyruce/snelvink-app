@@ -146,7 +146,7 @@ export default function AddModuleModal({
           name: data.name ?? trimmed,
           icon: data.icon ?? iconKey,
           isCustom: true,
-          href: `/taken/custom/${data.id}`,
+          href: `/app/taken/custom/${data.id}`,
         };
 
         resetCustomForm();

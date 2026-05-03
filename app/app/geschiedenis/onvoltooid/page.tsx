@@ -38,7 +38,7 @@ function OnvoltooidContent() {
       return;
     }
     if (tab === "taken") router.push("/app");
-    else router.push(`/?tab=${tab}`);
+    else router.push(`/app?tab=${tab}`);
   };
 
   return (

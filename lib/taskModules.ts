@@ -82,6 +82,21 @@ const REMOVED_DEFAULT_IDS = new Set<string>(["frituurvet"]);
 
 const STORAGE_KEY = "snelvink:taskModulesLayout:v1";
 
+/** Routes moved under `/app/*`; rewrite stored layout hrefs from before that change. */
+function normalizeStoredModuleHref(href: string): string {
+  if (!href.startsWith("/") || href.startsWith("/app/")) return href;
+  if (
+    href.startsWith("/taken/") ||
+    href.startsWith("/registreren") ||
+    href.startsWith("/geschiedenis/") ||
+    href.startsWith("/instellingen/") ||
+    href.startsWith("/dashboard/")
+  ) {
+    return `/app${href}`;
+  }
+  return href;
+}
+
 export function loadLayout(): TaskModule[] {
   if (typeof window === "undefined") return DEFAULT_MODULES;
   try {
@@ -89,7 +104,12 @@ export function loadLayout(): TaskModule[] {
     if (!raw) return DEFAULT_MODULES;
     const parsed = JSON.parse(raw) as TaskModule[];
     if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_MODULES;
-    return parsed.filter((m) => !REMOVED_DEFAULT_IDS.has(m.id));
+    return parsed
+      .filter((m) => !REMOVED_DEFAULT_IDS.has(m.id))
+      .map((m) => ({
+        ...m,
+        href: normalizeStoredModuleHref(m.href),
+      }));
   } catch {
     return DEFAULT_MODULES;
   }

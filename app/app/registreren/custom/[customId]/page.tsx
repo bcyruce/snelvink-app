@@ -89,7 +89,7 @@ function CustomModuleRecordContent() {
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") router.push("/app/registreren");
     else if (tab === "taken") router.push("/app");
-    else router.push(`/?tab=${tab}`);
+    else router.push(`/app?tab=${tab}`);
   };
 
   if (isLoading || !user || isModuleLoading) {

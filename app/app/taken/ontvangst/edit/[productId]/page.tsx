@@ -137,7 +137,7 @@ function ProductEditContent() {
       return;
     }
 
-    router.push("/taken/ontvangst");
+    router.push("/app/taken/ontvangst");
   }, [name, acceptReasons, rejectReasons, schedule, productId, router, t]);
 
   const addAcceptReason = () => {
@@ -201,7 +201,7 @@ function ProductEditContent() {
           type="button"
           size="iconSm"
           variant="neutral"
-          onClick={() => router.push("/taken/ontvangst")}
+          onClick={() => router.push("/app/taken/ontvangst")}
           aria-label={t("back")}
           className="mb-4 rounded-full"
         >

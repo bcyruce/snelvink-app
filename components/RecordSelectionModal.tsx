@@ -31,9 +31,9 @@ export default function RecordSelectionModal({
   const handleSelectModule = (module: TaskModule) => {
     onClose();
     if (module.isCustom) {
-      router.push(`/registreren/custom/${module.id}`);
+      router.push(`/app/registreren/custom/${module.id}`);
     } else {
-      router.push(`/registreren/${module.id}`);
+      router.push(`/app/registreren/${module.id}`);
     }
   };
 

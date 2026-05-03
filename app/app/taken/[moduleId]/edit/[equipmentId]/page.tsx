@@ -159,7 +159,7 @@ function EquipmentEditContent() {
       return;
     }
 
-    router.push(`/taken/${moduleIdParam}`);
+    router.push(`/app/taken/${moduleIdParam}`);
   }, [
     name,
     hasDefaultValue,
@@ -216,7 +216,7 @@ function EquipmentEditContent() {
             type="button"
             size="iconSm"
             variant="neutral"
-            onClick={() => router.push(`/taken/${moduleIdParam}`)}
+            onClick={() => router.push(`/app/taken/${moduleIdParam}`)}
             aria-label={t("back")}
             className="rounded-full"
           >
@@ -237,7 +237,7 @@ function EquipmentEditContent() {
           type="button"
           size="iconSm"
           variant="neutral"
-          onClick={() => router.push(`/taken/${moduleIdParam}`)}
+          onClick={() => router.push(`/app/taken/${moduleIdParam}`)}
           aria-label={t("back")}
           className="mb-4 rounded-full"
         >

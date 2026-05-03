@@ -54,8 +54,8 @@ export default function SchoonmaakCheck({
 }: Props) {
   const isCustom = !!customModuleId;
   const editBasePath = isCustom
-    ? `/taken/custom/${customModuleId}/edit`
-    : "/taken/schoonmaak/edit";
+    ? `/app/taken/custom/${customModuleId}/edit`
+    : "/app/taken/schoonmaak/edit";
   const recordModuleType = isCustom ? "custom_list" : "schoonmaak";
   const router = useRouter();
   const { t } = useTranslation();
@@ -360,7 +360,7 @@ export default function SchoonmaakCheck({
         return;
       }
 
-      router.push("/registreren");
+      router.push("/app/registreren");
     } catch (err) {
       console.error("Onverwachte fout bij opslaan:", err);
       setErrorMessage(t("unexpectedErrorRetry"));

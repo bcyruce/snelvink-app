@@ -99,8 +99,8 @@ export default function HaccpTemperatureModule({
 }: Props) {
   const isCustom = !!customModuleId;
   const editBasePath = isCustom
-    ? `/taken/custom/${customModuleId}/edit`
-    : `/taken/${moduleType}/edit`;
+    ? `/app/taken/custom/${customModuleId}/edit`
+    : `/app/taken/${moduleType}/edit`;
   const recordModuleType = isCustom ? "custom_number" : moduleType;
   const { t } = useTranslation();
   const { user, profile, isFreePlan } = useUser();
