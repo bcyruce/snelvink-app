@@ -11,7 +11,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { loadLayout, type TaskModule } from "@/lib/taskModules";
 import { useUser } from "@/hooks/useUser";
-import { ChevronRight, Download, Eye, X } from "lucide-react";
+import { ChevronRight, Download, Eye, Filter, RotateCcw, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 type HaccpModuleType =
@@ -361,6 +361,9 @@ export default function HistoryList() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [taskModules, setTaskModules] = useState<TaskModule[]>([]);
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
+  const [filterTaskModuleId, setFilterTaskModuleId] = useState<string>("all");
 
   useEffect(() => {
     setTaskModules(loadLayout());
@@ -610,7 +613,38 @@ export default function HistoryList() {
     [restaurant?.name, rows, translateHaccpText, t],
   );
 
-  const groupedRows = groupRowsByDate(rows, t, locale);
+  const filteredRows = useMemo(() => {
+    const startMs = filterStartDate
+      ? new Date(`${filterStartDate}T00:00:00`).getTime()
+      : null;
+    const endMs = filterEndDate
+      ? new Date(`${filterEndDate}T23:59:59.999`).getTime()
+      : null;
+    return rows.filter((row) => {
+      if (filterTaskModuleId !== "all" && row.taskModuleId !== filterTaskModuleId) {
+        return false;
+      }
+      if (startMs === null && endMs === null) return true;
+      const ts = new Date(row.created_at).getTime();
+      if (Number.isNaN(ts)) return false;
+      if (startMs !== null && ts < startMs) return false;
+      if (endMs !== null && ts > endMs) return false;
+      return true;
+    });
+  }, [rows, filterStartDate, filterEndDate, filterTaskModuleId]);
+
+  const filtersActive =
+    filterStartDate !== "" ||
+    filterEndDate !== "" ||
+    filterTaskModuleId !== "all";
+
+  const handleResetFilters = () => {
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterTaskModuleId("all");
+  };
+
+  const groupedRows = groupRowsByDate(filteredRows, t, locale);
 
   return (
     <div className="mt-2 print:mt-0">
@@ -649,6 +683,80 @@ export default function HistoryList() {
         Exporteer
       </SupercellButton>
 
+      <section
+        aria-label={t("filterRecords")}
+        className="mb-4 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-4 print:hidden"
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+              <Filter
+                className="h-4 w-4 text-blue-600"
+                strokeWidth={2.5}
+                aria-hidden
+              />
+            </span>
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
+              {t("filterRecords")}
+            </h3>
+          </div>
+          {filtersActive ? (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-100 active:scale-95"
+            >
+              <RotateCcw className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+              {t("resetFilters")}
+            </button>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <label className="col-span-1 flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              {t("from")}
+            </span>
+            <input
+              type="date"
+              value={filterStartDate}
+              max={filterEndDate || undefined}
+              onChange={(event) => setFilterStartDate(event.target.value)}
+              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="col-span-1 flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              {t("to")}
+            </span>
+            <input
+              type="date"
+              value={filterEndDate}
+              min={filterStartDate || undefined}
+              onChange={(event) => setFilterEndDate(event.target.value)}
+              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              {t("task")}
+            </span>
+            <select
+              value={filterTaskModuleId}
+              onChange={(event) => setFilterTaskModuleId(event.target.value)}
+              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+            >
+              <option value="all">{t("allTasks")}</option>
+              {exportTaskOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
       <div className="mb-4 flex items-center justify-end gap-3 print:hidden">
         <SupercellButton
           type="button"
@@ -681,7 +789,13 @@ export default function HistoryList() {
         </p>
       ) : null}
 
-      {rows.length > 0 ? (
+      {!loading && restaurantId && rows.length > 0 && filteredRows.length === 0 ? (
+        <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:hidden">
+          {t("noRegistrationsForFilter")}
+        </p>
+      ) : null}
+
+      {filteredRows.length > 0 ? (
         <>
           <div className="space-y-3 print:hidden">
             {groupedRows.map((group) => (

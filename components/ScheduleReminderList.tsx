@@ -15,6 +15,7 @@ import {
   type FrequencySchedule,
 } from "@/lib/schedules";
 import { supabase } from "@/lib/supabase";
+import { loadLayout, type TaskModule } from "@/lib/taskModules";
 import { densePressClass } from "@/lib/uiMotion";
 import {
   AlertCircle,
@@ -30,6 +31,7 @@ import { useEffect, useMemo, useState } from "react";
 type ScheduledItem = {
   id: string;
   title: string;
+  moduleId: string;
   moduleLabel: string;
   route: string;
   itemKind: "equipment" | "product" | "location";
@@ -49,6 +51,7 @@ type PlannedTask = {
   title: string;
   subtitle: string;
   route: string;
+  moduleId: string;
   moduleLabel: string;
   completed: boolean;
   requiredCount: number;
@@ -130,6 +133,7 @@ function buildPlannedTasks(
           .filter(Boolean)
           .join(" · "),
         route: item.route,
+        moduleId: item.moduleId,
         moduleLabel: item.moduleLabel,
         completed,
         requiredCount: occurrence.requiredCount,
@@ -473,6 +477,24 @@ export default function ScheduleReminderList() {
   const [monthIndex, setMonthIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [moduleFilter, setModuleFilter] = useState<string>("all");
+  const [taskModules, setTaskModules] = useState<TaskModule[]>([]);
+
+  useEffect(() => {
+    setTaskModules(loadLayout());
+  }, []);
+
+  const moduleLabelById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const module of taskModules) {
+      if (module.id === "koeling") map.set(module.id, t("koeling"));
+      else if (module.id === "ontvangst") map.set(module.id, t("ontvangst"));
+      else if (module.id === "schoonmaak") map.set(module.id, t("schoonmaak"));
+      else if (module.id === "kerntemperatuur")
+        map.set(module.id, t("kerntemperatuur"));
+      else map.set(module.id, module.name);
+    }
+    return map;
+  }, [taskModules, t]);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -519,12 +541,16 @@ export default function ScheduleReminderList() {
         if (!schedule) continue;
         const customName = customModuleName(row);
         const id = String(row.id);
+        const moduleId = row.custom_module_id
+          ? String(row.custom_module_id)
+          : String(row.type);
         const baseRoute = row.custom_module_id
           ? `/registreren/custom/${row.custom_module_id}`
           : `/registreren/${row.type}`;
         nextItems.push({
           id,
           title: row.name ?? "Item",
+          moduleId,
           moduleLabel:
             customName ??
             (row.type === "kerntemperatuur" ? t("kerntemperatuur") : t("koeling")),
@@ -539,12 +565,16 @@ export default function ScheduleReminderList() {
         if (!schedule) continue;
         const customName = customModuleName(row);
         const id = String(row.id);
+        const moduleId = row.custom_module_id
+          ? String(row.custom_module_id)
+          : "ontvangst";
         const baseRoute = row.custom_module_id
           ? `/registreren/custom/${row.custom_module_id}`
           : "/registreren/ontvangst";
         nextItems.push({
           id,
           title: row.name ?? "Item",
+          moduleId,
           moduleLabel: customName ?? t("ontvangst"),
           route: `${baseRoute}?item=${encodeURIComponent(id)}`,
           itemKind: "product",
@@ -557,12 +587,16 @@ export default function ScheduleReminderList() {
         if (!schedule) continue;
         const customName = customModuleName(row);
         const id = String(row.id);
+        const moduleId = row.custom_module_id
+          ? String(row.custom_module_id)
+          : "schoonmaak";
         const baseRoute = row.custom_module_id
           ? `/registreren/custom/${row.custom_module_id}`
           : "/registreren/schoonmaak";
         nextItems.push({
           id,
           title: row.name ?? "Item",
+          moduleId,
           moduleLabel: customName ?? t("schoonmaak"),
           route: `${baseRoute}?item=${encodeURIComponent(id)}`,
           itemKind: "location",
@@ -613,15 +647,34 @@ export default function ScheduleReminderList() {
     [items, records, restaurant?.opening_hours, restaurant?.closed_days],
   );
 
-  const moduleLabels = useMemo(() => {
-    const seen = new Set<string>();
-    for (const task of plannedTasks) seen.add(task.moduleLabel);
-    return Array.from(seen).sort((a, b) => a.localeCompare(b, locale));
-  }, [plannedTasks, locale]);
+  const filterOptions = useMemo(() => {
+    const knownIds = new Set<string>();
+    const options: { id: string; label: string }[] = [];
+
+    for (const module of taskModules) {
+      knownIds.add(module.id);
+      options.push({
+        id: module.id,
+        label: moduleLabelById.get(module.id) ?? module.name,
+      });
+    }
+
+    const orphans = new Map<string, string>();
+    for (const task of plannedTasks) {
+      if (!knownIds.has(task.moduleId)) {
+        orphans.set(task.moduleId, task.moduleLabel);
+      }
+    }
+    for (const [id, label] of orphans) {
+      options.push({ id, label });
+    }
+
+    return options.sort((a, b) => a.label.localeCompare(b.label, locale));
+  }, [taskModules, plannedTasks, moduleLabelById, locale]);
 
   const filteredTasks = useMemo(() => {
     if (moduleFilter === "all") return plannedTasks;
-    return plannedTasks.filter((task) => task.moduleLabel === moduleFilter);
+    return plannedTasks.filter((task) => task.moduleId === moduleFilter);
   }, [plannedTasks, moduleFilter]);
 
   const todayTasks = tasksForDate(filteredTasks, today).filter(
@@ -701,7 +754,7 @@ export default function ScheduleReminderList() {
               {t("allPlanning")}
             </h3>
             
-            {moduleLabels.length > 0 ? (
+            {filterOptions.length > 0 ? (
               <div className="mb-4">
                 <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--theme-muted)]">
                   {t("filterByType")}
@@ -713,9 +766,9 @@ export default function ScheduleReminderList() {
                   className="w-full rounded-lg border border-[var(--theme-card-border)] bg-white px-3 py-2 text-sm font-bold text-[var(--theme-fg)]"
                 >
                   <option value="all">{t("all")}</option>
-                  {moduleLabels.map((label) => (
-                    <option key={label} value={label}>
-                      {label}
+                  {filterOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
