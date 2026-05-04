@@ -21,6 +21,8 @@ import {
 import { useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { menuTabPath } from "@/lib/menuTabPath";
 
 export type MenuTab =
   | "registreren"
@@ -64,12 +66,24 @@ type FloatingMenuProps = {
 export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
     setPortalEl(document.body);
   }, []);
+
+  useEffect(() => {
+    menuItems.forEach(({ id, disabled }) => {
+      if (disabled) return;
+      try {
+        router.prefetch(menuTabPath(id));
+      } catch {
+        // prefetch is best-effort; ignore failures.
+      }
+    });
+  }, [router]);
 
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
