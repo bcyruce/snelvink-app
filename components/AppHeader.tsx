@@ -15,8 +15,8 @@ export default function AppHeader() {
       transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="sticky top-0 z-50 px-4 py-3 backdrop-blur-md border-b"
       style={{ 
-        background: theme.navBg,
-        borderColor: theme.navBorder,
+        background: theme.primary,
+        borderColor: theme.primaryDark,
       }}
     >
       <div className="flex items-center justify-between">
@@ -27,7 +27,7 @@ export default function AppHeader() {
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
           <Image
-            src="/logo-snelvink.png"
+            src="/logo-snelvink-transparent.png"
             alt="Snelvink"
             width={48}
             height={48}
@@ -37,13 +37,13 @@ export default function AppHeader() {
           <div className="flex items-baseline gap-0.5">
             <span
               className="text-xl font-bold tracking-tight"
-              style={{ color: theme.fg }}
+              style={{ color: "#FFFFFF" }}
             >
               Snel
             </span>
             <span
               className="text-xl font-bold tracking-tight"
-              style={{ color: theme.muted }}
+              style={{ color: "rgba(255,255,255,0.78)" }}
             >
               vink
             </span>

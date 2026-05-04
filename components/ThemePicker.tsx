@@ -28,7 +28,7 @@ function ThemePickerPopup({
 }: {
   onClose: () => void;
 }) {
-  const { themeName, setThemeName, paletteColors } = useTheme();
+  const { theme, themeName, setThemeName, paletteColors } = useTheme();
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -52,23 +52,23 @@ function ThemePickerPopup({
         top: "calc(100% + 8px)",
         right: 0,
         zIndex: 200,
-        background: "rgba(255,255,255,0.98)",
-        border: "1px solid rgba(0,0,0,0.08)",
+        background: theme.cardBg,
+        border: `1px solid ${theme.cardBorder}`,
         borderRadius: 12,
         padding: "10px 12px 10px",
         backdropFilter: "blur(24px)",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
         transformOrigin: "top right",
       }}
     >
       <div className="flex items-center gap-1.5 mb-3 px-0.5">
         <PaletteIcon colors={paletteColors} size={14} />
-        <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.04em", color: "#737373" }}>
+        <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.04em", color: theme.muted }}>
           {t("theme")}
         </span>
       </div>
 
-      {(["cool", "warm"] as const).map((temp, rowIndex) => (
+      {(["cool", "warm", "night"] as const).map((temp, rowIndex) => (
         <motion.div
           key={temp}
           className="flex gap-2 mb-2 last:mb-0"
@@ -116,7 +116,7 @@ function ThemePickerPopup({
 }
 
 export default function ThemePicker() {
-  const { paletteColors } = useTheme();
+  const { theme, paletteColors } = useTheme();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -129,15 +129,17 @@ export default function ThemePicker() {
         whileTap={{ scale: 0.92, rotate: 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 18 }}
         style={{
-          padding: 4,
-          background: "transparent",
-          border: "none",
+          padding: 5,
+          background: "rgba(255,255,255,0.14)",
+          border: "1px solid rgba(255,255,255,0.24)",
+          borderRadius: 9999,
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          opacity: open ? 1 : 0.75,
+          opacity: open ? 1 : 0.9,
           transition: "opacity 0.15s",
+          boxShadow: `0 1px 5px ${theme.primaryDark}40`,
         }}
         aria-label={t("changeTheme")}
       >

@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 export type Theme = {
   name: string;
   label: string;
-  temp: "cool" | "warm";
+  temp: "cool" | "warm" | "night";
   dot: string;
   primary: string;
   primaryDark: string;
@@ -68,9 +68,16 @@ export const themes: Record<string, Theme> = {
     cardBg: "rgba(255,255,255,0.95)", cardBorder: "rgba(229,229,229,0.8)",
     navBg: "rgba(255,255,255,0.92)", navBorder: "rgba(229,229,229,0.6)",
   },
+  night: {
+    name: "night", label: "Nachtmodus", temp: "night", dot: "#111827",
+    primary: "#334155", primaryDark: "#1E293B",
+    bg: "#0B1120", fg: "#F8FAFC", muted: "#94A3B8",
+    cardBg: "rgba(15,23,42,0.88)", cardBorder: "rgba(100,116,139,0.45)",
+    navBg: "rgba(15,23,42,0.92)", navBorder: "rgba(71,85,105,0.55)",
+  },
 };
 
-export const themeOrder = ["pine", "steel", "militaryblue", "tin", "plum", "warmgray", "beige"];
+export const themeOrder = ["pine", "steel", "militaryblue", "tin", "plum", "warmgray", "beige", "night"];
 
 type ThemeContextValue = {
   theme: Theme;

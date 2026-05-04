@@ -401,13 +401,13 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen px-4 py-8 sm:px-6 sm:py-12"
-      style={{ background: "#FAFAFA", color: theme.fg }}
+      style={{ background: "#EAF7EF", color: theme.fg }}
     >
       <div className="mx-auto flex w-full max-w-md flex-col gap-6">
         <header className="flex flex-col items-center text-center">
           <div className="flex items-center gap-3">
             <Image
-              src="/logo-snelvink.png"
+              src="/logo-snelvink-transparent.png"
               alt="SnelVink"
               width={56}
               height={56}

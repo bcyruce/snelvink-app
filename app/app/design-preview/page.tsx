@@ -246,7 +246,7 @@ function PhonePreview({
                 letterSpacing: "0.15em", marginTop: 3,
                 textTransform: "uppercase", whiteSpace: "nowrap",
               }}>
-                Meten · Vinken · Weten
+                SnelVink
               </div>
             </div>
 

@@ -24,7 +24,7 @@ export default function BrandPage() {
           marginTop: 12,
           textTransform: "uppercase",
         }}>
-          Meten · Vinken · Weten
+          SnelVink
         </div>
       </div>
     </div>

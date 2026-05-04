@@ -44,7 +44,7 @@ export default function FinalDesign() {
                 textTransform: "uppercase",
                 whiteSpace: "nowrap",
               }}>
-                Meten · Vinken · Weten
+                SnelVink
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ export default function FinalDesign() {
               <li>• 字体: 几何现代 (SNEL VINK 分层)</li>
               <li>• 主色: 松针绿 (#2D5C3C)</li>
               <li>• 样式: 玻璃拟态毛玻璃卡片</li>
-              <li>• 标语: Meten · Vinken · Weten</li>
+              <li>• 标语: SnelVink</li>
             </ul>
           </div>
           <div>
