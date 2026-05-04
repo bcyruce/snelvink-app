@@ -51,6 +51,17 @@ type PendingDelete = {
   index: number;
 };
 
+function restoreDeletedModule(
+  items: TaskModule[],
+  deleted: PendingDelete,
+): TaskModule[] {
+  if (items.some((m) => m.id === deleted.module.id)) return items;
+  const next = items.slice();
+  const safeIndex = Math.min(deleted.index, next.length);
+  next.splice(safeIndex, 0, deleted.module);
+  return next;
+}
+
 function HomeContent({ activeTab }: { activeTab: MenuTab }) {
   const router = useRouter();
   const { user, isLoading, profile } = useUser();
@@ -69,6 +80,27 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
   );
   const pendingDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
+  );
+
+  const persistModuleDelete = useCallback(
+    async (deleted: PendingDelete): Promise<boolean> => {
+      if (!deleted.module.isCustom) return true;
+      const restaurantId = profile?.restaurant_id;
+      if (!restaurantId) return false;
+
+      const { error } = await supabase
+        .from("custom_modules")
+        .update({ is_active: false })
+        .eq("id", deleted.module.id)
+        .eq("restaurant_id", restaurantId);
+
+      if (error) {
+        console.warn("Custom module deactiveren mislukt:", error.message);
+        return false;
+      }
+      return true;
+    },
+    [profile?.restaurant_id],
   );
 
   useEffect(() => {
@@ -152,6 +184,16 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
 
   const handleDelete = useCallback(
     (id: string) => {
+      if (pendingDelete) {
+        const previousDelete = pendingDelete;
+        void (async () => {
+          const persisted = await persistModuleDelete(previousDelete);
+          if (!persisted) {
+            setModules((items) => restoreDeletedModule(items, previousDelete));
+          }
+        })();
+      }
+
       setModules((items) => {
         const index = items.findIndex((m) => m.id === id);
         if (index === -1) return items;
@@ -163,19 +205,12 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
         return items.filter((m) => m.id !== id);
       });
     },
-    [],
+    [pendingDelete, persistModuleDelete],
   );
 
   const handleUndoDelete = useCallback(() => {
     if (!pendingDelete) return;
-    const { module: restored, index } = pendingDelete;
-    setModules((items) => {
-      if (items.some((m) => m.id === restored.id)) return items;
-      const next = items.slice();
-      const safeIndex = Math.min(index, next.length);
-      next.splice(safeIndex, 0, restored);
-      return next;
-    });
+    setModules((items) => restoreDeletedModule(items, pendingDelete));
     if (pendingDeleteTimerRef.current) {
       clearTimeout(pendingDeleteTimerRef.current);
       pendingDeleteTimerRef.current = null;
@@ -184,12 +219,21 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
   }, [pendingDelete]);
 
   const handleDismissDelete = useCallback(() => {
+    const finalizedDelete = pendingDelete;
     setPendingDelete(null);
     if (pendingDeleteTimerRef.current) {
       clearTimeout(pendingDeleteTimerRef.current);
       pendingDeleteTimerRef.current = null;
     }
-  }, []);
+    if (!finalizedDelete) return;
+
+    void (async () => {
+      const persisted = await persistModuleDelete(finalizedDelete);
+      if (!persisted) {
+        setModules((items) => restoreDeletedModule(items, finalizedDelete));
+      }
+    })();
+  }, [pendingDelete, persistModuleDelete]);
 
   const toggleEditing = useCallback(() => {
     setIsEditing((v) => !v);
