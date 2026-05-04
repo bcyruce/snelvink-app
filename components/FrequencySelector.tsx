@@ -261,7 +261,7 @@ function DailyFields({
               next[index] = event.target.value;
               onChange({ ...schedule, times: next });
             }}
-            className="min-h-[56px] rounded-xl border-2 border-b-4 border-slate-300 px-4 text-lg font-bold outline-none focus:border-blue-500"
+            className="min-h-[56px] w-full min-w-0 rounded-xl border-2 border-b-4 border-slate-300 px-3 text-base font-bold outline-none focus:border-blue-500"
           />
         </label>
       ))}
@@ -383,7 +383,7 @@ function YearlyFields({
                 next[index] = { ...next[index], month, day };
                 onChange({ ...schedule, dates: next });
               }}
-              className="min-h-[56px] rounded-xl border-2 border-b-4 border-slate-300 px-4 text-lg font-bold outline-none focus:border-blue-500"
+              className="min-h-[56px] w-full min-w-0 rounded-xl border-2 border-b-4 border-slate-300 px-3 text-base font-bold outline-none focus:border-blue-500"
             />
           </label>
           <input
@@ -395,7 +395,7 @@ function YearlyFields({
               onChange({ ...schedule, dates: next });
             }}
             placeholder={t("optional")}
-            className="min-h-[48px] rounded-xl border border-slate-200 px-4 text-base font-semibold placeholder:text-slate-300"
+            className="min-h-[48px] w-full min-w-0 rounded-xl border border-slate-200 px-3 text-sm font-semibold placeholder:text-slate-300"
           />
         </div>
       ))}
@@ -437,7 +437,7 @@ function CustomReminderFields({
             type="datetime-local"
             value={reminder.dateTime}
             onChange={(event) => updateReminder(reminder.id, event.target.value)}
-            className="min-h-[56px] min-w-0 flex-1 rounded-xl border-2 border-b-4 border-slate-300 px-3 text-base font-bold outline-none focus:border-blue-500"
+            className="min-h-[56px] min-w-0 flex-1 rounded-xl border-2 border-b-4 border-slate-300 px-3 text-sm font-semibold outline-none focus:border-blue-500"
           />
           <button
             type="button"
@@ -498,7 +498,7 @@ function CheckTimeRow({
           value={time}
           onChange={(event) => onChangeTime(event.target.value)}
           placeholder={t("optional")}
-          className="mt-2 min-h-[48px] w-full rounded-xl border border-slate-200 px-4 text-base font-semibold placeholder:text-slate-300"
+          className="mt-2 min-h-[48px] w-full min-w-0 rounded-xl border border-slate-200 px-3 text-sm font-semibold placeholder:text-slate-300"
         />
       ) : null}
     </div>

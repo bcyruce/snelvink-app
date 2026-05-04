@@ -891,7 +891,7 @@ function RecordView({
             type="datetime-local"
             value={recordedAtLocal}
             onChange={(e) => onRecordedAtChange(e.target.value)}
-            className="h-14 w-full rounded-xl border border-[var(--theme-card-border)] bg-white px-4 text-center text-lg font-bold tabular-nums text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
+            className="h-14 w-full min-w-0 rounded-xl border border-[var(--theme-card-border)] bg-white px-3 text-base font-semibold tabular-nums text-[var(--theme-fg)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
           />
         </label>
       </div>

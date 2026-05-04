@@ -104,7 +104,7 @@ export default function ExportModal({
               type="date"
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
-              className="h-14 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-14 w-full min-w-0 rounded-2xl border-2 border-slate-300 bg-white px-3 text-base font-semibold text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -120,7 +120,7 @@ export default function ExportModal({
               type="date"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
-              className="h-14 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-lg font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-14 w-full min-w-0 rounded-2xl border-2 border-slate-300 bg-white px-3 text-base font-semibold text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
 

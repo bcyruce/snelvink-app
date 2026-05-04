@@ -126,3 +126,39 @@ body {
 .toast-slide-up {
   animation: toast-slide-up 220ms ease-out;
 }
+
+/* ------------------------------------------------------------------
+ * 原生日期 / 时间输入控件：手机上避免内容溢出
+ * - 强制 box-sizing，允许收缩
+ * - 在小屏上稍微减小字号，让 locale 格式 (dd-mm-yyyy hh:mm) 能完整显示
+ * - iOS Safari 的 -webkit-date-and-time-value 单独允许收缩并继承对齐
+ * ------------------------------------------------------------------ */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"] {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: inherit;
+}
+
+@media (max-width: 480px) {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"] {
+    font-size: 14px;
+    letter-spacing: 0;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+  }
+}
