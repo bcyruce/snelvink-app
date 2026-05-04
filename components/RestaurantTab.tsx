@@ -235,7 +235,7 @@ function RestaurantHoursForm({
                       onChange={(event) =>
                         updateDay(day.value, { from: event.target.value })
                       }
-                      className="min-h-[48px] rounded-xl border border-slate-200 px-3 font-bold disabled:bg-slate-50"
+                      className="min-h-[48px] w-full min-w-0 rounded-xl border border-slate-200 px-2.5 text-sm font-semibold disabled:bg-slate-50"
                     />
                   </label>
                   <label className="flex flex-col gap-1">
@@ -249,7 +249,7 @@ function RestaurantHoursForm({
                       onChange={(event) =>
                         updateDay(day.value, { to: event.target.value })
                       }
-                      className="min-h-[48px] rounded-xl border border-slate-200 px-3 font-bold disabled:bg-slate-50"
+                      className="min-h-[48px] w-full min-w-0 rounded-xl border border-slate-200 px-2.5 text-sm font-semibold disabled:bg-slate-50"
                     />
                   </label>
                 </div>
@@ -300,7 +300,7 @@ function RestaurantHoursForm({
                 type="date"
                 value={newClosedDay}
                 onChange={(event) => setNewClosedDay(event.target.value)}
-                className="min-h-[48px] min-w-0 flex-1 rounded-xl border border-slate-200 px-3 font-bold"
+                className="min-h-[48px] min-w-0 flex-1 rounded-xl border border-slate-200 px-2.5 text-sm font-semibold"
               />
               <button
                 type="button"

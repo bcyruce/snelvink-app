@@ -150,6 +150,19 @@ input[type="datetime-local"]::-webkit-date-and-time-value {
   text-align: inherit;
 }
 
+/* Maak de iOS Safari placeholder velden duidelijker zichtbaar wanneer leeg */
+input[type="date"]:not(:focus):invalid::-webkit-datetime-edit,
+input[type="time"]:not(:focus):invalid::-webkit-datetime-edit,
+input[type="datetime-local"]:not(:focus):invalid::-webkit-datetime-edit {
+  color: #94a3b8;
+}
+
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="time"]::-webkit-datetime-edit-text,
+input[type="datetime-local"]::-webkit-datetime-edit-text {
+  padding: 0 2px;
+}
+
 @media (max-width: 480px) {
   input[type="date"],
   input[type="time"],

@@ -751,7 +751,7 @@ export default function HistoryList() {
               value={filterStartDate}
               max={filterEndDate || undefined}
               onChange={(event) => setFilterStartDate(event.target.value)}
-              className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
+              className="h-10 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-2.5 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
             />
           </label>
           <label className="col-span-1 flex flex-col gap-1">
@@ -763,7 +763,7 @@ export default function HistoryList() {
               value={filterEndDate}
               min={filterStartDate || undefined}
               onChange={(event) => setFilterEndDate(event.target.value)}
-              className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
+              className="h-10 w-full min-w-0 rounded-lg border border-neutral-200 bg-white px-2.5 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
             />
           </label>
           <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">

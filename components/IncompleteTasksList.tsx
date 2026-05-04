@@ -569,7 +569,7 @@ export default function IncompleteTasksList() {
               value={filterStartDate}
               max={filterEndDate || undefined}
               onChange={(event) => setFilterStartDate(event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-11 w-full min-w-0 rounded-xl border-2 border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500"
             />
           </label>
           <label className="col-span-1 flex flex-col gap-1">
@@ -582,7 +582,7 @@ export default function IncompleteTasksList() {
               min={filterStartDate || undefined}
               max={defaultEndDate}
               onChange={(event) => setFilterEndDate(event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-11 w-full min-w-0 rounded-xl border-2 border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500"
             />
           </label>
           <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
