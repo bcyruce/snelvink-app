@@ -676,7 +676,7 @@ export default function HistoryList() {
       </h1>
 
       <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl print:text-black">
+        <h2 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl print:text-black">
           {isFreePlan ? t("latest30Days") : t("navGeschiedenis")}
         </h2>
       </div>
@@ -686,10 +686,9 @@ export default function HistoryList() {
         size="lg"
         variant="primary"
         onClick={() => setShowExportModal(true)}
-        textCase="normal"
-        className="mb-4 flex h-20 w-full items-center justify-center gap-3 text-xl print:hidden"
+        className="mb-4 flex w-full items-center justify-center gap-3 px-4 py-4 text-base print:hidden"
       >
-        <Download className="h-7 w-7 shrink-0" strokeWidth={2.5} aria-hidden />
+        <Download className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden />
         Exporteer
       </SupercellButton>
 
@@ -698,27 +697,26 @@ export default function HistoryList() {
         size="lg"
         variant="neutral"
         onClick={() => router.push("/app/geschiedenis/onvoltooid")}
-        textCase="normal"
-        className="mb-4 flex h-16 w-full items-center justify-center gap-3 text-base print:hidden"
+        className="mb-4 flex w-full items-center justify-center gap-3 px-4 py-3 text-sm print:hidden"
       >
-        <AlertCircle className="h-5 w-5 shrink-0 text-red-500" strokeWidth={2.5} aria-hidden />
-        <span className="font-black">{t("viewIncompleteTasks")}</span>
+        <AlertCircle className="h-5 w-5 shrink-0 text-red-500" strokeWidth={1.75} aria-hidden />
+        <span className="font-medium">{t("viewIncompleteTasks")}</span>
       </SupercellButton>
 
       <section
         aria-label={t("filterRecords")}
-        className="mb-4 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-4 print:hidden"
+        className="mb-4 rounded-xl border border-neutral-200 bg-white p-4 print:hidden"
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100">
               <Filter
-                className="h-4 w-4 text-blue-600"
-                strokeWidth={2.5}
+                className="h-4 w-4 text-neutral-500"
+                strokeWidth={1.75}
                 aria-hidden
               />
             </span>
-            <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
+            <h3 className="text-sm font-medium text-neutral-700">
               {t("filterRecords")}
             </h3>
           </div>
@@ -729,14 +727,14 @@ export default function HistoryList() {
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
-                whileHover={{ scale: 1.06, rotate: -3 }}
-                whileTap={{ scale: 0.92 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-600"
+                className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-600"
               >
-                <RotateCcw className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+                <RotateCcw className="h-3 w-3" strokeWidth={2} aria-hidden />
                 {t("resetFilters")}
               </motion.button>
             ) : null}
@@ -745,7 +743,7 @@ export default function HistoryList() {
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <label className="col-span-1 flex flex-col gap-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-medium text-neutral-600">
               {t("from")}
             </span>
             <input
@@ -753,11 +751,11 @@ export default function HistoryList() {
               value={filterStartDate}
               max={filterEndDate || undefined}
               onChange={(event) => setFilterStartDate(event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
             />
           </label>
           <label className="col-span-1 flex flex-col gap-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-medium text-neutral-600">
               {t("to")}
             </span>
             <input
@@ -765,17 +763,17 @@ export default function HistoryList() {
               value={filterEndDate}
               min={filterStartDate || undefined}
               onChange={(event) => setFilterEndDate(event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
             />
           </label>
           <label className="col-span-2 flex flex-col gap-1 sm:col-span-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-medium text-neutral-600">
               {t("task")}
             </span>
             <select
               value={filterTaskModuleId}
               onChange={(event) => setFilterTaskModuleId(event.target.value)}
-              className="h-11 w-full rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+              className="h-10 w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 outline-none focus:border-[var(--theme-primary)] focus:ring-1 focus:ring-[var(--theme-primary)]/20"
             >
               <option value="all">{t("allTasks")}</option>
               {exportTaskOptions.map((option) => (
@@ -795,25 +793,24 @@ export default function HistoryList() {
           variant="neutral"
           onClick={() => void fetchLogs()}
           disabled={loading}
-          textCase="normal"
-          className="min-h-[44px] shrink-0 rounded-xl px-4 py-2 text-sm"
+          className="shrink-0 rounded-lg px-4 py-2 text-xs"
         >
           {t("refresh")}
         </SupercellButton>
       </div>
 
       {loading && rows.length === 0 ? (
-        <p className="text-center text-sm font-bold text-slate-500">{t("loading")}</p>
+        <p className="text-center text-sm text-neutral-500">{t("loading")}</p>
       ) : null}
 
       {!loading && !restaurantId ? (
-        <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:border print:border-black print:bg-white print:text-black">
+        <p className="rounded-lg border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500 print:border print:border-black print:bg-white print:text-black">
           {t("noRestaurantLinked")}
         </p>
       ) : null}
 
       {!loading && restaurantId && rows.length === 0 ? (
-        <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:border print:border-black print:bg-white print:text-black">
+        <p className="rounded-lg border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500 print:border print:border-black print:bg-white print:text-black">
           {isFreePlan
             ? t("noRegistrationsLast30Days")
             : t("noRegistrationsFound")}
@@ -821,24 +818,24 @@ export default function HistoryList() {
       ) : null}
 
       {!loading && restaurantId && rows.length > 0 && filteredRows.length === 0 ? (
-        <p className="rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white px-4 py-6 text-center font-bold text-slate-500 print:hidden">
+        <p className="rounded-lg border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500 print:hidden">
           {t("noRegistrationsForFilter")}
         </p>
       ) : null}
 
       {filteredRows.length > 0 ? (
         <>
-          <div className="space-y-3 print:hidden">
+          <div className="space-y-2 print:hidden">
             {groupedRows.map((group) => (
               <section
                 key={`mobile-${group.label}`}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-lg border border-neutral-200 bg-white"
               >
-                <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                <div className="border-b border-neutral-100 bg-neutral-50 px-4 py-2 text-xs font-medium text-neutral-600">
                   {group.label}
                 </div>
                 <motion.ul
-                  className="divide-y divide-slate-100"
+                  className="divide-y divide-neutral-100"
                   variants={listContainerVariants}
                   initial="initial"
                   animate="animate"
@@ -848,46 +845,46 @@ export default function HistoryList() {
                       <motion.button
                         type="button"
                         onClick={() => setDetailRow(row)}
-                        whileHover={{ backgroundColor: "rgba(248,250,252,1)", x: 2 }}
+                        whileHover={{ backgroundColor: "rgba(249,250,251,1)" }}
                         whileTap={{ scale: 0.99 }}
                         transition={{ type: "spring", stiffness: 380, damping: 24 }}
                         className="group flex w-full items-center gap-3 px-3 py-2.5 text-left"
                       >
-                        <span className="flex h-11 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-slate-100 text-[13px] font-black tabular-nums leading-none text-slate-700 transition-colors group-hover:bg-slate-200">
+                        <span className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-neutral-100 text-xs font-medium tabular-nums text-neutral-700">
                           {formatLogTime(row.created_at, locale)}
                         </span>
 
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[15px] font-black leading-tight text-slate-900">
+                          <span className="block truncate text-sm font-semibold text-neutral-900">
                             {translateHaccpText(row.apparaat)}
                           </span>
-                          <span className="mt-0.5 block truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          <span className="mt-0.5 block truncate text-xs text-neutral-500">
                             {translateHaccpText(row.taskName)}
                           </span>
                         </span>
 
                         <span
                           className={[
-                            "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-black transition-transform duration-150 group-hover:scale-105",
+                            "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-transform duration-150 group-hover:scale-105",
                             row.isOverLimit || row.status === "rejected"
                               ? "border-red-200 bg-red-50 text-red-700"
                               : row.status === "approved"
                                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : "border-slate-200 bg-slate-50 text-slate-800",
+                                : "border-neutral-200 bg-neutral-50 text-neutral-700",
                           ].join(" ")}
                         >
                           {translateHaccpText(row.valueOrStatus)}
                         </span>
 
                         {row.photoUrls.length > 0 ? (
-                          <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-black tabular-nums text-blue-700">
+                          <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-700">
                             {row.photoUrls.length}
                           </span>
                         ) : null}
 
                         <ChevronRight
-                          className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-slate-700"
-                          strokeWidth={2.5}
+                          className="h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-neutral-600"
+                          strokeWidth={2}
                           aria-hidden
                         />
                       </motion.button>

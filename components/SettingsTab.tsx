@@ -8,7 +8,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { planLabel, planStatusLabel } from "@/lib/plans";
 import { listContainerVariants, listItemVariants } from "@/lib/uiMotion";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, LogOut, RefreshCw } from "lucide-react";
+import { ChevronRight, LogOut, RefreshCw, Settings, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -285,19 +285,19 @@ export default function SettingsTab() {
       {isOwner ? (
         <motion.div
           variants={listItemVariants}
-          className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5"
+          className="mb-8 rounded-xl border border-neutral-200 bg-white p-5"
         >
-          <h3 className="text-lg font-black text-slate-900">{t("staff")}</h3>
-          <p className="mt-1 text-sm font-semibold text-slate-500">
+          <h3 className="text-lg font-semibold text-neutral-900">{t("staff")}</h3>
+          <p className="mt-1 text-sm text-neutral-500">
             {t("linkedStaffIntro")}
           </p>
           {isLoadingStaff ? (
-            <p className="mt-4 text-sm font-bold text-slate-500">{t("loading")}</p>
+            <p className="mt-4 text-sm text-neutral-500">{t("loading")}</p>
           ) : staff.length === 0 ? (
-            <p className="mt-4 text-sm font-bold text-slate-500">{t("noLinkedStaff")}</p>
+            <p className="mt-4 text-sm text-neutral-500">{t("noLinkedStaff")}</p>
           ) : (
             <motion.ul
-              className="mt-4 space-y-3"
+              className="mt-4 space-y-2"
               variants={listContainerVariants}
               initial="initial"
               animate="animate"
@@ -309,27 +309,24 @@ export default function SettingsTab() {
                     variants={listItemVariants}
                     layout
                     exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
-                    className="flex items-center justify-between gap-3 rounded-xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-slate-50 px-3 py-3"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-slate-900">
+                      <p className="truncate text-sm font-medium text-neutral-900">
                         {member.full_name?.trim() || t("unnamed")}
                       </p>
-                      <p className="truncate text-xs font-semibold text-slate-500">
+                      <p className="truncate text-xs text-neutral-500">
                         {member.email ?? t("unknownEmail")}
                       </p>
                     </div>
-                    <SupercellButton
+                    <button
                       type="button"
-                      size="sm"
-                      variant="danger"
                       onClick={() => void handleDeleteStaff(member.id)}
                       disabled={deletingStaffId === member.id}
-                      textCase="normal"
-                      className="shrink-0 rounded-xl px-3 py-2 text-sm"
+                      className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50"
                     >
                       {deletingStaffId === member.id ? t("busy") : t("delete")}
-                    </SupercellButton>
+                    </button>
                   </motion.li>
                 ))}
               </AnimatePresence>
@@ -338,19 +335,59 @@ export default function SettingsTab() {
         </motion.div>
       ) : null}
 
-      <motion.div variants={listItemVariants}>
-        <SupercellButton
-          type="button"
-          size="lg"
-          variant="danger"
-          onClick={() => void handleSignOut()}
-          disabled={isSigningOut}
-          textCase="normal"
-          className="flex min-h-14 w-full items-center justify-center gap-2 px-4 py-3 text-base"
-        >
-          <LogOut className="h-5 w-5 shrink-0 text-white" strokeWidth={2.5} />
-          {isSigningOut ? t("signingOut") : t("signOut")}
-        </SupercellButton>
+      <motion.div variants={listItemVariants} className="mt-8">
+        <div className="flex flex-col gap-3">
+          {isOwner ? (
+            <button
+              type="button"
+              onClick={() => router.push("/app/instellingen/beheer")}
+              className="group flex w-full items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:bg-neutral-50 hover:shadow-sm"
+            >
+              <span className="flex items-center gap-3">
+                <Settings className="h-5 w-5 shrink-0 text-neutral-500" strokeWidth={1.75} />
+                <span className="text-sm font-medium text-neutral-900">
+                  {t("restaurantSettings")}
+                </span>
+              </span>
+              <ChevronRight
+                className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                strokeWidth={2}
+                aria-hidden
+              />
+            </button>
+          ) : null}
+
+          {isOwner ? (
+            <button
+              type="button"
+              onClick={() => router.push("/app/instellingen/staff")}
+              className="group flex w-full items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:bg-neutral-50 hover:shadow-sm"
+            >
+              <span className="flex items-center gap-3">
+                <Users className="h-5 w-5 shrink-0 text-neutral-500" strokeWidth={1.75} />
+                <span className="text-sm font-medium text-neutral-900">
+                  {t("staffManagement")}
+                </span>
+              </span>
+              <ChevronRight
+                className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                strokeWidth={2}
+                aria-hidden
+              />
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            disabled={isSigningOut}
+            aria-busy={isSigningOut}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 transition-all duration-200 hover:bg-red-100 disabled:opacity-50"
+          >
+            <LogOut className="h-4 w-4" strokeWidth={2} />
+            {isSigningOut ? t("signingOut") : t("logout")}
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   );
