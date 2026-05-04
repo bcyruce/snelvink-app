@@ -46,6 +46,19 @@ type ProfileQueryRow = {
   restaurants: AppRestaurant | AppRestaurant[] | null;
 };
 
+// 模块级缓存：避免路由切换时 UserProvider 重挂导致瞬间回到 loading。
+let cachedUserState: {
+  initialized: boolean;
+  user: User | null;
+  profile: AppUserProfile | null;
+  restaurant: AppRestaurant | null;
+} = {
+  initialized: false,
+  user: null,
+  profile: null,
+  restaurant: null,
+};
+
 function normalizeRestaurant(
   nested: ProfileQueryRow["restaurants"],
 ): AppRestaurant | null {
@@ -81,10 +94,14 @@ function withTimeout<T>(
 const UserContext = createContext<UserContextValue | null>(null);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<AppUserProfile | null>(null);
-  const [restaurant, setRestaurant] = useState<AppRestaurant | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => cachedUserState.user);
+  const [profile, setProfile] = useState<AppUserProfile | null>(
+    () => cachedUserState.profile,
+  );
+  const [restaurant, setRestaurant] = useState<AppRestaurant | null>(
+    () => cachedUserState.restaurant,
+  );
+  const [isLoading, setIsLoading] = useState(() => !cachedUserState.initialized);
 
   const currentUserIdRef = useRef<string | null>(null);
 
@@ -92,6 +109,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!authUser) {
       setProfile(null);
       setRestaurant(null);
+      cachedUserState = {
+        ...cachedUserState,
+        profile: null,
+        restaurant: null,
+      };
       return;
     }
 
@@ -115,6 +137,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         );
         setProfile(null);
         setRestaurant(null);
+        cachedUserState = {
+          ...cachedUserState,
+          profile: null,
+          restaurant: null,
+        };
         return;
       }
 
@@ -122,14 +149,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!row) {
         setProfile(null);
         setRestaurant(null);
+        cachedUserState = {
+          ...cachedUserState,
+          profile: null,
+          restaurant: null,
+        };
         return;
       }
 
-      setProfile({
+      const nextProfile = {
         role: row.role,
         restaurant_id: row.restaurant_id,
         is_email_verified: row.is_email_verified === true,
-      });
+      };
+      setProfile(nextProfile);
+      cachedUserState = {
+        ...cachedUserState,
+        profile: nextProfile,
+      };
 
       let nextRestaurant = normalizeRestaurant(row.restaurants);
 
@@ -164,10 +201,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
 
       setRestaurant(nextRestaurant);
+      cachedUserState = {
+        ...cachedUserState,
+        restaurant: nextRestaurant,
+      };
     } catch (error) {
       console.warn("Profiel ophalen mislukt:", error);
       setProfile(null);
       setRestaurant(null);
+      cachedUserState = {
+        ...cachedUserState,
+        profile: null,
+        restaurant: null,
+      };
     }
   }, []);
 
@@ -183,6 +229,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const nextUser = session?.user ?? null;
       currentUserIdRef.current = nextUser?.id ?? null;
       setUser(nextUser);
+      cachedUserState = {
+        ...cachedUserState,
+        user: nextUser,
+      };
       await loadProfileForUser(nextUser);
     } catch (error) {
       console.warn("Sessie verversen mislukt:", error);
@@ -198,17 +248,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const nextUser = session?.user ?? null;
         currentUserIdRef.current = nextUser?.id ?? null;
         setUser(nextUser);
+        cachedUserState = {
+          ...cachedUserState,
+          user: nextUser,
+        };
         await loadProfileForUser(nextUser);
       } catch (error) {
         console.warn("Sessie toepassen mislukt:", error);
       } finally {
         if (mounted) setIsLoading(false);
+        cachedUserState = {
+          ...cachedUserState,
+          initialized: true,
+        };
       }
     };
 
     void (async () => {
       try {
-        setIsLoading(true);
+        if (!cachedUserState.initialized) {
+          setIsLoading(true);
+        } else if (mounted) {
+          setIsLoading(false);
+        }
         const {
           data: { session },
         } = await withTimeout(
@@ -220,6 +282,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.warn("Initiële sessie ophalen mislukt:", error);
         if (mounted) setIsLoading(false);
+        cachedUserState = {
+          ...cachedUserState,
+          initialized: true,
+        };
       }
     })();
 
@@ -253,7 +319,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       setTimeout(() => {
         if (!mounted) return;
-        if (userChanged) setIsLoading(true);
         void applySession(session);
       }, 0);
     });
