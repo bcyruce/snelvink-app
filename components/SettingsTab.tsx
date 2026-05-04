@@ -346,7 +346,7 @@ export default function SettingsTab() {
               <span className="flex items-center gap-3">
                 <Settings className="h-5 w-5 shrink-0 text-neutral-500" strokeWidth={1.75} />
                 <span className="text-sm font-medium text-neutral-900">
-                  {t("restaurantSettings")}
+                  {t("restaurant")}
                 </span>
               </span>
               <ChevronRight
@@ -366,7 +366,7 @@ export default function SettingsTab() {
               <span className="flex items-center gap-3">
                 <Users className="h-5 w-5 shrink-0 text-neutral-500" strokeWidth={1.75} />
                 <span className="text-sm font-medium text-neutral-900">
-                  {t("staffManagement")}
+                  {t("staff")}
                 </span>
               </span>
               <ChevronRight
@@ -385,7 +385,7 @@ export default function SettingsTab() {
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 transition-all duration-200 hover:bg-red-100 disabled:opacity-50"
           >
             <LogOut className="h-4 w-4" strokeWidth={2} />
-            {isSigningOut ? t("signingOut") : t("logout")}
+            {isSigningOut ? t("signingOut") : t("signOut")}
           </button>
         </div>
       </motion.div>
