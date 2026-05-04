@@ -65,7 +65,6 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  /** Portals to body so `position:fixed` is not trapped by parent `transform` (e.g. app/template). */
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
@@ -85,7 +84,6 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
     [onChange]
   );
 
-  // Close menu when clicking outside
   useEffect(() => {
     if (!isOpen) return;
 
@@ -100,7 +98,6 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [isOpen]);
 
-  // Close menu on escape key
   useEffect(() => {
     if (!isOpen) return;
 
@@ -124,94 +121,95 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="fixed inset-0 z-[100] bg-black/40 print:hidden"
-            style={{ backdropFilter: "blur(4px)" }}
+            className="fixed inset-0 z-[100] bg-black/20 print:hidden"
+            style={{ backdropFilter: "blur(8px)" }}
           />
         )}
       </AnimatePresence>
 
-      {/* Menu Panel - viewport-fixed; portal escapes transformed layout ancestors */}
+      {/* Menu Panel */}
       <AnimatePresence>
         {isOpen && (
           <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[110] mx-auto flex max-w-md justify-end print:hidden">
             <motion.div
               data-floating-menu
-              initial={{ opacity: 0, scale: 0.85, y: 24, originX: 1, originY: 1 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 16 }}
-              transition={{ type: "spring", stiffness: 320, damping: 26 }}
-              className="pointer-events-auto mr-4 w-56 overflow-hidden rounded-2xl shadow-2xl"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="pointer-events-auto mr-4 w-60 overflow-hidden rounded-2xl shadow-xl"
               style={{
-                background: theme.cardBg,
-                border: `1.5px solid ${theme.cardBorder}`,
-                transformOrigin: "bottom right",
+                background: "rgba(255, 255, 255, 0.98)",
+                border: "1px solid rgba(0, 0, 0, 0.08)",
               }}
             >
-            <motion.nav
-              className="py-2"
-              variants={listContainerVariants}
-              initial="initial"
-              animate="animate"
-            >
-              {menuItems.map(({ id, labelKey, Icon, disabled }) => {
-                const isActive = active === id;
-                return (
-                  <motion.button
-                    key={id}
-                    type="button"
-                    variants={listItemVariants}
-                    whileHover={
-                      disabled
-                        ? undefined
-                        : { x: 4, transition: { type: "spring", stiffness: 400, damping: 22 } }
-                    }
-                    whileTap={disabled ? undefined : { scale: 0.97 }}
-                    onClick={() => handleSelect(id, disabled)}
-                    disabled={disabled}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold transition-colors"
-                    style={{
-                      background: isActive ? theme.primary : "transparent",
-                      color: disabled
-                        ? theme.muted
-                        : isActive
-                        ? "#fff"
-                        : theme.fg,
-                      opacity: disabled ? 0.5 : 1,
-                      cursor: disabled ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    <motion.span
-                      animate={{ rotate: isActive ? [0, -8, 8, 0] : 0 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="inline-flex"
+              <motion.nav
+                className="py-2"
+                variants={listContainerVariants}
+                initial="initial"
+                animate="animate"
+              >
+                {menuItems.map(({ id, labelKey, Icon, disabled }) => {
+                  const isActive = active === id;
+                  return (
+                    <motion.button
+                      key={id}
+                      type="button"
+                      variants={listItemVariants}
+                      whileHover={
+                        disabled
+                          ? undefined
+                          : { backgroundColor: "rgba(0, 0, 0, 0.04)" }
+                      }
+                      whileTap={disabled ? undefined : { scale: 0.98 }}
+                      onClick={() => handleSelect(id, disabled)}
+                      disabled={disabled}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium transition-colors"
+                      style={{
+                        background: isActive ? `${theme.primary}10` : "transparent",
+                        color: disabled
+                          ? theme.muted
+                          : isActive
+                          ? theme.primary
+                          : theme.fg,
+                        opacity: disabled ? 0.5 : 1,
+                        cursor: disabled ? "not-allowed" : "pointer",
+                      }}
                     >
                       <Icon
                         className="h-5 w-5 shrink-0"
-                        strokeWidth={isActive ? 2.5 : 2}
+                        strokeWidth={isActive ? 2.5 : 1.75}
+                        style={{ color: isActive ? theme.primary : theme.muted }}
                       />
-                    </motion.span>
-                    <span className="flex-1">{t(labelKey)}</span>
-                    {disabled && (
-                      <span
-                        className="text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-0.5"
-                        style={{
-                          background: "rgba(0,0,0,0.08)",
-                          color: theme.muted,
-                        }}
-                      >
-                        {t("comingSoon")}
-                      </span>
-                    )}
-                  </motion.button>
-                );
-              })}
-            </motion.nav>
-          </motion.div>
+                      <span className="flex-1">{t(labelKey)}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeIndicator"
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ background: theme.primary }}
+                        />
+                      )}
+                      {disabled && (
+                        <span
+                          className="text-[10px] font-medium uppercase tracking-wider rounded-full px-2 py-0.5"
+                          style={{
+                            background: "rgba(0,0,0,0.05)",
+                            color: theme.muted,
+                          }}
+                        >
+                          {t("comingSoon")}
+                        </span>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </motion.nav>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* FAB — bottom safe area for notched phones */}
+      {/* FAB */}
       <div
         className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] mx-auto flex max-w-md justify-end print:hidden"
         style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
@@ -220,46 +218,46 @@ export default function FloatingMenu({ active, onChange }: FloatingMenuProps) {
           data-floating-menu
           type="button"
           onClick={handleToggle}
-          whileHover={{ scale: 1.08, y: -2 }}
-          whileTap={{ scale: 0.92, y: 1 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           animate={{
             rotate: isOpen ? 180 : 0,
-            boxShadow: isOpen
-              ? `0 2px 0 ${theme.primaryDark}, 0 4px 12px rgba(0,0,0,0.18)`
-              : `0 4px 0 ${theme.primaryDark}, 0 8px 24px rgba(0,0,0,0.15)`,
           }}
-          transition={{ type: "spring", stiffness: 300, damping: 22 }}
-          className="pointer-events-auto mb-6 mr-4 flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ background: theme.primary }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          className="pointer-events-auto mb-6 mr-4 flex h-14 w-14 items-center justify-center rounded-full shadow-lg"
+          style={{ 
+            background: theme.primary,
+            boxShadow: `0 4px 14px ${theme.primary}40`,
+          }}
           aria-label={isOpen ? t("menuClose") : t("menuOpen")}
           aria-expanded={isOpen}
         >
-        <AnimatePresence mode="wait" initial={false}>
-          {isOpen ? (
-            <motion.span
-              key="close"
-              initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
-              animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.18 }}
-              className="inline-flex"
-            >
-              <X className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="menu"
-              initial={{ rotate: 90, opacity: 0, scale: 0.6 }}
-              animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              exit={{ rotate: -90, opacity: 0, scale: 0.6 }}
-              transition={{ duration: 0.18 }}
-              className="inline-flex"
-            >
-              <Menu className="h-6 w-6 text-white" strokeWidth={2.5} />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </motion.button>
+          <AnimatePresence mode="wait" initial={false}>
+            {isOpen ? (
+              <motion.span
+                key="close"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="inline-flex"
+              >
+                <X className="h-6 w-6 text-white" strokeWidth={2} />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="menu"
+                initial={{ rotate: 90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: -90, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="inline-flex"
+              >
+                <Menu className="h-6 w-6 text-white" strokeWidth={2} />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
       </div>
     </>
   );

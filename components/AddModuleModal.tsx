@@ -203,41 +203,43 @@ export default function AddModuleModal({
             animate="animate"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-2 border-slate-200 bg-white px-6 pb-8 pt-6 sm:rounded-3xl sm:pb-6"
+            className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl border border-neutral-200 bg-white px-5 pb-8 pt-5 sm:rounded-2xl sm:pb-6"
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2
                 id="add-module-title"
-                className="text-3xl font-black tracking-tight text-slate-900"
+                className="text-xl font-semibold tracking-tight text-neutral-900"
               >
                 {isEditing ? t("moduleEdit") : t("newModule")}
               </h2>
-              <SupercellButton
-                size="icon"
-                variant="neutral"
+              <button
+                type="button"
                 onClick={onClose}
                 aria-label={t("close")}
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors"
               >
-                <X className="h-6 w-6" strokeWidth={2.75} aria-hidden />
-              </SupercellButton>
+                <X className="h-5 w-5 text-neutral-600" strokeWidth={2} aria-hidden />
+              </button>
             </div>
 
             {!isEditing ? (
-              <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border-2 border-slate-200 bg-slate-100 p-1.5">
+              <div className="mb-5 flex rounded-full bg-neutral-100 p-1">
                 {(["standard", "custom"] as const).map((tab) => {
                   const active = activeTab === tab;
                   return (
-                    <SupercellButton
+                    <button
                       key={tab}
-                      size="md"
-                      variant={active ? "primary" : "neutral"}
+                      type="button"
                       onClick={() => setActiveTab(tab)}
-                      textCase="normal"
-                      className="min-h-[56px] rounded-xl py-3 text-base"
+                      className="flex-1 rounded-full py-2 text-sm font-medium transition-all duration-200"
+                      style={{
+                        background: active ? "#fff" : "transparent",
+                        color: active ? "var(--theme-primary)" : "#737373",
+                        boxShadow: active ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                      }}
                     >
                       {tab === "standard" ? t("standard") : t("custom")}
-                    </SupercellButton>
+                    </button>
                   );
                 })}
               </div>
@@ -262,9 +264,8 @@ export default function AddModuleModal({
                       const alreadyAdded = existingIds.has(preset.id);
                       return (
                         <motion.div key={preset.id} variants={listItemVariants}>
-                          <SupercellButton
-                            size="lg"
-                            variant={alreadyAdded ? "neutral" : "primary"}
+                          <button
+                            type="button"
                             aria-disabled={alreadyAdded}
                             disabled={alreadyAdded}
                             onClick={() => {
@@ -274,14 +275,20 @@ export default function AddModuleModal({
                               }
                               onCreate({ ...preset });
                             }}
-                            className="flex min-h-[80px] w-full items-center gap-4 px-5 text-left text-xl normal-case"
+                            className="flex w-full items-center gap-4 rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:bg-neutral-50 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {createElement(getModuleIcon(preset.icon), {
-                              className: "h-8 w-8 shrink-0",
-                              strokeWidth: 2.25,
-                              "aria-hidden": true,
-                            })}
-                            <span className="flex-1">
+                            <div 
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                              style={{ background: "var(--theme-primary)15" }}
+                            >
+                              {createElement(getModuleIcon(preset.icon), {
+                                className: "h-5 w-5",
+                                strokeWidth: 1.75,
+                                style: { color: "var(--theme-primary)" },
+                                "aria-hidden": true,
+                              })}
+                            </div>
+                            <span className="flex-1 font-medium text-neutral-900">
                               {preset.id === "koeling"
                                 ? t("koeling")
                                 : preset.id === "kerntemperatuur"
@@ -293,11 +300,11 @@ export default function AddModuleModal({
                                       : preset.name}
                             </span>
                             {alreadyAdded ? (
-                              <span className="text-sm font-bold text-slate-400">
+                              <span className="text-xs font-medium text-neutral-400">
                                 {t("alreadyAdded")}
                               </span>
                             ) : null}
-                          </SupercellButton>
+                          </button>
                         </motion.div>
                       );
                     })}
@@ -320,7 +327,7 @@ export default function AddModuleModal({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.96 }}
                         transition={{ type: "spring", stiffness: 360, damping: 24 }}
-                        className="rounded-2xl border-2 border-red-300 border-b-4 border-b-red-400 bg-red-50 px-4 py-3 text-center text-base font-bold text-red-700"
+                        className="rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"
                       >
                         {errorMessage}
                       </motion.p>
@@ -331,7 +338,7 @@ export default function AddModuleModal({
                     <div className="flex flex-col gap-2">
                       <label
                         htmlFor="module-name"
-                        className="text-base font-bold text-slate-800"
+                        className="text-sm font-medium text-neutral-700"
                       >
                         {t("moduleName")}
                       </label>
@@ -343,12 +350,12 @@ export default function AddModuleModal({
                         onChange={(e) => setName(e.target.value)}
                         placeholder={t("moduleNamePlaceholder")}
                         maxLength={40}
-                        className="min-h-[64px] w-full rounded-2xl border-2 border-b-4 border-slate-300 bg-white px-4 text-xl font-bold text-slate-900 outline-none transition-colors focus:border-blue-500 focus:border-b-blue-700"
+                        className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-base font-medium text-neutral-900 outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/20"
                       />
                     </div>
 
                     <div className="flex flex-col gap-3">
-                      <span className="text-base font-bold text-slate-800">
+                      <span className="text-sm font-medium text-neutral-700">
                         {t("chooseIcon")}
                       </span>
                       <motion.div
@@ -361,30 +368,23 @@ export default function AddModuleModal({
                           const selected = key === iconKey;
                           return (
                             <motion.div key={key} variants={listItemVariants}>
-                              <SupercellButton
+                              <button
                                 type="button"
-                                size="icon"
-                                variant={selected ? "primary" : "neutral"}
                                 onClick={() => setIconKey(key)}
                                 aria-pressed={selected}
-                                className="flex min-h-[64px] w-full items-center justify-center"
+                                className="flex h-12 w-full items-center justify-center rounded-xl border transition-all duration-200"
+                                style={{
+                                  background: selected ? "var(--theme-primary)" : "#fff",
+                                  borderColor: selected ? "var(--theme-primary)" : "#e5e5e5",
+                                  color: selected ? "#fff" : "var(--theme-primary)",
+                                }}
                               >
-                                <motion.span
-                                  animate={
-                                    selected
-                                      ? { scale: [1, 1.25, 1], rotate: [0, -8, 0] }
-                                      : { scale: 1, rotate: 0 }
-                                  }
-                                  transition={{ duration: 0.35 }}
-                                  className="inline-flex"
-                                >
-                                  {createElement(getModuleIcon(key), {
-                                    className: "h-7 w-7",
-                                    strokeWidth: 2.25,
-                                    "aria-hidden": true,
-                                  })}
-                                </motion.span>
-                              </SupercellButton>
+                                {createElement(getModuleIcon(key), {
+                                  className: "h-5 w-5",
+                                  strokeWidth: 1.75,
+                                  "aria-hidden": true,
+                                })}
+                              </button>
                             </motion.div>
                           );
                         })}
@@ -393,15 +393,10 @@ export default function AddModuleModal({
                   </section>
 
                   <section className="flex flex-col gap-3">
-                    <span className="text-base font-bold text-slate-800">
+                    <span className="text-sm font-medium text-neutral-700">
                       {t("moduleType")}
                     </span>
-                    <motion.div
-                      className="grid grid-cols-1 gap-3"
-                      variants={listContainerVariants}
-                      initial="initial"
-                      animate="animate"
-                    >
+                    <div className="flex flex-col gap-2">
                       {[
                         ["number", t("moduleTypeNumber")],
                         ["boolean", t("moduleTypeBoolean")],
@@ -409,24 +404,26 @@ export default function AddModuleModal({
                       ].map(([value, label]) => {
                         const active = moduleType === value;
                         return (
-                          <motion.div key={value} variants={listItemVariants}>
-                            <SupercellButton
-                              type="button"
-                              size="lg"
-                              variant={active ? "primary" : "neutral"}
-                              onClick={() => setModuleType(value as ModuleType)}
-                              aria-pressed={active}
-                              className="min-h-[64px] w-full px-5 text-left text-lg normal-case"
-                            >
-                              {label}
-                            </SupercellButton>
-                          </motion.div>
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setModuleType(value as ModuleType)}
+                            aria-pressed={active}
+                            className="flex w-full items-center rounded-xl border px-4 py-3 text-left transition-all duration-200"
+                            style={{
+                              background: active ? "var(--theme-primary)10" : "#fff",
+                              borderColor: active ? "var(--theme-primary)" : "#e5e5e5",
+                              color: active ? "var(--theme-primary)" : "#171717",
+                            }}
+                          >
+                            <span className="font-medium">{label}</span>
+                          </button>
                         );
                       })}
-                    </motion.div>
+                    </div>
                   </section>
 
-                  <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
+                  <p className="rounded-lg bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
                     {t("customModuleHelp")}
                   </p>
 
@@ -436,7 +433,7 @@ export default function AddModuleModal({
                       size="lg"
                       variant="success"
                       disabled={!isValid || isSaving}
-                      className="min-h-[64px] w-full text-xl normal-case"
+                      className="w-full"
                     >
                       {isSaving
                         ? t("saving")
@@ -444,15 +441,13 @@ export default function AddModuleModal({
                           ? t("savingChanges")
                           : t("save")}
                     </SupercellButton>
-                    <SupercellButton
+                    <button
                       type="button"
-                      size="lg"
-                      variant="neutral"
                       onClick={onClose}
-                      className="min-h-[64px] w-full text-lg normal-case"
+                      className="w-full rounded-full py-3 text-sm font-medium text-neutral-500 hover:bg-neutral-100 transition-colors"
                     >
                       {t("cancel")}
-                    </SupercellButton>
+                    </button>
                   </div>
                 </motion.form>
               )}

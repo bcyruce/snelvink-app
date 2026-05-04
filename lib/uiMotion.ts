@@ -1,20 +1,17 @@
 import type { Transition, Variants } from "framer-motion";
 
 /**
- * Tailwind helper used on regular, non-motion buttons / links.  Provides a
- * snappy "press" feeling (slight scale + smooth color transitions) so every
- * tappable element has at least *some* feedback even when we cannot reach for
- * a full <motion.button>.
+ * Tailwind helper used on regular, non-motion buttons / links.
+ * Landing page 风格：更柔和的交互反馈
  */
 export const densePressClass =
-  "transition-[transform,colors,opacity,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-[1px] active:translate-y-[1px] active:scale-[0.97] focus-visible:scale-[1.02]";
+  "transition-all duration-200 ease-out hover:opacity-90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2";
 
 /**
- * A slightly softer press affordance for full-width cards / list rows where a
- * large scale change would feel jarring.  Still gives visible feedback on tap.
+ * Landing page 风格的卡片交互：微妙的阴影和位移
  */
 export const cardPressClass =
-  "transition-[transform,box-shadow,colors,background-color,border-color] duration-200 ease-out hover:-translate-y-[1px] hover:shadow-md active:translate-y-[1px] active:scale-[0.985]";
+  "transition-all duration-200 ease-out hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md";
 
 // ---------------------------------------------------------------------------
 // Framer-motion variants — reused everywhere so the whole app feels coherent.
@@ -22,37 +19,68 @@ export const cardPressClass =
 
 export const springSnappy: Transition = {
   type: "spring",
-  stiffness: 420,
-  damping: 24,
-  mass: 0.6,
+  stiffness: 400,
+  damping: 30,
+  mass: 0.8,
 };
 
 export const springSoft: Transition = {
   type: "spring",
-  stiffness: 260,
-  damping: 22,
+  stiffness: 300,
+  damping: 26,
 };
 
-/** Hover/tap props you can spread onto any motion.* component. */
+/** Landing page 风格：更柔和的悬停/点击反馈 */
 export const pressMotionProps = {
-  whileHover: { scale: 1.02, y: -1 },
-  whileTap: { scale: 0.96, y: 1 },
+  whileHover: { scale: 1.01, opacity: 0.95 },
+  whileTap: { scale: 0.98 },
   transition: springSnappy,
 } as const;
 
-/** Subtler version of {@link pressMotionProps} for big card surfaces. */
+/** 卡片交互：微妙的浮起效果 */
 export const cardPressMotionProps = {
-  whileHover: { scale: 1.01, y: -2 },
-  whileTap: { scale: 0.985, y: 1 },
+  whileHover: { y: -2, boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" },
+  whileTap: { y: 0, scale: 0.995 },
   transition: springSoft,
 } as const;
 
-/** Drop-in props for icon-only buttons (back arrows, close X, FAB, etc.). */
+/** 图标按钮：简洁的缩放反馈 */
 export const iconPressMotionProps = {
-  whileHover: { scale: 1.08, rotate: -2 },
-  whileTap: { scale: 0.9, rotate: 0 },
+  whileHover: { scale: 1.05 },
+  whileTap: { scale: 0.92 },
   transition: springSnappy,
 } as const;
+
+/** Landing page fadeInUp 变体 */
+export const fadeInUp: Variants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
+/** Landing page scaleIn 变体 */
+export const scaleIn: Variants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
+
+/** Landing page stagger container */
+export const staggerContainer: Variants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+};
 
 /** Page-level transition used by {@link app/template.tsx}. */
 export const pageVariants: Variants = {

@@ -64,8 +64,8 @@ export default function RecordSelectionModal({
             initial="initial"
             animate="animate"
             exit="exit"
-            className="fixed inset-0 z-50 bg-black/50"
-            style={{ backdropFilter: "blur(4px)" }}
+            className="fixed inset-0 z-50 bg-black/20"
+            style={{ backdropFilter: "blur(8px)" }}
             onClick={onClose}
           />
 
@@ -81,36 +81,27 @@ export default function RecordSelectionModal({
             onDragEnd={(_, info) => {
               if (info.offset.y > 80 || info.velocity.y > 600) onClose();
             }}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-hidden rounded-t-3xl"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-hidden rounded-t-2xl bg-white"
             style={{
-              background: theme.cardBg,
-              boxShadow: "0 -4px 32px rgba(0,0,0,0.15)",
+              boxShadow: "0 -4px 32px rgba(0,0,0,0.1)",
             }}
           >
             <div className="flex justify-center pt-3 pb-1">
-              <div
-                className="h-1.5 w-12 rounded-full"
-                style={{ background: theme.cardBorder }}
-              />
+              <div className="h-1 w-10 rounded-full bg-neutral-200" />
             </div>
 
             <div className="flex items-center justify-between px-5 py-3">
-              <h2
-                className="text-xl font-black"
-                style={{ color: theme.fg }}
-              >
+              <h2 className="text-lg font-semibold text-neutral-900">
                 {t("chooseModule")}
               </h2>
-              <motion.button
-                {...iconPressMotionProps}
+              <button
                 type="button"
                 onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full transition-colors"
-                style={{ background: `${theme.muted}20` }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors"
                 aria-label={t("close")}
               >
-                <X className="h-5 w-5" style={{ color: theme.muted }} />
-              </motion.button>
+                <X className="h-5 w-5 text-neutral-600" />
+              </button>
             </div>
 
             {/* Module List */}
@@ -125,46 +116,29 @@ export default function RecordSelectionModal({
                   const Icon = getModuleIcon(module.icon);
                   return (
                     <motion.li key={module.id} variants={listItemVariants}>
-                      <motion.button
+                      <button
                         type="button"
                         onClick={() => handleSelectModule(module)}
-                        whileHover={{
-                          scale: 1.015,
-                          x: 2,
-                          boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-                        }}
-                        whileTap={{ scale: 0.97 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 24 }}
-                        className="group flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left"
-                        style={{
-                          background: theme.bg,
-                          border: `1.5px solid ${theme.cardBorder}`,
-                        }}
+                        className="group flex w-full items-center gap-4 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 text-left transition-all duration-200 hover:bg-neutral-50 hover:shadow-sm"
                       >
-                        <motion.div
-                          whileHover={{ rotate: -6, scale: 1.08 }}
-                          transition={{ type: "spring", stiffness: 380, damping: 18 }}
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-                          style={{ background: `${theme.primary}15` }}
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                          style={{ background: `${theme.primary}10` }}
                         >
                           <Icon
-                            className="h-6 w-6"
+                            className="h-5 w-5"
                             style={{ color: theme.primary }}
-                            strokeWidth={2.5}
+                            strokeWidth={1.75}
                           />
-                        </motion.div>
-                        <span
-                          className="flex-1 text-lg font-bold"
-                          style={{ color: theme.fg }}
-                        >
+                        </div>
+                        <span className="flex-1 font-medium text-neutral-900">
                           {moduleName(module)}
                         </span>
                         <ChevronRight
-                          className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:translate-x-1"
-                          style={{ color: theme.muted }}
-                          strokeWidth={2.5}
+                          className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                          strokeWidth={2}
                         />
-                      </motion.button>
+                      </button>
                     </motion.li>
                   );
                 })}

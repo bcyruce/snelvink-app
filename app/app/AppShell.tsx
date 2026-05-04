@@ -301,7 +301,7 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
         {activeTab === "taken" && (
           <div className="flex items-center justify-between pb-3 pt-4">
             <span
-              className="text-[11px] font-black uppercase tracking-widest"
+              className="text-xs font-semibold uppercase tracking-wide"
               style={{ color: theme.muted }}
             >
               {t("navTaken")}
@@ -311,27 +311,20 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
                 e.stopPropagation();
                 toggleEditing();
               }}
-              whileHover={{ scale: 1.06, y: -1 }}
-              whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               animate={{
                 background: isEditing ? theme.primary : "transparent",
                 color: isEditing ? "#fff" : theme.primary,
-                borderColor: isEditing ? theme.primary : theme.cardBorder,
               }}
-              transition={{ type: "spring", stiffness: 380, damping: 22 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
               className={[
-                "flex items-center gap-1.5 rounded-full border-[1.5px] px-3 py-1.5 text-[11px] font-black",
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
+                !isEditing && "border border-neutral-200",
                 densePressClass,
-              ].join(" ")}
-              style={{ letterSpacing: "0.04em" }}
+              ].filter(Boolean).join(" ")}
             >
-              <motion.span
-                animate={{ rotate: isEditing ? 180 : 0 }}
-                transition={{ type: "spring", stiffness: 320, damping: 20 }}
-                className="inline-flex"
-              >
-                <Pencil className="h-3 w-3" strokeWidth={2.5} />
-              </motion.span>
+              <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={isEditing ? "done" : "edit"}
@@ -359,14 +352,11 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
                 strategy={rectSortingStrategy}
               >
                 <div className="grid grid-cols-2 gap-3">
-                  {modules.map((m, i) => (
+                  {modules.map((m) => (
                     <SortableModuleCard
                       key={m.id}
                       module={m}
                       isEditing={isEditing}
-                      wiggleClass={
-                        i % 2 === 0 ? "animate-wiggle-a" : "animate-wiggle-b"
-                      }
                       onDelete={handleDelete}
                       onEdit={handleEditModule}
                     />
@@ -388,27 +378,16 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
                 <motion.button
                   type="button"
                   onClick={handleOpenAddModule}
-                  whileHover={{
-                    scale: 1.02,
-                    y: -2,
-                    boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
-                  }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 24 }}
-                  className="mt-3 flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl text-base font-black"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-3 flex min-h-[120px] w-full flex-col items-center justify-center gap-2 rounded-2xl text-sm font-medium border-2 border-dashed"
                   style={{
-                    background: "rgba(0,0,0,0.04)",
-                    border: `1.5px dashed ${theme.cardBorder}`,
+                    borderColor: theme.cardBorder,
                     color: theme.muted,
                   }}
                 >
-                  <motion.span
-                    animate={{ rotate: [0, 90, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className="inline-flex"
-                  >
-                    <Plus className="h-10 w-10" strokeWidth={1.75} />
-                  </motion.span>
+                  <Plus className="h-8 w-8" strokeWidth={1.5} />
                   {t("add")}
                 </motion.button>
               </motion.div>
@@ -432,22 +411,22 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
             <div onClick={stopEditingExit} className="pt-4">
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div
-                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
-                  style={{ background: `${theme.primary}15` }}
+                  className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+                  style={{ background: `${theme.primary}10` }}
                 >
-                  <Users className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
+                  <Users className="h-8 w-8" style={{ color: theme.primary }} strokeWidth={1.75} />
                 </div>
-                <h2 className="text-xl font-black" style={{ color: theme.fg }}>
+                <h2 className="text-lg font-semibold" style={{ color: theme.fg }}>
                   {t("navPersoneel")}
                 </h2>
-                <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
+                <p className="mt-2 max-w-xs text-sm" style={{ color: theme.muted }}>
                   {t("staffIntro")}
                 </p>
                 <div
-                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
-                  style={{ background: `${theme.primary}15`, color: theme.primary }}
+                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+                  style={{ background: `${theme.primary}10`, color: theme.primary }}
                 >
-                  <Construction className="h-4 w-4" strokeWidth={2.5} />
+                  <Construction className="h-4 w-4" strokeWidth={2} />
                   {t("comingSoon")}
                 </div>
               </div>
@@ -459,22 +438,22 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
             <div onClick={stopEditingExit} className="pt-4">
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div
-                  className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
-                  style={{ background: `${theme.primary}15` }}
+                  className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+                  style={{ background: `${theme.primary}10` }}
                 >
-                  <User className="h-10 w-10" style={{ color: theme.primary }} strokeWidth={2} />
+                  <User className="h-8 w-8" style={{ color: theme.primary }} strokeWidth={1.75} />
                 </div>
-                <h2 className="text-xl font-black" style={{ color: theme.fg }}>
+                <h2 className="text-lg font-semibold" style={{ color: theme.fg }}>
                   {t("navProfiel")}
                 </h2>
-                <p className="mt-2 text-sm font-medium" style={{ color: theme.muted }}>
+                <p className="mt-2 max-w-xs text-sm" style={{ color: theme.muted }}>
                   {t("profileIntro")}
                 </p>
                 <div
-                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold"
-                  style={{ background: `${theme.primary}15`, color: theme.primary }}
+                  className="mt-6 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+                  style={{ background: `${theme.primary}10`, color: theme.primary }}
                 >
-                  <Construction className="h-4 w-4" strokeWidth={2.5} />
+                  <Construction className="h-4 w-4" strokeWidth={2} />
                   {t("comingSoon")}
                 </div>
               </div>

@@ -4,16 +4,27 @@
   /* 松叶绿主题默认值 */
   --theme-primary: #2D5C3C;
   --theme-primary-dark: #1E4029;
-  --theme-bg: #F5F3EF;
-  --theme-fg: #1A2520;
-  --theme-muted: #5A6E62;
-  --theme-card-bg: rgba(255,255,255,0.80);
-  --theme-card-border: rgba(200,215,205,0.9);
-  --theme-nav-bg: rgba(248,246,242,0.95);
-  --theme-nav-border: rgba(200,215,205,0.6);
+  --theme-bg: #FAFAFA;
+  --theme-fg: #171717;
+  --theme-muted: #525252;
+  --theme-card-bg: rgba(255,255,255,0.95);
+  --theme-card-border: rgba(229,229,229,0.8);
+  --theme-nav-bg: rgba(255,255,255,0.92);
+  --theme-nav-border: rgba(229,229,229,0.6);
   
   --background: var(--theme-bg);
   --foreground: var(--theme-fg);
+  
+  /* Landing page 统一设计 token */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 @theme inline {
@@ -45,32 +56,59 @@ body {
   animation: tab-panel-enter 150ms ease-out;
 }
 
-@keyframes wiggle-a {
-  0% { transform: rotate(-1.1deg); }
-  50% { transform: rotate(1.1deg); }
-  100% { transform: rotate(-1.1deg); }
+/* Landing page 风格动画 */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@keyframes wiggle-b {
-  0% { transform: rotate(1.1deg); }
-  50% { transform: rotate(-1.1deg); }
-  100% { transform: rotate(1.1deg); }
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.animate-wiggle-a {
-  animation: wiggle-a 320ms ease-in-out infinite;
-  transform-origin: center center;
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-wiggle-b {
-  animation: wiggle-b 360ms ease-in-out infinite;
-  transform-origin: center center;
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.35s ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-wiggle-a,
-  .animate-wiggle-b {
+  .animate-fade-in-up,
+  .animate-scale-in,
+  .animate-slide-in-right {
     animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 

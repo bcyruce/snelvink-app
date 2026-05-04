@@ -18,9 +18,9 @@ type RegisterRole = "owner" | "employee";
 type LoginPanel = "auth" | "forgot" | "reset";
 
 const baseInputClass =
-  "h-14 w-full rounded-2xl border-2 border-b-4 bg-white px-4 text-base font-bold outline-none transition-colors sm:h-16 sm:px-5 sm:text-lg";
+  "h-12 w-full rounded-xl border bg-white px-4 text-base font-medium outline-none transition-all duration-200 sm:h-14 sm:px-5";
 
-const labelClass = "text-[11px] font-black uppercase tracking-widest";
+const labelClass = "text-xs font-medium";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,10 +59,10 @@ export default function LoginPage() {
 
   const inputClass = [
     baseInputClass,
-    "text-[var(--theme-fg,#1A2520)]",
-    "border-[var(--theme-card-border,rgba(200,215,205,0.9))]",
-    "focus:border-[var(--theme-primary,#2D5C3C)]",
-    "focus:border-b-[var(--theme-primary-dark,#1E4029)]",
+    "text-neutral-900",
+    "border-neutral-200",
+    "focus:border-[var(--theme-primary)]",
+    "focus:ring-2 focus:ring-[var(--theme-primary)]/20",
   ].join(" ");
 
   const resetFeedback = () => {
@@ -400,93 +400,74 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen px-4 py-6 sm:px-6 sm:py-8"
-      style={{ background: theme.bg, color: theme.fg }}
+      className="min-h-screen px-4 py-8 sm:px-6 sm:py-12"
+      style={{ background: "#FAFAFA", color: theme.fg }}
     >
-      <div className="mx-auto flex w-full max-w-md flex-col gap-5">
-        <header
-          className="rounded-3xl border-2 border-b-4 px-4 py-4 sm:px-5"
-          style={{
-            background: theme.primary,
-            borderColor: theme.primaryDark,
-          }}
-        >
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+        <header className="flex flex-col items-center text-center">
           <div className="flex items-center gap-3">
             <Image
               src="/logo-snelvink.png"
               alt="SnelVink"
-              width={72}
-              height={72}
+              width={56}
+              height={56}
               priority
-              className="h-16 w-16 shrink-0 select-none"
+              className="h-12 w-12 shrink-0 select-none"
             />
-            <div className="min-w-0">
-              <p
-                className="truncate text-3xl font-black uppercase tracking-[0.08em] text-white sm:text-4xl"
-                style={{ lineHeight: 1 }}
-              >
-                SNEL
-                <span className="ml-1.5 text-white/70">VINK</span>
-              </p>
-              <p className="mt-1 text-xs font-black uppercase tracking-[0.2em] text-white/90">
-                {t("brandTagline")}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-white/20 bg-white/10 p-3">
-            <div className="mb-2 flex items-center gap-2 text-white/90">
-              <Globe className="h-4 w-4" strokeWidth={2.4} />
-              <span className="text-[11px] font-black uppercase tracking-widest">
-                {t("language")}
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-2xl font-bold tracking-tight text-neutral-900">
+                Snel
+              </span>
+              <span className="text-2xl font-bold tracking-tight text-neutral-400">
+                vink
               </span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {SUPPORTED_LANGUAGES.map((code) => {
-                const meta = LANGUAGE_META[code];
-                const active = language === code;
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => setLanguage(code)}
-                    className="shrink-0 rounded-xl border-2 border-b-4 px-3 py-2 text-sm font-black transition-colors"
-                    style={{
-                      background: active ? "#fff" : "rgba(255,255,255,0.14)",
-                      color: active ? theme.primary : "#fff",
-                      borderColor: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)",
-                    }}
-                    dir={meta.dir}
-                  >
-                    <span className="mr-1.5" aria-hidden>
-                      {meta.flag}
-                    </span>
-                    {meta.nativeName}
-                  </button>
-                );
-              })}
+          </div>
+          <p className="mt-2 text-sm text-neutral-500">
+            {t("brandTagline")}
+          </p>
+
+          {/* Language Dropdown */}
+          <div className="mt-4 relative">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-neutral-400" strokeWidth={1.75} />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as typeof language)}
+                className="appearance-none bg-transparent text-sm font-medium text-neutral-600 cursor-pointer pr-6 focus:outline-none"
+              >
+                {SUPPORTED_LANGUAGES.map((code) => {
+                  const meta = LANGUAGE_META[code];
+                  return (
+                    <option key={code} value={code}>
+                      {meta.flag} {meta.nativeName}
+                    </option>
+                  );
+                })}
+              </select>
+              <svg className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
         </header>
 
         <section
-          className="rounded-3xl border-2 border-b-4 px-4 py-5 sm:px-5"
+          className="rounded-2xl border bg-white px-5 py-6 shadow-sm sm:px-6"
           style={{
-            background: theme.cardBg,
-            borderColor: theme.cardBorder,
+            borderColor: "rgba(0, 0, 0, 0.06)",
           }}
         >
           {panel !== "reset" ? (
-            <div className="mb-4 grid grid-cols-2 gap-2">
+            <div className="mb-5 flex rounded-full bg-neutral-100 p-1">
               <button
                 type="button"
                 onClick={() => switchAuthView("login")}
-                className="rounded-xl border-2 border-b-4 px-3 py-2.5 text-sm font-black uppercase tracking-wide transition-colors"
+                className="flex-1 rounded-full py-2 text-sm font-medium transition-all duration-200"
                 style={{
-                  background: authView === "login" ? theme.primary : "#fff",
-                  color: authView === "login" ? "#fff" : theme.fg,
-                  borderColor:
-                    authView === "login" ? theme.primaryDark : theme.cardBorder,
+                  background: authView === "login" ? "#fff" : "transparent",
+                  color: authView === "login" ? theme.primary : theme.muted,
+                  boxShadow: authView === "login" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                 }}
               >
                 {t("loginTitle")}
@@ -494,12 +475,11 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => switchAuthView("register")}
-                className="rounded-xl border-2 border-b-4 px-3 py-2.5 text-sm font-black uppercase tracking-wide transition-colors"
+                className="flex-1 rounded-full py-2 text-sm font-medium transition-all duration-200"
                 style={{
-                  background: authView === "register" ? theme.primary : "#fff",
-                  color: authView === "register" ? "#fff" : theme.fg,
-                  borderColor:
-                    authView === "register" ? theme.primaryDark : theme.cardBorder,
+                  background: authView === "register" ? "#fff" : "transparent",
+                  color: authView === "register" ? theme.primary : theme.muted,
+                  boxShadow: authView === "register" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                 }}
               >
                 {t("registerTitle")}
@@ -508,8 +488,7 @@ export default function LoginPage() {
           ) : null}
 
           <h1
-            className="mb-5 text-center text-2xl font-black tracking-tight sm:text-3xl"
-            style={{ color: theme.fg }}
+            className="mb-5 text-center text-xl font-semibold tracking-tight text-neutral-900"
           >
             {panel === "reset"
               ? t("resetPasswordTitle")
@@ -574,7 +553,7 @@ export default function LoginPage() {
               </div>
               {error ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-red-300 bg-red-50 px-4 py-3 text-center text-sm font-bold text-red-900"
+                  className="rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"
                   role="alert"
                 >
                   {error}
@@ -582,7 +561,7 @@ export default function LoginPage() {
               ) : null}
               {info ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-emerald-300 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900"
+                  className="rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700"
                   role="status"
                 >
                   {info}
@@ -607,7 +586,7 @@ export default function LoginPage() {
                   setConfirmNewPassword("");
                   setError(null);
                 }}
-                className="text-center text-sm font-black uppercase tracking-wide"
+                className="text-center text-sm font-medium hover:underline"
                 style={{ color: theme.primary }}
               >
                 {t("back")}
@@ -616,17 +595,13 @@ export default function LoginPage() {
           ) : panel === "forgot" ? (
             <form
               onSubmit={handleSendRecoveryEmail}
-              className="flex flex-col gap-3 rounded-2xl border-2 border-b-4 px-4 py-4"
-              style={{ borderColor: theme.cardBorder, background: "#fff" }}
+              className="flex flex-col gap-4"
               noValidate
             >
               <p
-                className="text-center text-xs font-black uppercase tracking-[0.14em]"
+                className="text-center text-sm font-medium"
                 style={{ color: theme.muted }}
               >
-                {t("forgotPassword")}
-              </p>
-              <p className="text-center text-xs font-semibold" style={{ color: theme.muted }}>
                 {t("forgotPasswordHint")}
               </p>
               <div className="flex flex-col gap-1.5">
@@ -651,7 +626,7 @@ export default function LoginPage() {
               </div>
               {info ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-emerald-300 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900"
+                  className="rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-700"
                   role="status"
                 >
                   {info}
@@ -659,7 +634,7 @@ export default function LoginPage() {
               ) : null}
               {error ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-red-300 bg-red-50 px-4 py-3 text-center text-sm font-bold text-red-900"
+                  className="rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"
                   role="alert"
                 >
                   {error}
@@ -671,8 +646,7 @@ export default function LoginPage() {
                 variant="primary"
                 disabled={sendingRecovery}
                 aria-busy={sendingRecovery}
-                textCase="normal"
-                className="h-12 w-full text-base"
+                className="w-full"
               >
                 {sendingRecovery ? t("sending") : t("sendResetLink")}
               </SupercellButton>
@@ -683,7 +657,7 @@ export default function LoginPage() {
                   setError(null);
                   setInfo(null);
                 }}
-                className="text-center text-xs font-black uppercase tracking-wide"
+                className="text-center text-sm font-medium hover:underline"
                 style={{ color: theme.primary }}
               >
                 {t("back")}
@@ -744,7 +718,7 @@ export default function LoginPage() {
                     setError(null);
                     setInfo(null);
                   }}
-                  className="text-xs font-black uppercase tracking-wide"
+                  className="text-sm font-medium hover:underline"
                   style={{ color: theme.primary }}
                 >
                   {t("forgotPassword")}
@@ -753,7 +727,7 @@ export default function LoginPage() {
 
               {info ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-amber-300 bg-amber-100 px-4 py-3 text-center text-sm font-bold leading-snug text-amber-950"
+                  className="rounded-lg bg-amber-50 px-4 py-3 text-center text-sm font-medium leading-snug text-amber-700"
                   role="status"
                 >
                   {info}
@@ -762,10 +736,10 @@ export default function LoginPage() {
 
               {unconfirmedEmail ? (
                 <div
-                  className="flex flex-col gap-3 rounded-2xl border-2 border-b-4 border-amber-300 bg-amber-100 px-4 py-4 text-amber-950"
+                  className="flex flex-col gap-3 rounded-lg bg-amber-50 px-4 py-4 text-amber-800"
                   role="status"
                 >
-                  <p className="text-center text-sm font-bold leading-snug">
+                  <p className="text-center text-sm font-medium leading-snug">
                     {t("unconfirmedEmailMessage", { email: unconfirmedEmail })}
                   </p>
                   <SupercellButton
@@ -775,8 +749,7 @@ export default function LoginPage() {
                     onClick={() => void handleResendVerification()}
                     disabled={resendState === "sending" || resendState === "sent"}
                     aria-busy={resendState === "sending"}
-                    textCase="normal"
-                    className="h-12 w-full text-sm"
+                    className="w-full"
                   >
                     {resendState === "sending"
                       ? t("sending")
@@ -785,12 +758,12 @@ export default function LoginPage() {
                         : t("resendConfirmation")}
                   </SupercellButton>
                   {resendState === "sent" ? (
-                    <p className="text-center text-xs font-bold text-green-900">
+                    <p className="text-center text-xs font-medium text-emerald-700">
                       {t("newConfirmationSent")}
                     </p>
                   ) : null}
                   {resendState === "error" && resendError ? (
-                    <p className="text-center text-xs font-bold text-red-800">
+                    <p className="text-center text-xs font-medium text-red-700">
                       {resendError}
                     </p>
                   ) : null}
@@ -799,7 +772,7 @@ export default function LoginPage() {
 
               {error ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-red-300 bg-red-50 px-4 py-3 text-center text-sm font-bold text-red-900"
+                  className="rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"
                   role="alert"
                 >
                   {error}
@@ -812,8 +785,7 @@ export default function LoginPage() {
                 variant="primary"
                 disabled={loading}
                 aria-busy={loading}
-                textCase="normal"
-                className="mt-1 h-14 w-full text-lg"
+                className="mt-2 w-full"
               >
                 {loading ? t("working") : t("loginTitle")}
               </SupercellButton>
@@ -823,19 +795,18 @@ export default function LoginPage() {
               <fieldset className="flex flex-col gap-2 border-0 p-0">
                 <legend className="sr-only">{t("accountType")}</legend>
                 <p
-                  className="text-center text-xs font-black uppercase tracking-[0.14em]"
+                  className="text-center text-xs font-medium"
                   style={{ color: theme.muted }}
                 >
                   {t("chooseAccountType")}
                 </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="flex rounded-full bg-neutral-100 p-1">
                   <label
-                    className="flex min-h-12 cursor-pointer items-center justify-center rounded-xl border-2 border-b-4 px-3 py-2 text-center text-sm font-black uppercase tracking-wide transition-colors"
+                    className="flex flex-1 cursor-pointer items-center justify-center rounded-full py-2 text-center text-sm font-medium transition-all duration-200"
                     style={{
-                      background: registerRole === "owner" ? theme.primary : "#fff",
-                      color: registerRole === "owner" ? "#fff" : theme.fg,
-                      borderColor:
-                        registerRole === "owner" ? theme.primaryDark : theme.cardBorder,
+                      background: registerRole === "owner" ? "#fff" : "transparent",
+                      color: registerRole === "owner" ? theme.primary : theme.muted,
+                      boxShadow: registerRole === "owner" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                     }}
                   >
                     <input
@@ -849,12 +820,11 @@ export default function LoginPage() {
                     {t("owner")}
                   </label>
                   <label
-                    className="flex min-h-12 cursor-pointer items-center justify-center rounded-xl border-2 border-b-4 px-3 py-2 text-center text-sm font-black uppercase tracking-wide transition-colors"
+                    className="flex flex-1 cursor-pointer items-center justify-center rounded-full py-2 text-center text-sm font-medium transition-all duration-200"
                     style={{
-                      background: registerRole === "employee" ? theme.primary : "#fff",
-                      color: registerRole === "employee" ? "#fff" : theme.fg,
-                      borderColor:
-                        registerRole === "employee" ? theme.primaryDark : theme.cardBorder,
+                      background: registerRole === "employee" ? "#fff" : "transparent",
+                      color: registerRole === "employee" ? theme.primary : theme.muted,
+                      boxShadow: registerRole === "employee" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                     }}
                   >
                     <input
@@ -977,12 +947,8 @@ export default function LoginPage() {
                     className={inputClass}
                   />
                   <p
-                    className="rounded-xl border px-4 py-3 text-center text-xs font-semibold"
-                    style={{
-                      color: theme.muted,
-                      borderColor: theme.cardBorder,
-                      background: "#fff",
-                    }}
+                    className="rounded-lg bg-neutral-50 px-4 py-3 text-center text-xs"
+                    style={{ color: theme.muted }}
                   >
                     {t("inviteCodeHelp")}
                   </p>
@@ -991,7 +957,7 @@ export default function LoginPage() {
 
               {error ? (
                 <p
-                  className="rounded-xl border-2 border-b-4 border-red-300 bg-red-50 px-4 py-3 text-center text-sm font-bold text-red-900"
+                  className="rounded-lg bg-red-50 px-4 py-3 text-center text-sm font-medium text-red-700"
                   role="alert"
                 >
                   {error}
@@ -1004,8 +970,7 @@ export default function LoginPage() {
                 variant="primary"
                 disabled={loading}
                 aria-busy={loading}
-                textCase="normal"
-                className="mt-1 h-14 w-full text-lg"
+                className="mt-2 w-full"
               >
                 {loading ? t("working") : t("createAccount")}
               </SupercellButton>
@@ -1014,7 +979,7 @@ export default function LoginPage() {
 
           {panel === "auth" ? (
             <p
-              className="mt-5 text-center text-sm font-semibold"
+              className="mt-5 text-center text-sm"
               style={{ color: theme.muted }}
             >
               {authView === "login" ? t("noAccount") : t("alreadyHaveAccount")}{" "}
@@ -1023,7 +988,7 @@ export default function LoginPage() {
                 onClick={() =>
                   switchAuthView(authView === "login" ? "register" : "login")
                 }
-                className="font-black uppercase tracking-wide"
+                className="font-semibold hover:underline"
                 style={{ color: theme.primary }}
               >
                 {authView === "login" ? t("registerTitle") : t("loginTitle")}

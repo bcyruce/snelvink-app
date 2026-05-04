@@ -49,21 +49,21 @@ function ThemePickerPopup({
       exit="exit"
       style={{
         position: "absolute",
-        top: "calc(100% + 10px)",
+        top: "calc(100% + 8px)",
         right: 0,
         zIndex: 200,
-        background: "rgba(18,22,20,0.97)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 16,
-        padding: "12px 12px 10px",
+        background: "rgba(255,255,255,0.98)",
+        border: "1px solid rgba(0,0,0,0.08)",
+        borderRadius: 12,
+        padding: "10px 12px 10px",
         backdropFilter: "blur(24px)",
-        boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
         transformOrigin: "top right",
       }}
     >
       <div className="flex items-center gap-1.5 mb-3 px-0.5">
         <PaletteIcon colors={paletteColors} size={14} />
-        <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.22em", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>
+        <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: "0.04em", color: "#737373" }}>
           {t("theme")}
         </span>
       </div>
@@ -90,20 +90,20 @@ function ThemePickerPopup({
                 title={th.label}
                 variants={{
                   initial: { opacity: 0, scale: 0.5, y: 6 },
-                  animate: { opacity: 1, scale: isActive ? 1.15 : 1, y: 0 },
+                  animate: { opacity: 1, scale: isActive ? 1.1 : 1, y: 0 },
                 }}
-                whileHover={{ scale: isActive ? 1.2 : 1.12, rotate: 8 }}
-                whileTap={{ scale: 0.9, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 18 }}
-                animate={{ scale: isActive ? 1.15 : 1 }}
+                whileHover={{ scale: isActive ? 1.15 : 1.1 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                animate={{ scale: isActive ? 1.1 : 1 }}
                 style={{
-                  width: 28, height: 28, borderRadius: "50%",
+                  width: 26, height: 26, borderRadius: "50%",
                   background: th.primary,
                   border: isActive
-                    ? "2.5px solid rgba(255,255,255,0.9)"
-                    : "2.5px solid rgba(255,255,255,0.15)",
+                    ? "2px solid #fff"
+                    : "2px solid transparent",
                   cursor: "pointer",
-                  boxShadow: isActive ? `0 0 0 2px ${th.primary}55` : "none",
+                  boxShadow: isActive ? `0 0 0 2px ${th.primary}` : "0 1px 3px rgba(0,0,0,0.1)",
                   flexShrink: 0,
                 }}
               />

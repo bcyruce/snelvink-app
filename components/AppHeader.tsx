@@ -10,45 +10,43 @@ export default function AppHeader() {
 
   return (
     <motion.header
-      initial={{ y: -24, opacity: 0 }}
+      initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 26 }}
-      className="px-5 pt-2 pb-2"
-      style={{ background: theme.primary }}
+      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="sticky top-0 z-50 px-4 py-3 backdrop-blur-md border-b"
+      style={{ 
+        background: theme.navBg,
+        borderColor: theme.navBorder,
+      }}
     >
       <div className="flex items-center justify-between">
         <motion.div
-          className="flex items-center gap-2.5"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 380, damping: 22 }}
+          className="flex items-center gap-3"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
-          <motion.div
-            whileHover={{ rotate: -10, scale: 1.06 }}
-            transition={{ type: "spring", stiffness: 360, damping: 16 }}
-          >
-            <Image
-              src="/logo-snelvink.png"
-              alt="Snelvink"
-              width={72}
-              height={72}
-              priority
-              className="h-16 w-16 shrink-0 select-none"
-            />
-          </motion.div>
-          <div
-            style={{
-              fontSize: 26,
-              fontWeight: 800,
-              color: "#fff",
-              letterSpacing: "0.06em",
-              lineHeight: 1,
-              fontFamily: "'Trebuchet MS', sans-serif",
-              textTransform: "uppercase",
-            }}
-          >
-            SNEL
-            <span style={{ opacity: 0.5, marginLeft: "0.1em" }}>VINK</span>
+          <Image
+            src="/logo-snelvink.png"
+            alt="Snelvink"
+            width={48}
+            height={48}
+            priority
+            className="h-10 w-10 shrink-0 select-none"
+          />
+          <div className="flex items-baseline gap-0.5">
+            <span
+              className="text-xl font-bold tracking-tight"
+              style={{ color: theme.fg }}
+            >
+              Snel
+            </span>
+            <span
+              className="text-xl font-bold tracking-tight"
+              style={{ color: theme.muted }}
+            >
+              vink
+            </span>
           </div>
         </motion.div>
 

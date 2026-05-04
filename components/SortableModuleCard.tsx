@@ -20,7 +20,6 @@ const MotionLink = motion(Link);
 type SortableModuleCardProps = {
   module: TaskModule;
   isEditing: boolean;
-  wiggleClass: string;
   onDelete: (id: string) => void;
   onEdit: (module: TaskModule) => void;
 };
@@ -30,7 +29,6 @@ const DEFAULT_MODULE_IDS = new Set(DEFAULT_MODULES.map((module) => module.id));
 export default function SortableModuleCard({
   module,
   isEditing,
-  wiggleClass,
   onDelete,
   onEdit,
 }: SortableModuleCardProps) {
@@ -55,14 +53,13 @@ export default function SortableModuleCard({
   };
 
   const cardStyle: React.CSSProperties = {
-    background: theme.cardBg,
-    border: `1.5px solid ${theme.cardBorder}`,
+    background: "rgba(255, 255, 255, 0.9)",
+    border: "1px solid rgba(0, 0, 0, 0.06)",
     backdropFilter: "blur(12px)",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
   };
 
   const controlBaseClass =
-    "absolute z-10 flex h-10 w-10 origin-center transform items-center justify-center rounded-full text-white ring-4 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]";
+    "absolute z-10 flex h-9 w-9 origin-center transform items-center justify-center rounded-full shadow-md ring-2 ring-white transition-all duration-200 ease-out";
   const controlVisibilityClass = isEditing
     ? "scale-100 opacity-100"
     : "pointer-events-none scale-0 opacity-0";
@@ -79,24 +76,17 @@ export default function SortableModuleCard({
             : module.name;
 
   const moduleIcon = createElement(getModuleIcon(module.icon), {
-    className: "h-10 w-10",
-    strokeWidth: 1.75,
+    className: "h-8 w-8",
+    strokeWidth: 1.5,
     style: { color: theme.primary },
     "aria-hidden": true,
   });
 
   const content = (
     <>
-      <motion.span
-        whileHover={{ scale: 1.08, rotate: -3 }}
-        whileTap={{ scale: 0.92 }}
-        transition={{ type: "spring", stiffness: 400, damping: 18 }}
-        className="inline-flex"
-      >
-        {moduleIcon}
-      </motion.span>
+      <span className="inline-flex">{moduleIcon}</span>
       <span
-        className="line-clamp-2 text-base font-black leading-tight"
+        className="line-clamp-2 text-sm font-semibold leading-tight"
         style={{ color: theme.fg }}
       >
         {moduleName}
@@ -104,7 +94,6 @@ export default function SortableModuleCard({
     </>
   );
 
-  const animationClass = isEditing && !isDragging ? wiggleClass : "";
   const stopCardClick = (e: React.MouseEvent) => {
     if (isEditing) e.stopPropagation();
   };
@@ -116,83 +105,71 @@ export default function SortableModuleCard({
       className={isEditing ? "touch-none" : undefined}
       onClick={stopCardClick}
     >
-      <div className={animationClass}>
-        <div className="relative">
-          {isEditing ? (
-            <motion.div
-              className="relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center"
-              style={cardStyle}
-              animate={isDragging ? { scale: 1.05 } : { scale: 1 }}
-              transition={{ type: "spring", stiffness: 320, damping: 22 }}
-            >
-              {content}
-            </motion.div>
-          ) : (
-            <MotionLink
-              href={module.href}
-              className="group relative flex min-h-[140px] w-full flex-col items-center justify-center gap-3 rounded-2xl px-4 text-center"
-              style={cardStyle}
-              whileHover={{
-                y: -3,
-                scale: 1.02,
-                boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
-              }}
-              whileTap={{ scale: 0.96, y: 1 }}
-              transition={{ type: "spring", stiffness: 380, damping: 24 }}
-            >
-              {content}
-            </MotionLink>
-          )}
+      <div className="relative">
+        {isEditing ? (
+          <motion.div
+            className="relative flex min-h-[120px] w-full flex-col items-center justify-center gap-2.5 rounded-2xl px-4 text-center shadow-sm"
+            style={cardStyle}
+            animate={isDragging ? { scale: 1.03, boxShadow: "0 12px 24px rgba(0,0,0,0.12)" } : { scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {content}
+          </motion.div>
+        ) : (
+          <MotionLink
+            href={module.href}
+            className="group relative flex min-h-[120px] w-full flex-col items-center justify-center gap-2.5 rounded-2xl px-4 text-center shadow-sm"
+            style={cardStyle}
+            whileHover={{
+              y: -2,
+              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+          >
+            {content}
+          </MotionLink>
+        )}
 
+        <SupercellButton
+          type="button"
+          size="iconSm"
+          variant="danger"
+          onClick={() => onDelete(module.id)}
+          aria-label={`${t("remove")} ${moduleName}`}
+          tabIndex={isEditing ? 0 : -1}
+          className={`${controlBaseClass} -left-2 -top-2 ${controlVisibilityClass}`}
+        >
+          <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+        </SupercellButton>
+
+        <SupercellButton
+          ref={setActivatorNodeRef}
+          type="button"
+          size="iconSm"
+          variant="neutral"
+          aria-label={`${t("move")} ${moduleName}`}
+          className={`${controlBaseClass} -right-2 -top-2 cursor-grab ${controlVisibilityClass} active:cursor-grabbing`}
+          {...listeners}
+          {...attributes}
+          tabIndex={isEditing ? 0 : -1}
+        >
+          <GripVertical className="h-4 w-4" strokeWidth={2} style={{ color: theme.muted }} aria-hidden />
+        </SupercellButton>
+
+        {isCustomModule ? (
           <SupercellButton
             type="button"
-            size="icon"
-            variant="danger"
-            onClick={() => onDelete(module.id)}
-            aria-label={`${t("remove")} ${moduleName}`}
+            size="iconSm"
+            variant="primary"
+            onClick={() => onEdit(module)}
+            aria-label={`${t("edit")} ${moduleName}`}
             tabIndex={isEditing ? 0 : -1}
-            className={`${controlBaseClass} -left-2 -top-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
-            style={{
-              boxShadow: `0 0 0 4px ${theme.bg}`,
-            }}
+            className={`${controlBaseClass} -right-2 -bottom-2 ${controlVisibilityClass}`}
           >
-            <Trash2 className="h-4 w-4" strokeWidth={2.75} aria-hidden />
+            <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden />
           </SupercellButton>
-
-          <SupercellButton
-            ref={setActivatorNodeRef}
-            type="button"
-            size="icon"
-            variant="neutral"
-            aria-label={`${t("move")} ${moduleName}`}
-            className={`${controlBaseClass} -right-2 -top-2 h-10 w-10 cursor-grab rounded-full ${controlVisibilityClass} active:cursor-grabbing`}
-            style={{
-              boxShadow: `0 0 0 4px ${theme.bg}`,
-            }}
-            {...listeners}
-            {...attributes}
-            tabIndex={isEditing ? 0 : -1}
-          >
-            <GripVertical className="h-4 w-4" strokeWidth={2.75} style={{ color: theme.muted }} aria-hidden />
-          </SupercellButton>
-
-          {isCustomModule ? (
-            <SupercellButton
-              type="button"
-              size="icon"
-              variant="primary"
-              onClick={() => onEdit(module)}
-              aria-label={`${t("edit")} ${moduleName}`}
-              tabIndex={isEditing ? 0 : -1}
-              className={`${controlBaseClass} -right-2 -bottom-2 h-10 w-10 rounded-full ${controlVisibilityClass}`}
-              style={{
-                boxShadow: `0 0 0 4px ${theme.bg}`,
-              }}
-            >
-              <Pencil className="h-4 w-4" strokeWidth={2.75} aria-hidden />
-            </SupercellButton>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     </div>
   );

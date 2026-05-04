@@ -152,100 +152,87 @@ export default function SettingsTab() {
     >
       <motion.h2
         variants={listItemVariants}
-        className="mb-5 text-3xl font-black tracking-tight text-slate-900"
+        className="mb-5 text-xl font-semibold tracking-tight text-neutral-900"
       >
         {t("settingsTitle")}
       </motion.h2>
 
       <motion.section
         variants={listItemVariants}
-        className="mb-6 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5"
+        className="mb-5"
       >
-        <SupercellButton
+        <button
           type="button"
-          size="lg"
-          variant="neutral"
           onClick={() => router.push("/app/instellingen/taal")}
-          textCase="normal"
-          className="group flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+          className="group flex w-full items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left transition-all duration-200 hover:bg-neutral-50 hover:shadow-sm"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <motion.span
-              aria-hidden
-              whileHover={{ scale: 1.12, rotate: -8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 18 }}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-2xl"
-            >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-xl">
               {languageMeta.flag}
-            </motion.span>
+            </span>
             <span className="min-w-0">
-              <span className="block truncate text-base font-black text-slate-900">
+              <span className="block truncate text-sm font-medium text-neutral-900">
                 {t("language")}
               </span>
-              <span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">
+              <span className="mt-0.5 block truncate text-xs text-neutral-500">
                 {languageMeta.nativeName}
               </span>
             </span>
           </span>
           <ChevronRight
-            className="h-6 w-6 shrink-0 text-blue-600 transition-transform duration-200 group-hover:translate-x-1 rtl:rotate-180"
-            strokeWidth={2.75}
+            className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5 rtl:rotate-180"
+            strokeWidth={2}
             aria-hidden
           />
-        </SupercellButton>
+        </button>
       </motion.section>
 
       <motion.div
         variants={listItemVariants}
-        className="mb-8 rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white p-5"
+        className="mb-6 rounded-xl border border-neutral-200 bg-white p-5"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
               {t("restaurant")}
             </p>
-            <p className="mt-1 truncate text-2xl font-black text-slate-900">
+            <p className="mt-1 truncate text-lg font-semibold text-neutral-900">
               {restaurant?.name ?? "—"}
             </p>
           </div>
-          <SupercellButton
+          <button
             type="button"
-            size="icon"
-            variant="neutral"
             onClick={() => void handleRefresh()}
             disabled={isRefreshing}
             aria-busy={isRefreshing}
             title={t("refresh")}
-            className="shrink-0 rounded-lg p-2"
+            className="shrink-0 rounded-lg p-2 hover:bg-neutral-100 transition-colors"
           >
             <RefreshCw
-              className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
-              strokeWidth={2}
+              className={`h-5 w-5 text-neutral-500 ${isRefreshing ? "animate-spin" : ""}`}
+              strokeWidth={1.75}
             />
-          </SupercellButton>
+          </button>
         </div>
 
-        <p className="mt-5 text-xs font-black uppercase tracking-wide text-slate-500">
+        <p className="mt-5 text-xs font-medium uppercase tracking-wide text-neutral-500">
           {t("subscription")}
         </p>
-        <SupercellButton
+        <button
           type="button"
-          size="lg"
-          variant="neutral"
           onClick={() => router.push("/app/dashboard/subscription")}
-          textCase="normal"
-          className="mt-2 flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+          className="group mt-2 flex w-full items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-all duration-200 hover:bg-neutral-100"
         >
           <div className="min-w-0">
-            <p className="truncate text-xl font-black text-slate-900">
+            <p className="truncate text-base font-medium text-neutral-900">
               {planLabel(restaurant?.plan ?? restaurant?.plan_type ?? "free")}
             </p>
             {restaurant?.plan_status ? (
-              <p className="mt-0.5 truncate text-xs font-bold text-slate-500">
+              <p className="mt-0.5 truncate text-xs text-neutral-500">
                 {translatedPlanStatus(restaurant.plan_status, t)}
               </p>
             ) : (
-              <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+              <p className="mt-0.5 truncate text-xs text-neutral-500">
                 {isOwner
                   ? t("manageSubscription")
                   : t("viewRestaurantSubscription")}
@@ -253,41 +240,41 @@ export default function SettingsTab() {
             )}
           </div>
           <ChevronRight
-            className="h-6 w-6 shrink-0 text-blue-600"
-            strokeWidth={2.75}
+            className="h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5"
+            strokeWidth={2}
             aria-hidden
           />
-        </SupercellButton>
+        </button>
 
         {isOwner ? (
-          <div className="mt-6 border-t-2 border-slate-200 pt-6">
-            <p className="text-center text-xs font-black uppercase tracking-wide text-slate-500">
+          <div className="mt-5 border-t border-neutral-200 pt-5">
+            <p className="text-center text-xs font-medium uppercase tracking-wide text-neutral-500">
               {t("inviteCode")}
             </p>
             {!restaurant ? (
-              <p className="mt-3 text-center text-sm font-bold text-slate-500">
+              <p className="mt-3 text-center text-sm text-neutral-500">
                 {t("loading")}
               </p>
             ) : isFreePlan ? (
-              <div className="mt-3 rounded-2xl border-2 border-amber-300 border-b-4 border-b-amber-400 bg-amber-100 px-4 py-5 text-center">
-                <p className="text-base font-black text-amber-900">
+              <div className="mt-3 rounded-lg bg-amber-50 px-4 py-4 text-center">
+                <p className="text-sm font-medium text-amber-800">
                   {t("inviteCodeUnavailableTitle")}
                 </p>
-                <p className="mt-2 text-sm font-semibold leading-relaxed text-amber-900">
+                <p className="mt-1 text-xs leading-relaxed text-amber-700">
                   {t("inviteCodeUpgradeMessage")}
                 </p>
               </div>
             ) : restaurant.invite_code ? (
-              <div className="mt-3 rounded-2xl border-2 border-blue-300 border-b-4 border-b-blue-400 bg-blue-50 px-4 py-5">
-                <p className="text-center text-5xl font-black tabular-nums tracking-widest text-blue-700 sm:text-6xl">
+              <div className="mt-3 rounded-lg bg-[var(--theme-primary)]/10 px-4 py-5">
+                <p className="text-center text-4xl font-bold tabular-nums tracking-widest" style={{ color: "var(--theme-primary)" }}>
                   {restaurant.invite_code}
                 </p>
-                <p className="mt-4 text-center text-sm font-semibold leading-relaxed text-slate-600">
+                <p className="mt-3 text-center text-sm text-neutral-600">
                   {t("inviteCodeShareMessage")}
                 </p>
               </div>
             ) : (
-              <p className="mt-3 text-center text-sm font-bold text-slate-500">
+              <p className="mt-3 text-center text-sm text-neutral-500">
                 {t("inviteCodeUnavailable")}
               </p>
             )}
