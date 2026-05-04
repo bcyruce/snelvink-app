@@ -106,14 +106,11 @@ function HomeContent({ activeTab }: { activeTab: MenuTab }) {
   useEffect(() => {
     if (!profile?.restaurant_id) return;
     if (hydratedRestaurantId !== profile.restaurant_id) return;
-    const timer = window.setTimeout(() => {
-      void upsertRestaurantTaskModulesLayout(
-        supabase,
-        profile.restaurant_id,
-        modules,
-      );
-    }, 800);
-    return () => window.clearTimeout(timer);
+    void upsertRestaurantTaskModulesLayout(
+      supabase,
+      profile.restaurant_id,
+      modules,
+    );
   }, [modules, hydratedRestaurantId, profile?.restaurant_id]);
 
   useEffect(() => {
