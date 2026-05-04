@@ -11,6 +11,7 @@ import {
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { menuTabPath } from "@/lib/menuTabPath";
 import {
   iconPressMotionProps,
   listContainerVariants,
@@ -44,12 +45,7 @@ function LanguageSettingsContent() {
   }
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") {
-      router.push("/app/registreren");
-      return;
-    }
-    if (tab === "taken") router.push("/app");
-    else router.push(`/app?tab=${tab}`);
+    router.push(menuTabPath(tab));
   };
 
   const handleSelect = (next: Language) => {
@@ -71,7 +67,7 @@ function LanguageSettingsContent() {
             <motion.button
               {...iconPressMotionProps}
               type="button"
-              onClick={() => router.push("/app?tab=instellingen")}
+              onClick={() => router.push("/app/instellingen")}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-200 border-b-4 border-b-slate-300 bg-white text-slate-700 rtl:rotate-180"
               aria-label={t("back")}
             >

@@ -9,6 +9,7 @@ import SchoonmaakCheck from "@/components/SchoonmaakCheck";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { menuTabPath } from "@/lib/menuTabPath";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
@@ -32,7 +33,7 @@ function ModuleContent() {
 
   // Determine where to go back based on source parameter
   const source = searchParams.get("source");
-  const backPath = source === "registreren" ? "/app/registreren" : "/app";
+  const backPath = source === "registreren" ? "/app/registreren" : "/app/taken";
   const activeMenu = source === "registreren" ? "registreren" : "taken";
 
   useEffect(() => {
@@ -60,9 +61,7 @@ function ModuleContent() {
   const componentMode = source === "registreren" ? "record" : "manage";
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") router.push("/app/registreren");
-    else if (tab === "taken") router.push("/app");
-    else router.push(`/app?tab=${tab}`);
+    router.push(menuTabPath(tab));
   };
 
   return (

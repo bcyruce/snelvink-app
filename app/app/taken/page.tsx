@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import AppShell from "../AppShell";
 
 export default function TakenPage() {
-  redirect("/app");
+  return <AppShell activeTab="taken" />;
 }

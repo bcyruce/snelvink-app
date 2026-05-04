@@ -9,6 +9,7 @@ import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { menuTabPath } from "@/lib/menuTabPath";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -38,8 +39,7 @@ function RegistrerenContent() {
 
   const handleMenuNav = (tab: MenuTab) => {
     if (tab === "registreren") return; // Already on this page
-    if (tab === "taken") router.push("/app");
-    else router.push(`/app?tab=${tab}`);
+    router.push(menuTabPath(tab));
   };
 
   return (

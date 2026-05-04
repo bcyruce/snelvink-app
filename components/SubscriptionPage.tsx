@@ -201,7 +201,7 @@ export default function SubscriptionPage() {
         type="button"
         size="md"
         variant="neutral"
-        onClick={() => router.push("/app?tab=instellingen")}
+        onClick={() => router.push("/app/instellingen")}
         textCase="normal"
         className="mb-6 inline-flex items-center gap-2 px-4 py-3 text-base"
       >

@@ -8,6 +8,7 @@ import SupercellButton from "@/components/SupercellButton";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { menuTabPath } from "@/lib/menuTabPath";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { ArrowLeft, Wrench } from "lucide-react";
@@ -86,9 +87,7 @@ function CustomModuleManageContent() {
   }, [isLoading, user, router]);
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") router.push("/app/registreren");
-    else if (tab === "taken") router.push("/app");
-    else router.push(`/app?tab=${tab}`);
+    router.push(menuTabPath(tab));
   };
 
   if (isLoading || !user || isModuleLoading) {
@@ -108,7 +107,7 @@ function CustomModuleManageContent() {
         <SupercellButton
           type="button"
           variant="neutral"
-          onClick={() => router.push("/app")}
+          onClick={() => router.push("/app/taken")}
           size="iconSm"
           aria-label={t("back")}
           className="mb-4 rounded-full"

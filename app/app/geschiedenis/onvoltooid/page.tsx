@@ -7,6 +7,7 @@ import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { UserProvider, useUser } from "@/hooks/useUser";
+import { menuTabPath } from "@/lib/menuTabPath";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -33,12 +34,7 @@ function OnvoltooidContent() {
   }
 
   const handleMenuNav = (tab: MenuTab) => {
-    if (tab === "registreren") {
-      router.push("/app/registreren");
-      return;
-    }
-    if (tab === "taken") router.push("/app");
-    else router.push(`/app?tab=${tab}`);
+    router.push(menuTabPath(tab));
   };
 
   return (
