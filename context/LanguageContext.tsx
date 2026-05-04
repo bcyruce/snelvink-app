@@ -533,6 +533,21 @@ export const translations = {
     createAccount: "Account aanmaken",
     noAccount: "Nog geen account?",
     alreadyHaveAccount: "Al een account?",
+    forgotPassword: "Wachtwoord vergeten?",
+    forgotPasswordHint:
+      "Vul je e-mailadres in. We sturen je een link om een nieuw wachtwoord te kiezen.",
+    sendResetLink: "Stuur resetlink",
+    passwordResetMailSent:
+      "We hebben een resetlink naar {email} gestuurd. Controleer ook je spammap.",
+    resetPasswordTitle: "Nieuw wachtwoord instellen",
+    resetPasswordHint: "Kies een nieuw wachtwoord voor je account.",
+    newPassword: "Nieuw wachtwoord",
+    confirmPassword: "Bevestig wachtwoord",
+    updatePassword: "Wachtwoord bijwerken",
+    passwordUpdatedSuccess: "Je wachtwoord is bijgewerkt. Je kunt nu inloggen.",
+    passwordsDoNotMatch: "De wachtwoorden komen niet overeen.",
+    passwordTooShort: "Wachtwoord moet minimaal 6 tekens bevatten.",
+    fillEmailAddress: "Vul je e-mailadres in.",
     emailAlreadyRegistered:
       "Dit e-mailadres is al geregistreerd. Log in of klik hieronder op 'Wachtwoord vergeten?'.",
     confirmationMailSent:
@@ -1002,6 +1017,21 @@ export const translations = {
     createAccount: "Create account",
     noAccount: "No account yet?",
     alreadyHaveAccount: "Already have an account?",
+    forgotPassword: "Forgot password?",
+    forgotPasswordHint:
+      "Enter your email address. We will send you a link to choose a new password.",
+    sendResetLink: "Send reset link",
+    passwordResetMailSent:
+      "We sent a reset link to {email}. Also check your spam folder.",
+    resetPasswordTitle: "Set a new password",
+    resetPasswordHint: "Choose a new password for your account.",
+    newPassword: "New password",
+    confirmPassword: "Confirm password",
+    updatePassword: "Update password",
+    passwordUpdatedSuccess: "Your password has been updated. You can now sign in.",
+    passwordsDoNotMatch: "Passwords do not match.",
+    passwordTooShort: "Password must contain at least 6 characters.",
+    fillEmailAddress: "Enter your email address.",
     emailAlreadyRegistered:
       "This email address is already registered. Sign in or click 'Forgot password?' below.",
     confirmationMailSent:
@@ -1455,6 +1485,20 @@ export const translations = {
     createAccount: "创建账户",
     noAccount: "还没有账户？",
     alreadyHaveAccount: "已有账户？",
+    forgotPassword: "忘记密码？",
+    forgotPasswordHint: "请输入你的邮箱，我们会发送重置密码链接。",
+    sendResetLink: "发送重置链接",
+    passwordResetMailSent:
+      "我们已向 {email} 发送重置链接，请同时检查垃圾邮件箱。",
+    resetPasswordTitle: "设置新密码",
+    resetPasswordHint: "请为你的账户设置一个新密码。",
+    newPassword: "新密码",
+    confirmPassword: "确认密码",
+    updatePassword: "更新密码",
+    passwordUpdatedSuccess: "密码已更新，现在可以登录。",
+    passwordsDoNotMatch: "两次输入的密码不一致。",
+    passwordTooShort: "密码至少需要 6 个字符。",
+    fillEmailAddress: "请输入邮箱地址。",
     emailAlreadyRegistered:
       "此电子邮件地址已注册。请登录或点击下方的'忘记密码？'。",
     confirmationMailSent:
@@ -1913,6 +1957,21 @@ export const translations = {
     createAccount: "إنشاء حساب",
     noAccount: "ليس لديك حساب بعد؟",
     alreadyHaveAccount: "هل لديك حساب بالفعل؟",
+    forgotPassword: "هل نسيت كلمة المرور؟",
+    forgotPasswordHint:
+      "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لاختيار كلمة مرور جديدة.",
+    sendResetLink: "إرسال رابط إعادة التعيين",
+    passwordResetMailSent:
+      "أرسلنا رابط إعادة تعيين إلى {email}. تحقق أيضًا من مجلد الرسائل غير المرغوب فيها.",
+    resetPasswordTitle: "تعيين كلمة مرور جديدة",
+    resetPasswordHint: "اختر كلمة مرور جديدة لحسابك.",
+    newPassword: "كلمة المرور الجديدة",
+    confirmPassword: "تأكيد كلمة المرور",
+    updatePassword: "تحديث كلمة المرور",
+    passwordUpdatedSuccess: "تم تحديث كلمة المرور. يمكنك الآن تسجيل الدخول.",
+    passwordsDoNotMatch: "كلمتا المرور غير متطابقتين.",
+    passwordTooShort: "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.",
+    fillEmailAddress: "أدخل عنوان بريدك الإلكتروني.",
     emailAlreadyRegistered:
       "عنوان البريد الإلكتروني هذا مسجل بالفعل. سجل الدخول أو انقر على 'نسيت كلمة المرور؟' أدناه.",
     confirmationMailSent:
@@ -2371,6 +2430,21 @@ export const translations = {
     createAccount: "Hesap oluştur",
     noAccount: "Henüz hesabınız yok mu?",
     alreadyHaveAccount: "Zaten hesabınız var mı?",
+    forgotPassword: "Parolanızı mı unuttunuz?",
+    forgotPasswordHint:
+      "E-posta adresinizi girin. Yeni parola seçmeniz için size bir bağlantı göndereceğiz.",
+    sendResetLink: "Sıfırlama bağlantısı gönder",
+    passwordResetMailSent:
+      "{email} adresine bir sıfırlama bağlantısı gönderdik. Spam klasörünü de kontrol edin.",
+    resetPasswordTitle: "Yeni parola belirle",
+    resetPasswordHint: "Hesabınız için yeni bir parola seçin.",
+    newPassword: "Yeni parola",
+    confirmPassword: "Parolayı doğrula",
+    updatePassword: "Parolayı güncelle",
+    passwordUpdatedSuccess: "Parolanız güncellendi. Artık giriş yapabilirsiniz.",
+    passwordsDoNotMatch: "Parolalar eşleşmiyor.",
+    passwordTooShort: "Parola en az 6 karakter olmalıdır.",
+    fillEmailAddress: "E-posta adresinizi girin.",
     emailAlreadyRegistered:
       "Bu e-posta adresi zaten kayıtlı. Giriş yapın veya aşağıdaki 'Parolanızı mı unuttunuz?' bağlantısına tıklayın.",
     confirmationMailSent:
